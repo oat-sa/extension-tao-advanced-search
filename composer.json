@@ -1,0 +1,45 @@
+{
+    "name": "oat-sa/extension-tao-advance-search",
+    "type": "tao-extension",
+    "description": "tao extension to advanced search",
+    "authors": [
+        {
+            "name": "Open Assessment Technologies SA"
+        }
+    ],
+    "support": {
+        "forum": "http://forum.taotesting.com",
+        "issues": "http://forge.taotesting.com"
+    },
+    "repositories": [
+    ],
+    "keywords": [
+        "tao",
+        "computer-based-assessment"
+    ],
+    "homepage": "http://www.taotesting.com",
+    "license": "GPL-2.0-only",
+    "extra": {
+        "tao-extension-name": "taoAdvanceSearch"
+    },
+    "minimum-stability": "dev",
+    "require": {
+        "oat-sa/oatbox-extension-installer": "~1.1||dev-master",
+        "oat-sa/generis": "*",
+        "oat-sa/tao-core": "*",
+        "ext-json": "*"
+    },
+    "autoload" : {
+        "psr-4" : {
+            "oat\\taoAdvanceSearch\\" : ""
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^8.5"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "oat\\taoAdvanceSearch\\tests\\": "test"
+        }
+    }
+}
