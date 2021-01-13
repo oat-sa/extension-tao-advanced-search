@@ -18,10 +18,7 @@
  * Copyright (c) 2020 (original work) Open Assessment Technologies SA;
  */
 
-use oat\taoAdvanceSearch\scripts\install\RegisterEvents;
-use oat\taoAdvanceSearch\scripts\update\Updater;
-
-$managerRole = 'http://www.tao.lu/Ontologies/generis.rdf#advanceSearchManager';
+$managerRole = 'http://www.tao.lu/Ontologies/generis.rdf#advancedSearchManager';
 
 return [
     'name' => 'taoAdvancedSearch',
