@@ -24,7 +24,7 @@ use oat\taoAdvanceSearch\scripts\update\Updater;
 $managerRole = 'http://www.tao.lu/Ontologies/generis.rdf#advanceSearchManager';
 
 return [
-    'name' => 'taoAdvanceSearch',
+    'name' => 'taoAdvancedSearch',
     'label' => 'Extension to manage advanced search',
     'description' => 'Extension to manage advanced search integration for all TAO resources',
     'license' => 'GPL-2.0',
