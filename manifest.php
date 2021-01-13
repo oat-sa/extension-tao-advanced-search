@@ -31,30 +31,22 @@ return [
     'version' => '1.0.0',
     'author' => 'Open Assessment Technologies SA',
     'requires' => [
-        //@TODO Needs to be updated
-        'generis' => '>=12.24.0',
-        'tao' => '>=44.11.0',
-        'taoDelivery' => '>=14.10.1',
-        'taoResultServer' => '>=12.2.2',
-        'taoTestTaker' => '>=7.6.0',
-        'taoLti' => '>=11.11.0',
+        'generis' => '>=14.1.0',
+        'tao' => '>=46.9.2',
     ],
     'managementRole' => $managerRole,
     'acl' => [
-        ['grant', $managerRole, ['ext' => 'taoAdvanceSearch']],
+        ['grant', $managerRole, ['ext' => 'taoAdvancedSearch']],
     ],
     'install' => [
-        'php' => [
-            RegisterEvents::class,
-        ],
+        'php' => [],
         'rdf' => []
     ],
     'uninstall' => [
     ],
-    'update' => Updater::class,
     'routes' => [
     ],
     'constants' => [
-        'BASE_URL' => ROOT_URL . 'taoAdvanceSearch/',
+        'BASE_URL' => ROOT_URL . 'taoAdvancedSearch/',
     ]
 ];
