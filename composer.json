@@ -31,7 +31,7 @@
     },
     "autoload" : {
         "psr-4" : {
-            "oat\\taoAdvanceSearch\\" : ""
+            "oat\\taoAdvancedSearch\\" : ""
         }
     },
     "require-dev": {
@@ -39,7 +39,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "oat\\taoAdvanceSearch\\tests\\": "test"
+            "oat\\taoAdvancedSearch\\tests\\": "test"
         }
     }
 }
