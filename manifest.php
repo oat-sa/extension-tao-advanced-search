@@ -18,13 +18,13 @@
  * Copyright (c) 2020 (original work) Open Assessment Technologies SA;
  */
 
-use oat\taoAdvanceSearch\scripts\install\RegisterEvents;
-use oat\taoAdvanceSearch\scripts\update\Updater;
+use oat\taoAdvancedSearch\scripts\install\RegisterEvents;
+use oat\taoAdvancedSearch\scripts\update\Updater;
 
 $managerRole = 'http://www.tao.lu/Ontologies/generis.rdf#advanceSearchManager';
 
 return [
-    'name' => 'taoAdvanceSearch',
+    'name' => 'taoAdvancedSearch',
     'label' => 'Extension to manage advanced search',
     'description' => 'Extension to manage advanced search integration for all TAO resources',
     'license' => 'GPL-2.0',
@@ -41,7 +41,7 @@ return [
     ],
     'managementRole' => $managerRole,
     'acl' => [
-        ['grant', $managerRole, ['ext' => 'taoAdvanceSearch']],
+        ['grant', $managerRole, ['ext' => 'taoAdvancedSearch']],
     ],
     'install' => [
         'php' => [
@@ -55,6 +55,6 @@ return [
     'routes' => [
     ],
     'constants' => [
-        'BASE_URL' => ROOT_URL . 'taoAdvanceSearch/',
+        'BASE_URL' => ROOT_URL . 'taoAdvancedSearch/',
     ]
 ];

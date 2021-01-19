@@ -1,5 +1,5 @@
 {
-    "name": "oat-sa/extension-tao-advance-search",
+    "name": "oat-sa/extension-tao-advanced-search",
     "type": "tao-extension",
     "description": "tao extension to advanced search",
     "authors": [
@@ -20,7 +20,7 @@
     "homepage": "http://www.taotesting.com",
     "license": "GPL-2.0-only",
     "extra": {
-        "tao-extension-name": "taoAdvanceSearch"
+        "tao-extension-name": "taoAdvancedSearch"
     },
     "minimum-stability": "dev",
     "require": {
@@ -31,7 +31,7 @@
     },
     "autoload" : {
         "psr-4" : {
-            "oat\\taoAdvanceSearch\\" : ""
+            "oat\\taoAdvancedSearch\\" : ""
         }
     },
     "require-dev": {
@@ -39,7 +39,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "oat\\taoAdvanceSearch\\tests\\": "test"
+            "oat\\taoAdvancedSearch\\tests\\": "test"
         }
     }
 }
