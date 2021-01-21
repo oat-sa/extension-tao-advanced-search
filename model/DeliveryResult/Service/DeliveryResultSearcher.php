@@ -48,8 +48,8 @@ class DeliveryResultSearcher extends ConfigurableService implements ResultSearch
             ->getResultByDelivery(
                 [],
                 [
-                    'offset' => $filter->getParameter('start') ?? 0,
-                    'limit' => $filter->getParameter('end') ?? 1,
+                    'offset' => $filter->getParameter('start'),
+                    'limit' => $filter->getParameter('end') - $filter->getParameter('start'),
                     'recursive' => true,
                 ]
             );
