@@ -25,12 +25,12 @@ namespace oat\taoAdvancedSearch\model\Index\Service;
 use oat\tao\model\task\migration\AbstractMigrationTask;
 use oat\tao\model\task\migration\service\MigrationConfigFactory;
 use oat\tao\model\task\migration\service\MigrationConfigFactoryInterface;
-use oat\tao\model\task\migration\service\ResultFilterFactory;
 use oat\tao\model\task\migration\service\ResultFilterFactoryInterface;
 use oat\tao\model\task\migration\service\ResultSearcherInterface;
 use oat\tao\model\task\migration\service\ResultUnitProcessorInterface;
 use oat\tao\model\task\migration\service\SpawnMigrationConfigService;
 use oat\tao\model\task\migration\service\SpawnMigrationConfigServiceInterface;
+use oat\taoAdvancedSearch\model\DeliveryResult\Factory\ResultFilterFactory;
 use oat\taoAdvancedSearch\model\DeliveryResult\Service\DeliveryResultSearcher;
 use oat\taoAdvancedSearch\model\DeliveryResult\Service\DeliveryResultUnitProcessor;
 
@@ -53,7 +53,7 @@ class IndexMigrationTask extends AbstractMigrationTask
 
     protected function getResultFilterFactory(): ResultFilterFactoryInterface
     {
-        return $this->getServiceLocator()->get(ResultFilterFactory::class); //@TODO FIXME - Needs to be replaced by proper service
+        return $this->getServiceLocator()->get(ResultFilterFactory::class);
     }
 
     protected function getMigrationConfigFactory(): MigrationConfigFactoryInterface

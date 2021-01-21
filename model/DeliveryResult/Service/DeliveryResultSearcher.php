@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\DeliveryResult\Service;
 
+use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\service\ConfigurableService;
 use oat\tao\model\task\migration\ResultUnit;
 use oat\tao\model\task\migration\ResultUnitCollection;
@@ -29,37 +30,33 @@ use oat\tao\model\task\migration\service\ResultFilter;
 use oat\tao\model\task\migration\service\ResultSearcherInterface;
 use oat\taoDelivery\model\execution\DeliveryExecutionService;
 use oat\taoOutcomeUi\model\ResultsService;
-use oat\taoOutcomeUi\model\Wrapper\ResultServiceWrapper;
-use oat\taoResultServer\models\classes\ResultServerService;
 
 class DeliveryResultSearcher extends ConfigurableService implements ResultSearcherInterface
 {
+    use OntologyAwareTrait;
+
     public function search(ResultFilter $filter): ResultUnitCollection
     {
-        $filter->getParameter('max');
-        $filter->getParameter('start');
-        $filter->getParameter('end');
+        //FIXME @TODO Remove after tests
+        \common_Logger::e(__METHOD__ . ' =============================> MAX ' . $filter->getParameter('max')); //FIXME
+        \common_Logger::e(__METHOD__ . ' =============================> START ' . $filter->getParameter('start')); //FIXME
+        \common_Logger::e(__METHOD__ . ' =============================> END ' . $filter->getParameter('end')); //FIXME
 
-        $deliveryId = 'https://tao.docker.localhost/ontologies/tao.rdf#i6006f70fd479a37700506c282d16be90';
-
-        $results = $this->getResultsService($deliveryId)
+        $results = $this->getResultsService()
             ->getImplementation()
             ->getResultByDelivery(
+                [],
                 [
-                    //@TODO FIXME Decide how to get the deliveries
-
-                ],
-                [
-                    //'order' => $this->getRequestParameter('sortby'),
-                    //'orderdir' => strtoupper($this->getRequestParameter('sortorder')),
                     'offset' => $filter->getParameter('start') ?? 0,
                     'limit' => $filter->getParameter('max') ?? 1,
                     'recursive' => true,
                 ]
             );
 
-
         $collection = new ResultUnitCollection();
+
+        //FIXME @TODO Remove after tests
+        \common_Logger::e(__METHOD__ . ' =============================> results ' . count($results));
 
         foreach ($results as $result) {
             $deliveryExecution = $this->getDeliveryExecutionService()
@@ -71,20 +68,15 @@ class DeliveryResultSearcher extends ConfigurableService implements ResultSearch
         return $collection;
     }
 
-    private function getResultsService(string $deliveryUri): ResultsService
+    private function getResultsService(): ResultsService
     {
-        /** @var ResultsService $service */
-        $service = $this->getServiceLocator()
-            ->get(ResultServiceWrapper::SERVICE_ID)
-            ->getService();
+        return $this->getResultServiceBuilder()->build();
+    }
 
-        $resultServerService = $this->getServiceLocator()->get(ResultServerService::SERVICE_ID);
-
-        $resultStorage = $resultServerService->getResultStorage($deliveryUri);
-
-        $service->setImplementation($resultStorage);
-
-        return $service;
+    private function getResultServiceBuilder(): ResultServiceBuilder
+    {
+        return $this->getServiceLocator()
+            ->get(ResultServiceBuilder::class);
     }
 
     private function getDeliveryExecutionService(): DeliveryExecutionService
