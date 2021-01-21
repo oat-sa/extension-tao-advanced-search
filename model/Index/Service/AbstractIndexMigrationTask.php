@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\Index\Service;
 
+use InvalidArgumentException;
 use oat\tao\model\task\migration\AbstractMigrationTask;
 use oat\tao\model\task\migration\service\MigrationConfigFactory;
 use oat\tao\model\task\migration\service\MigrationConfigFactoryInterface;
@@ -30,20 +31,32 @@ use oat\tao\model\task\migration\service\ResultSearcherInterface;
 use oat\tao\model\task\migration\service\ResultUnitProcessorInterface;
 use oat\tao\model\task\migration\service\SpawnMigrationConfigService;
 use oat\tao\model\task\migration\service\SpawnMigrationConfigServiceInterface;
-use oat\taoAdvancedSearch\model\DeliveryResult\Factory\ResultFilterFactory;
-use oat\taoAdvancedSearch\model\DeliveryResult\Service\DeliveryResultSearcher;
-use oat\taoAdvancedSearch\model\DeliveryResult\Service\DeliveryResultUnitProcessor;
 
-class IndexMigrationTask extends AbstractMigrationTask
+abstract class AbstractIndexMigrationTask extends AbstractMigrationTask
 {
+    public const OPTION_INDEXER = 'indexer';
+    public const OPTION_RESULT_SEARCHER = 'resultSearcher';
+    public const OPTION_RESULT_FILTER_FACTORY = 'filterFactory';
+
     protected function getUnitProcessor(): ResultUnitProcessorInterface
     {
-        return $this->getServiceLocator()->get(DeliveryResultUnitProcessor::class);
+        /** @var IndexerInterface $indexer */
+        $indexer = $this->getServiceLocator()->get($this->getConfigValue(self::OPTION_INDEXER));
+
+        /** @var IndexUnitProcessor $unitProcessor */
+        $unitProcessor = $this->getServiceLocator()->get(IndexUnitProcessor::class);
+
+        return $unitProcessor->setIndexer($indexer);
     }
 
     protected function getResultSearcher(): ResultSearcherInterface
     {
-        return $this->getServiceLocator()->get(DeliveryResultSearcher::class);
+        return $this->getServiceLocator()->get($this->getConfigValue(self::OPTION_RESULT_SEARCHER));
+    }
+
+    protected function getResultFilterFactory(): ResultFilterFactoryInterface
+    {
+        return $this->getServiceLocator()->get($this->getConfigValue(self::OPTION_RESULT_FILTER_FACTORY));
     }
 
     protected function getSpawnMigrationConfigService(): SpawnMigrationConfigServiceInterface
@@ -51,13 +64,21 @@ class IndexMigrationTask extends AbstractMigrationTask
         return $this->getServiceLocator()->get(SpawnMigrationConfigService::class);
     }
 
-    protected function getResultFilterFactory(): ResultFilterFactoryInterface
-    {
-        return $this->getServiceLocator()->get(ResultFilterFactory::class);
-    }
-
     protected function getMigrationConfigFactory(): MigrationConfigFactoryInterface
     {
         return $this->getServiceLocator()->get(MigrationConfigFactory::class);
+    }
+
+    abstract protected function getConfig(): array;
+
+    private function getConfigValue(string $config)
+    {
+        $options = $this->getConfig();
+
+        if (isset($options[$config])) {
+            return $options[$config];
+        }
+
+        throw new InvalidArgumentException(sprintf('Missing config %s', $config));
     }
 }

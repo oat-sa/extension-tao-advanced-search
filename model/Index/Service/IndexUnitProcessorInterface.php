@@ -20,26 +20,11 @@
 
 declare(strict_types=1);
 
-namespace oat\taoAdvancedSearch\model\DeliveryResult\Service;
+namespace oat\taoAdvancedSearch\model\Index\Service;
 
-use oat\oatbox\service\ConfigurableService;
 use oat\tao\model\task\migration\service\ResultUnitProcessorInterface;
-use oat\tao\model\task\migration\ResultUnit;
-use oat\taoAdvancedSearch\model\Index\Service\IndexerInterface;
-use oat\taoDelivery\model\execution\DeliveryExecutionInterface;
 
-class DeliveryResultUnitProcessor extends ConfigurableService implements ResultUnitProcessorInterface
+interface IndexUnitProcessorInterface extends ResultUnitProcessorInterface
 {
-    public function process(ResultUnit $unit): void
-    {
-        /** @var DeliveryExecutionInterface $deliveryExecution */
-        $deliveryExecution = $unit->getResult();
-
-        $this->getIndexer()->addIndex($deliveryExecution);
-    }
-
-    protected function getIndexer(): IndexerInterface
-    {
-        return $this->getServiceLocator()->get(DeliveryResultIndexer::class);
-    }
+    public function setIndexer(IndexerInterface $indexer): IndexUnitProcessorInterface;
 }

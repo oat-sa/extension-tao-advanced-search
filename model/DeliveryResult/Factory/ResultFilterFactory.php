@@ -59,10 +59,7 @@ class ResultFilterFactory extends ConfigurableService implements ResultFilterFac
     {
         $end = $start + $chunkSize;
 
-        if ($end >= $max) {
-            $end = $max;
-        }
-        return $end;
+        return $end >= $max ? $max : $end;
     }
 
     private function getResultsService(): ResultsService
