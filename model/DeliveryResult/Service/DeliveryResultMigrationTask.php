@@ -22,7 +22,8 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\DeliveryResult\Service;
 
-use oat\taoAdvancedSearch\model\DeliveryResult\Factory\ResultFilterFactory;
+use oat\taoAdvancedSearch\model\DeliveryResult\Factory\DeliveryResultFilterFactory;
+use oat\taoAdvancedSearch\model\DeliveryResult\Normalizer\DeliveryResultNormalizer;
 use oat\taoAdvancedSearch\model\Index\Service\AbstractIndexMigrationTask;
 
 class DeliveryResultMigrationTask extends AbstractIndexMigrationTask
@@ -30,9 +31,9 @@ class DeliveryResultMigrationTask extends AbstractIndexMigrationTask
     protected function getConfig(): array
     {
         return [
-            self::OPTION_INDEXER => DeliveryResultIndexer::class,
+            self::OPTION_NORMALIZER => DeliveryResultNormalizer::class,
             self::OPTION_RESULT_SEARCHER => DeliveryResultSearcher::class,
-            self::OPTION_RESULT_FILTER_FACTORY => ResultFilterFactory::class,
+            self::OPTION_RESULT_FILTER_FACTORY => DeliveryResultFilterFactory::class,
         ];
     }
 }

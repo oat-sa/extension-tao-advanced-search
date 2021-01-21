@@ -7,11 +7,21 @@ use oat\tao\model\search\tasks\AddSearchIndexFromArray;
 use oat\tao\model\taskQueue\QueueDispatcherInterface;
 use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
 
-abstract class AbstractResultIndexer extends ConfigurableService implements IndexerInterface
+class ResultIndexer extends ConfigurableService implements IndexerInterface
 {
+    /** @var NormalizerInterface */
+    private $normalizer;
+
+    public function setNormalizer(NormalizerInterface $normalizer): self
+    {
+        $this->normalizer = $normalizer;
+
+        return $this;
+    }
+
     public function addIndex($resource): void
     {
-        $normalizedResource = $this->getNormalizer()->normalize($resource);
+        $normalizedResource = $this->normalizer->normalize($resource);
 
         $this->getQueueDispatcher()->createTask(
             new AddSearchIndexFromArray(),
@@ -22,8 +32,6 @@ abstract class AbstractResultIndexer extends ConfigurableService implements Inde
             __('Adding/Updating search index for %s', $normalizedResource->getLabel())
         );
     }
-
-    abstract protected function getNormalizer(): NormalizerInterface;
 
     private function getQueueDispatcher(): QueueDispatcherInterface
     {

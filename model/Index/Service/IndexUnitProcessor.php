@@ -25,13 +25,14 @@ namespace oat\taoAdvancedSearch\model\Index\Service;
 use InvalidArgumentException;
 use oat\oatbox\service\ConfigurableService;
 use oat\tao\model\task\migration\ResultUnit;
+use oat\tao\model\task\migration\service\ResultUnitProcessorInterface;
 
-class IndexUnitProcessor extends ConfigurableService implements IndexUnitProcessorInterface
+class IndexUnitProcessor extends ConfigurableService implements ResultUnitProcessorInterface
 {
     /** @var IndexerInterface */
     private $indexer;
 
-    public function setIndexer(IndexerInterface $indexer): IndexUnitProcessorInterface
+    public function setIndexer(IndexerInterface $indexer): ResultUnitProcessorInterface
     {
         $this->indexer = $indexer;
 

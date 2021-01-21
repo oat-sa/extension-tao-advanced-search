@@ -31,20 +31,20 @@ use oat\tao\model\task\migration\service\ResultSearcherInterface;
 use oat\tao\model\task\migration\service\ResultUnitProcessorInterface;
 use oat\tao\model\task\migration\service\SpawnMigrationConfigService;
 use oat\tao\model\task\migration\service\SpawnMigrationConfigServiceInterface;
+use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
 
 abstract class AbstractIndexMigrationTask extends AbstractMigrationTask
 {
-    public const OPTION_INDEXER = 'indexer';
+    public const OPTION_NORMALIZER = 'normalizer';
     public const OPTION_RESULT_SEARCHER = 'resultSearcher';
     public const OPTION_RESULT_FILTER_FACTORY = 'filterFactory';
 
     protected function getUnitProcessor(): ResultUnitProcessorInterface
     {
-        /** @var IndexerInterface $indexer */
-        $indexer = $this->getServiceLocator()->get($this->getConfigValue(self::OPTION_INDEXER));
+        $indexer = $this->getIndexer()
+            ->setNormalizer($this->getNormalizer());
 
-        /** @var IndexUnitProcessor $unitProcessor */
-        $unitProcessor = $this->getServiceLocator()->get(IndexUnitProcessor::class);
+        $unitProcessor = $this->getIndexUnitProcessor();
 
         return $unitProcessor->setIndexer($indexer);
     }
@@ -80,5 +80,20 @@ abstract class AbstractIndexMigrationTask extends AbstractMigrationTask
         }
 
         throw new InvalidArgumentException(sprintf('Missing config %s', $config));
+    }
+
+    private function getIndexUnitProcessor(): IndexUnitProcessor
+    {
+        return $this->getServiceLocator()->get(IndexUnitProcessor::class);
+    }
+
+    private function getIndexer(): ResultIndexer
+    {
+        return $this->getServiceLocator()->get(ResultIndexer::class);
+    }
+
+    private function getNormalizer(): NormalizerInterface
+    {
+        return $this->getServiceLocator()->get($this->getConfigValue(self::OPTION_NORMALIZER));
     }
 }

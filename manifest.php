@@ -15,11 +15,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2020 (original work) Open Assessment Technologies SA;
+ * Copyright (c) 2021 (original work) Open Assessment Technologies SA;
  */
-
-use oat\taoAdvancedSearch\scripts\install\RegisterEvents;
-use oat\taoAdvancedSearch\scripts\update\Updater;
 
 $managerRole = 'http://www.tao.lu/Ontologies/generis.rdf#advanceSearchManager';
 
@@ -31,27 +28,21 @@ return [
     'version' => '1.0.0',
     'author' => 'Open Assessment Technologies SA',
     'requires' => [
-        //@TODO Needs to be updated
         'generis' => '>=12.24.0',
         'tao' => '>=44.11.0',
         'taoDelivery' => '>=14.10.1',
-        'taoResultServer' => '>=12.2.2',
-        'taoTestTaker' => '>=7.6.0',
-        'taoLti' => '>=11.11.0',
+        'taoOutcomeUi' => '>=9.4.3',
     ],
     'managementRole' => $managerRole,
     'acl' => [
         ['grant', $managerRole, ['ext' => 'taoAdvancedSearch']],
     ],
     'install' => [
-        'php' => [
-            RegisterEvents::class,
-        ],
+        'php' => [],
         'rdf' => []
     ],
     'uninstall' => [
     ],
-    'update' => Updater::class,
     'routes' => [
     ],
     'constants' => [

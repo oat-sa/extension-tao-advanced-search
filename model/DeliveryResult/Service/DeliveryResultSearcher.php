@@ -29,6 +29,7 @@ use oat\tao\model\task\migration\ResultUnitCollection;
 use oat\tao\model\task\migration\service\ResultFilter;
 use oat\tao\model\task\migration\service\ResultSearcherInterface;
 use oat\taoDelivery\model\execution\DeliveryExecutionService;
+use oat\taoOutcomeUi\model\Builder\ResultsServiceBuilder;
 use oat\taoOutcomeUi\model\ResultsService;
 
 class DeliveryResultSearcher extends ConfigurableService implements ResultSearcherInterface
@@ -48,7 +49,7 @@ class DeliveryResultSearcher extends ConfigurableService implements ResultSearch
                 [],
                 [
                     'offset' => $filter->getParameter('start') ?? 0,
-                    'limit' => $filter->getParameter('max') ?? 1,
+                    'limit' => $filter->getParameter('end') ?? 1,
                     'recursive' => true,
                 ]
             );
@@ -73,10 +74,10 @@ class DeliveryResultSearcher extends ConfigurableService implements ResultSearch
         return $this->getResultServiceBuilder()->build();
     }
 
-    private function getResultServiceBuilder(): ResultServiceBuilder
+    private function getResultServiceBuilder(): ResultsServiceBuilder
     {
         return $this->getServiceLocator()
-            ->get(ResultServiceBuilder::class);
+            ->get(ResultsServiceBuilder::class);
     }
 
     private function getDeliveryExecutionService(): DeliveryExecutionService
