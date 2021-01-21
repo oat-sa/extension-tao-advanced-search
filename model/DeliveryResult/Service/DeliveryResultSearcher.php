@@ -38,11 +38,6 @@ class DeliveryResultSearcher extends ConfigurableService implements ResultSearch
 
     public function search(ResultFilter $filter): ResultUnitCollection
     {
-        //FIXME @TODO Remove after tests
-        \common_Logger::e(__METHOD__ . ' =============================> MAX ' . $filter->getParameter('max')); //FIXME
-        \common_Logger::e(__METHOD__ . ' =============================> START ' . $filter->getParameter('start')); //FIXME
-        \common_Logger::e(__METHOD__ . ' =============================> END ' . $filter->getParameter('end')); //FIXME
-
         $results = $this->getResultsService()
             ->getImplementation()
             ->getResultByDelivery(
@@ -55,9 +50,6 @@ class DeliveryResultSearcher extends ConfigurableService implements ResultSearch
             );
 
         $collection = new ResultUnitCollection();
-
-        //FIXME @TODO Remove after tests
-        \common_Logger::e(__METHOD__ . ' =============================> results ' . count($results));
 
         foreach ($results as $result) {
             $deliveryExecution = $this->getDeliveryExecutionService()
