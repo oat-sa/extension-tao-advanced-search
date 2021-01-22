@@ -25,8 +25,6 @@
     "minimum-stability": "dev",
     "require": {
         "oat-sa/oatbox-extension-installer": "~1.1||dev-master",
-        "oat-sa/generis": "*",
-        "oat-sa/tao-core": "*",
         "ext-json": "*"
     },
     "autoload" : {
