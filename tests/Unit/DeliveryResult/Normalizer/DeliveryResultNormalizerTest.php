@@ -22,80 +22,27 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\DeliveryResult\Factory;
 
-use core_kernel_classes_Resource;
-use oat\generis\model\kernel\persistence\smoothsql\search\ResourceSearchService;
+use InvalidArgumentException;
 use oat\generis\test\TestCase;
-use oat\search\ResultSet;
-use oat\tao\test\unit\helpers\NoPrivacyTrait;
-use oat\taoAdvancedSearch\model\DeliveryResult\Factory\DeliveryResultFilterFactory;
-use oat\taoOutcomeUi\model\Builder\ResultsServiceBuilder;
-use oat\taoOutcomeUi\model\ResultsService;
-use oat\taoResultServer\models\classes\ResultManagement;
-use PHPUnit\Framework\MockObject\MockObject;
+use oat\taoAdvancedSearch\model\DeliveryResult\Normalizer\DeliveryResultNormalizer;
+use oat\taoDelivery\model\execution\DeliveryExecutionInterface;
+use stdClass;
 
-class DeliveryResultFilterFactoryTest extends TestCase
+class DeliveryResultNormalizerTest extends TestCase
 {
-    use NoPrivacyTrait;
-
-    /** @var DeliveryResultFilterFactory */
+    /** @var DeliveryResultNormalizer */
     private $subject;
-
-    /** @var ResultsService|MockObject */
-    private $resultsService;
-
-    /** @var ResultsServiceBuilder|MockObject */
-    private $resultsServiceBuilder;
-
-    /** @var ResourceSearchService|MockObject */
-    private $resourceSearchService;
-
-    /** @var ResultManagement|MockObject */
-    private $resultManagement;
 
     public function setUp(): void
     {
-        $this->resultsService = $this->createMock(ResultsService::class);
-        $this->resultManagement = $this->createMock(ResultManagement::class);
-        $this->resultsServiceBuilder = $this->createMock(ResultsServiceBuilder::class);
-        $this->resourceSearchService = $this->createMock(ResourceSearchService::class);
-
-        $this->resultsServiceBuilder
-            ->method('build')
-            ->willReturn($this->resultsService);
-
-        $this->resultsService
-            ->method('getImplementation')
-            ->willReturn($this->resultManagement);
-
-        $this->subject = new DeliveryResultFilterFactory();
-        $this->subject->setServiceLocator(
-            $this->getServiceLocatorMock(
-                [
-                    ResultsServiceBuilder::class => $this->resultsServiceBuilder,
-                    ResourceSearchService::class => $this->resourceSearchService,
-                ]
-            )
-        );
+        $this->subject = new DeliveryResultNormalizer();
     }
 
-    public function testGetMax(): void
+    public function testNormalizeOnlyAcceptsDeliveryExecution(): void
     {
-        $this->resourceSearchService
-            ->method('findByClassUri')
-            ->willReturn(
-                new ResultSet(
-                    [
-                        new core_kernel_classes_Resource('uri')
-                    ],
-                    1
-                )
-            );
+        $this->expectExceptionMessage('$deliveryExecution must be instance of ' . DeliveryExecutionInterface::class);
+        $this->expectException(InvalidArgumentException::class);
 
-        $this->resultManagement
-            ->method('countResultByDelivery')
-            ->with(['uri'])
-            ->willReturn(777);
-
-        $this->assertEquals(777, $this->invokePrivateMethod($this->subject, 'getMax', []));
+        $this->subject->normalize(new stdClass());
     }
 }
