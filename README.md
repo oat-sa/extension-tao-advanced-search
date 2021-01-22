@@ -14,7 +14,7 @@ TBD.
 
 ## Create an Indexer
 
-### 1) Create a new Migration Task
+### 1) Create a new Migration Indexing Task
 
 Here we need to specify 3 required classes and create them:
 

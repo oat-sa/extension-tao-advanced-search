@@ -18,7 +18,7 @@
  * Copyright (c) 2021 (original work) Open Assessment Technologies SA;
  */
 
-$managerRole = 'http://www.tao.lu/Ontologies/generis.rdf#advanceSearchManager';
+$managerRole = 'http://www.tao.lu/Ontologies/generis.rdf#advancedSearchManager';
 
 return [
     'name' => 'taoAdvancedSearch',
