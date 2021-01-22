@@ -50,3 +50,11 @@ Execute the migration pointing to the migration task you just created. Example:
 ```shell script
 php index.php "\oat\tao\scripts\tools\MigrationAction" -c 1 -cp "start=0" -t "oat\taoAdvancedSearch\model\DeliveryResult\Service\DeliveryResultMigrationTask" -rp
 ```
+
+## Populating indexes
+
+To populate all indexes, execute:
+
+```shell script
+./taoAdvancedSearch/scripts/tools/IndexPopulator.sh
+```
