@@ -68,13 +68,11 @@ class DeliveryResultSearcher extends ConfigurableService implements ResultSearch
 
     private function getResultServiceBuilder(): ResultsServiceBuilder
     {
-        return $this->getServiceLocator()
-            ->get(ResultsServiceBuilder::class);
+        return $this->getServiceLocator()->get(ResultsServiceBuilder::class);
     }
 
     private function getDeliveryExecutionService(): DeliveryExecutionService
     {
-        return $this->getServiceLocator()
-            ->get(DeliveryExecutionService::SERVICE_ID);
+        return $this->getServiceLocator()->get(DeliveryExecutionService::SERVICE_ID);
     }
 }

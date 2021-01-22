@@ -54,7 +54,7 @@ class DeliveryResultNormalizer extends ConfigurableService implements Normalizer
         $deliveryExecutionId = $deliveryExecution->getIdentifier();
         $user = UserHelper::getUser($deliveryExecution->getUserIdentifier());
 
-        $customFieldService = $this->getServiceLocator()->get(ResultCustomFieldsService::SERVICE_ID);
+        $customFieldService = $this->getResultCustomFieldsService();
         $customBody = $customFieldService->getCustomFields($deliveryExecution);
 
         return new IndexResource(
@@ -97,5 +97,10 @@ class DeliveryResultNormalizer extends ConfigurableService implements Normalizer
         }
 
         return $date->format('m/d/Y H:i:s');
+    }
+
+    private function getResultCustomFieldsService(): ResultCustomFieldsService
+    {
+        return $this->getServiceLocator()->get(ResultCustomFieldsService::SERVICE_ID);
     }
 }
