@@ -4,26 +4,25 @@
 namespace oat\taoAdvancedSearch\model\tree;
 
 
-class Tree
-{
-    /** @var ClassElement */
-    private $classes;
+use Doctrine\Common\Collections\ArrayCollection;
 
+class Tree extends ArrayCollection
+{
     public function __construct(ClassElement ...$classes)
     {
-        $this->classes = $classes;
+        parent::__construct($classes);
     }
 
-    /**
-     * @return ClassElement
-     */
-    public function getClasses(): ClassElement
+    public function toArray()
     {
-        return $this->classes;
-    }
+        $arrayTree = [];
+        foreach ($this->getIterator() as $element) {
+            $arrayTree[$element->getUri()] = [
+                'parentClass' => $element->getParentClass(),
+                'properties' => $element->getProperties()->toArray()
+            ];
+        }
 
-    public function addClassElement(ClassElement ...$classes)
-    {
-        $this->classes = array_push($this->classes, $classes);
+        return $arrayTree;
     }
 }

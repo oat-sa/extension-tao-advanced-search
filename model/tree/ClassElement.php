@@ -4,6 +4,8 @@
 namespace oat\taoAdvancedSearch\model\tree;
 
 
+use Doctrine\Common\Collections\ArrayCollection;
+
 class ClassElement
 {
     /** @var string */
@@ -15,10 +17,10 @@ class ClassElement
     /** @var string */
     private $parentClass;
 
-    public function __construct(string $uri, array $properties, string $parentClass)
+    public function __construct(string $uri, string $parentClass, array $properties)
     {
         $this->uri = $uri;
-        $this->properties = $properties;
+        $this->properties = new ArrayCollection($properties);
         $this->parentClass = $parentClass;
     }
 
@@ -33,7 +35,7 @@ class ClassElement
     /**
      * @return PropertyElement[]
      */
-    public function getProperties(): array
+    public function getProperties(): ArrayCollection
     {
         return $this->properties;
     }
