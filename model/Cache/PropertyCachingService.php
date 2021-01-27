@@ -26,6 +26,7 @@ use ArrayIterator;
 use Exception;
 use oat\oatbox\service\ConfigurableService;
 use oat\tao\elasticsearch\ElasticSearch;
+use oat\tao\elasticsearch\IndexerInterface;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilder;
 use oat\tao\model\search\ResultSet;
 use oat\tao\model\search\Search;
@@ -34,16 +35,11 @@ use oat\taoAdvancedSearch\model\tree\Tree;
 
 class PropertyCachingService extends ConfigurableService
 {
-    public const PROPERTY_ITEM = 'property_item';
-    public const PROPERTY_ASSEMBLED_DELIVERY = 'property_assembled_delivery';
-    public const PROPERTY_GROUP = 'property_group';
-    public const PROPERTY_TEST = 'property_test';
-
     private const CACHE_INDEX_MAP = [
-        TaoOntology::CLASS_URI_ITEM => self::PROPERTY_ITEM,
-        TaoOntology::CLASS_URI_ASSEMBLED_DELIVERY => self::PROPERTY_ASSEMBLED_DELIVERY,
-        TaoOntology::CLASS_URI_GROUP => self::PROPERTY_GROUP,
-        TaoOntology::CLASS_URI_TEST => self::PROPERTY_TEST,
+        TaoOntology::CLASS_URI_ITEM => IndexerInterface::PROPERTY_ITEM,
+        TaoOntology::CLASS_URI_ASSEMBLED_DELIVERY => IndexerInterface::PROPERTY_ASSEMBLED_DELIVERY,
+        TaoOntology::CLASS_URI_GROUP => IndexerInterface::PROPERTY_GROUP,
+        TaoOntology::CLASS_URI_TEST => IndexerInterface::PROPERTY_TEST,
     ];
 
     /**
