@@ -20,11 +20,9 @@
 
 declare(strict_types=1);
 
-namespace oat\taoAdvancedSearch\test\model\tree;
+namespace oat\taoAdvancedSearch\model\Index\Listener;
 
-use oat\generis\test\TestCase;
-
-class TestTreeHandler extends TestCase
+interface ListenerInterface
 {
-
+    public function listen($event): void;
 }

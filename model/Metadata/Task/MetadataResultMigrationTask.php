@@ -20,14 +20,21 @@
 
 declare(strict_types=1);
 
-namespace oat\taoAdvancedSearch\test\model\cache;
+namespace oat\taoAdvancedSearch\model\Metadata\Task;
 
-use oat\generis\test\TestCase;
+use oat\tao\model\task\migration\service\ResultFilterFactory;
+use oat\taoAdvancedSearch\model\Index\Service\AbstractIndexMigrationTask;
+use oat\taoAdvancedSearch\model\Metadata\Normalizer\MetadataNormalizer;
+use oat\taoAdvancedSearch\model\Metadata\Service\MetadataResultSearcher;
 
-class PropertyCachingTest extends TestCase
+class MetadataResultMigrationTask extends AbstractIndexMigrationTask
 {
-    public function testCache()
+    protected function getConfig(): array
     {
-
+        return [
+            self::OPTION_NORMALIZER => MetadataNormalizer::class,
+            self::OPTION_RESULT_SEARCHER => MetadataResultSearcher::class,
+            self::OPTION_RESULT_FILTER_FACTORY => ResultFilterFactory::class,
+        ];
     }
 }
