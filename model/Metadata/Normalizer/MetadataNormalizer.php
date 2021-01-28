@@ -27,6 +27,7 @@ use InvalidArgumentException;
 use oat\oatbox\service\ConfigurableService;
 use oat\taoAdvancedSearch\model\Index\IndexResource;
 use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
+use oat\taoAdvancedSearch\model\Metadata\Service\MetadataResultSearcher;
 
 class MetadataNormalizer extends ConfigurableService implements NormalizerInterface
 {
@@ -44,14 +45,17 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
             [
                 'type' => 'property-list',
                 'parentClass' => $this->getParentClass($class),
-                'properties' => $this->getPropertiesFromClass($class)
-
+                'propertiesTree' => $this->getPropertiesFromClass($class)
             ]
         );
     }
 
     private function getParentClass(core_kernel_classes_Class $class): string
     {
+        if (in_array($class->getUri(), MetadataResultSearcher::ROOT_CLASSES)) {
+            return '';
+        }
+
         $parentClass = $class->getParentClasses();
         return reset($parentClass)->getUri();
     }

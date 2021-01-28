@@ -34,7 +34,7 @@ class MetadataResultSearcher extends ConfigurableService implements ResultSearch
 {
     use OntologyAwareTrait;
 
-    private const ROOT_CLASSES = [
+    public const ROOT_CLASSES = [
         TaoOntology::CLASS_URI_ITEM,
         TaoOntology::CLASS_URI_ASSEMBLED_DELIVERY,
         TaoOntology::CLASS_URI_GROUP,
