@@ -35,7 +35,8 @@ class MetadataResultFilterFactory extends ResultFilterFactory implements ResultF
     {
         $count = 0;
         foreach (MetadataResultSearcher::ROOT_CLASSES as $class) {
-            $count += $this->getClass($class)->countInstances([], ['recursive' => true]);
+            //Plus 1 for root class itself.
+            $count += $this->getClass($class)->countInstances([], ['recursive' => true]) + 1;
         }
 
         return $count;
