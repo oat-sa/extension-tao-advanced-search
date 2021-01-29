@@ -20,21 +20,24 @@
 
 declare(strict_types=1);
 
-namespace oat\taoAdvancedSearch\model\Metadata\Task;
+namespace oat\taoAdvancedSearch\model\Metadata\Factory;
 
-use oat\taoAdvancedSearch\model\Index\Service\AbstractIndexMigrationTask;
-use oat\taoAdvancedSearch\model\Metadata\Factory\MetadataResultFilterFactory;
-use oat\taoAdvancedSearch\model\Metadata\Normalizer\MetadataNormalizer;
+use oat\generis\model\OntologyAwareTrait;
+use oat\tao\model\task\migration\service\ResultFilterFactory;
+use oat\tao\model\task\migration\service\ResultFilterFactoryInterface;
 use oat\taoAdvancedSearch\model\Metadata\Service\MetadataResultSearcher;
 
-class MetadataResultMigrationTask extends AbstractIndexMigrationTask
+class MetadataResultFilterFactory extends ResultFilterFactory implements ResultFilterFactoryInterface
 {
-    protected function getConfig(): array
+    use OntologyAwareTrait;
+
+    protected function getMax(): int
     {
-        return [
-            self::OPTION_NORMALIZER => MetadataNormalizer::class,
-            self::OPTION_RESULT_SEARCHER => MetadataResultSearcher::class,
-            self::OPTION_RESULT_FILTER_FACTORY => MetadataResultFilterFactory::class,
-        ];
+        $count = 0;
+        foreach (MetadataResultSearcher::ROOT_CLASSES as $class) {
+            $count += $this->getClass($class)->countInstances([], ['recursive' => true]);
+        }
+
+        return $count;
     }
 }
