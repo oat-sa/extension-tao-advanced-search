@@ -55,7 +55,7 @@ class MetadataResultSearcher extends ConfigurableService implements ResultSearch
         return $collection;
     }
 
-    private function addSubclasses(array $subClasses, ResultUnitCollection $collection)
+    private function addSubclasses(array $subClasses, ResultUnitCollection $collection): void
     {
         foreach ($subClasses as $class) {
             $collection->add(new ResultUnit($class));
