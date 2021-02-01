@@ -50,10 +50,10 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
         );
     }
 
-    private function getParentClass(core_kernel_classes_Class $class): string
+    private function getParentClass(core_kernel_classes_Class $class): ?string
     {
         if (in_array($class->getUri(), MetadataResultSearcher::ROOT_CLASSES)) {
-            return '';
+            return null;
         }
 
         $parentClass = $class->getParentClasses();
