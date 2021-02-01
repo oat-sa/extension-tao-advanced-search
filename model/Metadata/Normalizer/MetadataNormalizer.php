@@ -60,7 +60,7 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
         return reset($parentClass)->getUri();
     }
 
-    private function getPropertiesFromClass(core_kernel_classes_Class $class)
+    private function getPropertiesFromClass(core_kernel_classes_Class $class): array
     {
         $propertyCollection = [];
         foreach ($class->getProperties() as $property) {
