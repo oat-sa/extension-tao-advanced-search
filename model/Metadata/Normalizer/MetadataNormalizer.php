@@ -52,7 +52,7 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
 
     private function getParentClass(core_kernel_classes_Class $class): ?string
     {
-        if (in_array($class->getUri(), MetadataResultSearcher::ROOT_CLASSES)) {
+        if (in_array($class->getUri(), MetadataResultSearcher::ROOT_CLASSES, true)) {
             return null;
         }
 
