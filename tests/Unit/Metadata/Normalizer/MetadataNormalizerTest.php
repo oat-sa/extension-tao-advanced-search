@@ -47,13 +47,13 @@ class MetadataNormalizerTest extends TestCase
         $this->propertyMock = $this->createMock(core_kernel_classes_Property::class);
     }
 
-    public function testNormalizeTakesOnlyClass()
+    public function testNormalizeTakesOnlyClass(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->subject->normalize('string');
     }
 
-    public function testNormalize()
+    public function testNormalize(): void
     {
         $this->classMock
             ->expects($this->exactly(3))
