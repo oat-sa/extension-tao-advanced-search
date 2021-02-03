@@ -65,8 +65,9 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
     private function getPropertiesFromClass(core_kernel_classes_Class $class): array
     {
         $propertyCollection = [];
-        $properties = $this->getGetClassMetadataValuesService()
-            ->getByClass($class, 100, $this->isRootClass($class));
+        $properties = $this->isRootClass($class)
+            ? $this->getGetClassMetadataValuesService()->getByClass($class)
+            : $this->getGetClassMetadataValuesService()->getByClassExplicitly($class);
 
         /** @var Metadata $property */
         foreach ($properties as $property) {
