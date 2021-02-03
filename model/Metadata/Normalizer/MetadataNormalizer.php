@@ -25,6 +25,8 @@ namespace oat\taoAdvancedSearch\model\Metadata\Normalizer;
 use core_kernel_classes_Class;
 use InvalidArgumentException;
 use oat\oatbox\service\ConfigurableService;
+use oat\tao\model\Lists\Business\Domain\Metadata;
+use oat\tao\model\Lists\Business\Service\GetClassMetadataValuesService;
 use oat\taoAdvancedSearch\model\Index\IndexResource;
 use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
 use oat\taoAdvancedSearch\model\Metadata\Service\MetadataResultSearcher;
@@ -39,13 +41,15 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
             );
         }
 
+        $this->logCritical('======= TEST ====== ' . $class->getUri()); //FIXME
+
         return new IndexResource(
             $class->getUri(),
             $class->getLabel(),
             [
                 'type' => 'property-list',
                 'parentClass' => $this->getParentClass($class),
-                'propertiesTree' => $this->getPropertiesFromClass($class)
+                'propertiesTree' => $this->getPropertiesFromClass($class),
             ]
         );
     }
@@ -63,13 +67,25 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
     private function getPropertiesFromClass(core_kernel_classes_Class $class): array
     {
         $propertyCollection = [];
-        foreach ($class->getProperties() as $property) {
+
+        /** @var Metadata $property */
+        foreach ($this->getGetClassMetadataValuesService()->getByClass($class) as $property) {
             $propertyCollection[] = [
-                'propertyUri' => $property->getUri(),
+                'propertyUri' => $property->getPropertyUri(), //@TODO FIXME This URI is not coming
                 'propertyLabel' => $property->getLabel(),
+                'propertyType' => $property->getType(),
+                'propertyValues' => $property->getUri() ? null : $property->getValues(), //@TODO We should not get values when the URI
             ];
         }
 
+        $this->logCritical('======= CLASS ====== ' . $class->getUri()); //FIXME
+        $this->logCritical('======= VALUES ====== ' . var_export($propertyCollection, true)); //FIXME
+
         return $propertyCollection;
+    }
+
+    private function getGetClassMetadataValuesService(): GetClassMetadataValuesService
+    {
+        return $this->getServiceLocator()->get(GetClassMetadataValuesService::class);
     }
 }
