@@ -41,8 +41,6 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
             );
         }
 
-        $this->logCritical('======= TEST ====== ' . $class->getUri()); //FIXME
-
         return new IndexResource(
             $class->getUri(),
             $class->getLabel(),
@@ -56,7 +54,7 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
 
     private function getParentClass(core_kernel_classes_Class $class): ?string
     {
-        if (in_array($class->getUri(), MetadataResultSearcher::ROOT_CLASSES, true)) {
+        if ($this->isRootClass($class)) {
             return null;
         }
 
@@ -67,19 +65,20 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
     private function getPropertiesFromClass(core_kernel_classes_Class $class): array
     {
         $propertyCollection = [];
+        $properties = $this->getGetClassMetadataValuesService()
+            ->getByClass($class, 100, $this->isRootClass($class));
 
         /** @var Metadata $property */
-        foreach ($this->getGetClassMetadataValuesService()->getByClass($class) as $property) {
+        foreach ($properties as $property) {
             $propertyCollection[] = [
-                'propertyUri' => $property->getPropertyUri(), //@TODO FIXME This URI is not coming
+                'propertyUri' => $property->getPropertyUri(),
                 'propertyLabel' => $property->getLabel(),
                 'propertyType' => $property->getType(),
-                'propertyValues' => $property->getUri() ? null : $property->getValues(), //@TODO We should not get values when the URI
+                'propertyValues' => $property->getUri()
+                    ? null
+                    : $property->getValues(),
             ];
         }
-
-        $this->logCritical('======= CLASS ====== ' . $class->getUri()); //FIXME
-        $this->logCritical('======= VALUES ====== ' . var_export($propertyCollection, true)); //FIXME
 
         return $propertyCollection;
     }
@@ -87,5 +86,10 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
     private function getGetClassMetadataValuesService(): GetClassMetadataValuesService
     {
         return $this->getServiceLocator()->get(GetClassMetadataValuesService::class);
+    }
+
+    private function isRootClass(core_kernel_classes_Class $class)
+    {
+        return in_array($class->getUri(), MetadataResultSearcher::ROOT_CLASSES, true);
     }
 }
