@@ -55,7 +55,7 @@ class MetadataResultSearcherTest extends TestCase
         $this->subject->setModel($this->ontologyMock);
     }
 
-    public function testSearch()
+    public function testSearch(): void
     {
         $this->ontologyMock
             ->method('getClass')
