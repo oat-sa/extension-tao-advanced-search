@@ -32,10 +32,13 @@ class ClassDeletionListener extends ConfigurableService implements ListenerInter
 {
     public const SERVICE_ID = 'taoAdvancedSearch/ClassDeletionListener';
 
+    /**
+     * @throws WrongEventException
+     */
     public function listen($event): void
     {
         if (!$event instanceof ClassDeletedEvent) {
-            throw new Exception('Wrong event'); //FIXME
+            throw new WrongEventException(ClassDeletedEvent::class);
         }
 
         try {

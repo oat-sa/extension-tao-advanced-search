@@ -26,8 +26,8 @@ use Exception;
 use oat\generis\model\data\event\ClassPropertyCreatedEvent;
 use oat\generis\model\data\event\ClassPropertyDeletedEvent;
 use oat\oatbox\service\ConfigurableService;
+use oat\tao\model\event\ClassPropertiesChangedEvent;
 use oat\taoAdvancedSearch\model\Index\Listener\ListenerInterface;
-use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
 use oat\taoAdvancedSearch\model\Index\Service\IndexerInterface;
 use oat\taoAdvancedSearch\model\Index\Service\ResultIndexer;
 use oat\taoAdvancedSearch\model\Metadata\Normalizer\MetadataNormalizer;
@@ -42,7 +42,9 @@ class MetadataListener extends ConfigurableService implements ListenerInterface
     public function listen($event): void
     {
         if (!($event instanceof ClassPropertyDeletedEvent || $event instanceof ClassPropertyCreatedEvent)) {
-            throw new Exception('Wrong event provided');
+            throw new WrongEventException(
+                sprintf('%s or %s', ClassPropertyDeletedEvent::class, ClassPropertyCreatedEvent::class)
+            );
         }
 
         $this->getIndexer()->addIndex(
