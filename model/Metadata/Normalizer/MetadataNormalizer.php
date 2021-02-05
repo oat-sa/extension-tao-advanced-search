@@ -66,7 +66,7 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
     {
         $propertyCollection = [];
         $properties = $this->isRootClass($class)
-            ? $this->getGetClassMetadataValuesService()->getByClass($class)
+            ? $this->getGetClassMetadataValuesService()->getByClassRecursive($class)
             : $this->getGetClassMetadataValuesService()->getByClassExplicitly($class);
 
         /** @var Metadata $property */
