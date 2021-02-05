@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace oat\tao\migrations;
+namespace oat\taoAdvancedSearch\migrations;
 
 use Doctrine\DBAL\Schema\Schema;
 use oat\tao\model\Lists\Business\Service\ClassMetadataSearcherProxy;
