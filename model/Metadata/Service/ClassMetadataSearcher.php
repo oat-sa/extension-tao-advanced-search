@@ -47,7 +47,7 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
 
     public function findAll(ClassMetadataSearchInput $input): ClassCollection
     {
-        //throw new \Exception('dasdadasd'); //FIXME
+        //throw new \Exception('dasdadasd'); //@FIXME @TODO Remove after test...
 
         if ($this->getAdvancedSearchChecker()->isEnabled()) {
             $currentClassUri = $input->getSearchRequest()->getClassUri();
@@ -62,12 +62,12 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
             return new ClassCollection(...array_values($this->processedClasses));
         }
 
-        $this->getClassMetadataSearcher()->findAll($input);
+        return $this->getClassMetadataSearcher()->findAll($input);
     }
 
     private function getSubProperties(string $classUri, array &$properties): void
     {
-        $result = $this->executeQuery($classUri, 'parentClass');
+        $result = $this->executeQuery('parentClass', $classUri);
 
         //FIXME var_dump($result); exit('__________TEST_________');//FIXME
 
@@ -83,7 +83,7 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
 
     private function getParentProperties(string $classUri, array &$properties): void
     {
-        $result = $this->executeQuery($classUri, '_id');
+        $result = $this->executeQuery('_id', $classUri);
 
         foreach ($result as $res) {
             $this->incrementProperties($res, $properties);
@@ -119,7 +119,13 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
                 (new Metadata())
                     ->setLabel($property['propertyLabel'])
                     ->setPropertyUri($property['propertyUri'])
-                    ->setUri($this->getPropertyListUri($property['propertyUri'], $property['propertyType'], $property['propertyValues']))
+                    ->setUri(
+                        $this->getPropertyListUri(
+                            $property['propertyUri'],
+                            $property['propertyType'],
+                            $property['propertyValues']
+                        )
+                    )
                     ->setType($property['propertyType'])
                     ->setValues($property['propertyValues'])
             );
@@ -128,16 +134,14 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
         $this->processedClasses[$classUri] = (new ClassMetadata())
             ->setClass($classUri)
             ->setParentClass($parentClass)
-            ->setLabel('Label...')
+            ->setLabel($classUri)
             ->setMetaData($metadataCollection);
     }
 
-    private function executeQuery(string $classUri, string $field): ResultSet
+    private function executeQuery(string $field, string $value): ResultSet
     {
         $query = (new Query('property-list'))
-            ->setOffset(0)
-            ->setLimit(1000)
-            ->addCondition(sprintf('%s:"%s"', $field, $classUri));
+            ->addCondition(sprintf('%s:"%s"', $field, $value));
 
         return $this->getSearcher()->search($query);
     }
