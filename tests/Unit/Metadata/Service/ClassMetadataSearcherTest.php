@@ -24,25 +24,27 @@ namespace oat\taoAdvancedSearch\tests\Unit\model\Metadata\Service;
 
 use oat\generis\test\TestCase;
 use oat\tao\elasticsearch\ElasticSearch;
+use oat\tao\elasticsearch\SearchResult;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\Lists\Business\Domain\ClassCollection;
 use oat\tao\model\Lists\Business\Domain\ClassMetadataSearchRequest;
 use oat\tao\model\Lists\Business\Input\ClassMetadataSearchInput;
 use oat\tao\model\Lists\Business\Service\ClassMetadataService;
 use oat\taoAdvancedSearch\model\Metadata\Service\ClassMetadataSearcher;
+use PHPUnit\Framework\MockObject\MockObject;
 
 class ClassMetadataSearcherTest extends TestCase
 {
     /** @var ClassMetadataSearcher */
     private $subject;
 
-    /** @var ClassMetadataService|\PHPUnit\Framework\MockObject\MockObject */
+    /** @var ClassMetadataService|MockObject */
     private $classMetadataService;
 
-    /** @var AdvancedSearchChecker|\PHPUnit\Framework\MockObject\MockObject */
+    /** @var AdvancedSearchChecker|MockObject */
     private $advancedSearchChecker;
 
-    /** @var ElasticSearch|\PHPUnit\Framework\MockObject\MockObject */
+    /** @var ElasticSearch|MockObject */
     private $elasticSearch;
 
     public function setUp(): void
@@ -83,5 +85,81 @@ class ClassMetadataSearcherTest extends TestCase
 
         $this->assertSame($expectedCollection, $result);
     }
-}
 
+    public function testFindAllUsingElasticSearch(): void
+    {
+        $this->advancedSearchChecker
+            ->method('isEnabled')
+            ->willReturn(true);
+
+        $this->elasticSearch
+            ->method('search')
+            ->willReturnOnConsecutiveCalls(
+                ...[
+                    // Parent classes
+                    new SearchResult(
+                        [
+                            $this->getMockResult('class1', 'parentClass1'),
+                        ],
+                        1
+                    ),
+                    new SearchResult(
+                        [
+                            $this->getMockResult('parentClass1', null)
+                        ],
+                        1
+                    ),
+                    // Sub classes
+                    new SearchResult(
+                        [
+                            $this->getMockResult('subClass1', 'doesNotMatter')
+                        ],
+                        1
+                    ),
+                    new SearchResult(
+                        [],
+                        0
+                    )
+                ]
+            );
+
+        $result = $this->subject->findAll(
+            new ClassMetadataSearchInput(
+                (new ClassMetadataSearchRequest())->setClassUri('class1')
+            )
+        );
+
+        $rawResult = json_decode(json_encode($result->jsonSerialize()), true);
+
+        $this->assertSame(null, $rawResult[0]['parent-class']);
+        $this->assertSame('parentClass1', $rawResult[0]['class']);
+
+        $this->assertSame('parentClass1', $rawResult[1]['parent-class']);
+        $this->assertSame('class1', $rawResult[1]['class']);
+
+        $this->assertSame('class1', $rawResult[2]['parent-class']);
+        $this->assertSame('subClass1', $rawResult[2]['class']);
+    }
+
+    private function getMockResult(string $classId, ?string $parentClassUri): array
+    {
+        return [
+            'id' => $classId,
+            'parentClass' => $parentClassUri,
+            'propertiesTree' => [
+                [
+                    'propertyUri' => 'propertyUri1',
+                    'propertyLabel' => 'propertyLabel1',
+                    'propertyType' => 'list',
+                    'propertyValues' => [],
+                ],
+                [
+                    'propertyUri' => 'propertyUri2',
+                    'propertyLabel' => 'propertyLabel2',
+                    'propertyType' => 'text',
+                    'propertyValues' => [],
+                ]
+            ],
+        ];
+    }
+}

@@ -47,16 +47,12 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
 
     public function findAll(ClassMetadataSearchInput $input): ClassCollection
     {
-        //throw new \Exception('dasdadasd'); //@FIXME @TODO Remove after test...
-
         if ($this->getAdvancedSearchChecker()->isEnabled()) {
             $currentClassUri = $input->getSearchRequest()->getClassUri();
             $properties = [];
 
             $this->getParentProperties($currentClassUri, $properties);
 
-            // - Current class with properties
-            $this->addProcessedClass($currentClassUri, null, $properties);
             $this->getSubProperties($currentClassUri, $properties);
 
             return new ClassCollection(...array_values($this->processedClasses));
@@ -68,8 +64,6 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
     private function getSubProperties(string $classUri, array &$properties): void
     {
         $result = $this->executeQuery('parentClass', $classUri);
-
-        //FIXME var_dump($result); exit('__________TEST_________');//FIXME
 
         foreach ($result as $res) {
             $this->incrementProperties($res, $properties);
@@ -84,16 +78,17 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
     private function getParentProperties(string $classUri, array &$properties): void
     {
         $result = $this->executeQuery('_id', $classUri);
+        $result = current($result);
 
-        foreach ($result as $res) {
-            $this->incrementProperties($res, $properties);
+        if ($result) {
+            $this->incrementProperties($result, $properties);
 
-            if (!empty($res['parentClass']) && !$this->wasClassProcessed($res['parentClass'])) {
-                $this->processedClasses[$res['parentClass']] = $res['parentClass'];
-
-                $this->getParentProperties($res['parentClass'], $properties);
+            if (!empty($result['parentClass']) && !$this->wasClassProcessed($result['parentClass'])) {
+                $this->getParentProperties($result['parentClass'], $properties);
             }
         }
+
+        $this->addProcessedClass($classUri, $result['parentClass'] ?? null, $properties);
     }
 
     private function incrementProperties(array $res, array &$properties)
