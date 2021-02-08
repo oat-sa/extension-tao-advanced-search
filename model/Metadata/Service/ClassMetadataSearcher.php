@@ -49,10 +49,10 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
     {
         if ($this->getAdvancedSearchChecker()->isEnabled()) {
             $currentClassUri = $input->getSearchRequest()->getClassUri();
+
             $properties = [];
 
             $this->getParentProperties($currentClassUri, $properties);
-
             $this->getSubProperties($currentClassUri, $properties);
 
             return new ClassCollection(...array_values($this->processedClasses));
@@ -61,16 +61,16 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
         return $this->getClassMetadataSearcher()->findAll($input);
     }
 
-    private function getSubProperties(string $classUri, array &$properties): void
+    private function getSubProperties(string $classUri, array $properties = []): void
     {
         $result = $this->executeQuery('parentClass', $classUri);
 
         foreach ($result as $res) {
-            $this->incrementProperties($res, $properties);
+            $newProperties = $this->incrementProperties($res, $properties);
 
             if (!$this->wasClassProcessed($res['id'])) {
-                $this->addProcessedClass($res['id'], $classUri, $properties);
-                $this->getSubProperties($res['id'], $properties);
+                $this->addProcessedClass($res['id'], $classUri, $newProperties);
+                $this->getSubProperties($res['id'], $newProperties);
             }
         }
     }
@@ -81,7 +81,7 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
         $result = current($result);
 
         if ($result) {
-            $this->incrementProperties($result, $properties);
+            $properties = $this->incrementProperties($result, $properties);
 
             if (!empty($result['parentClass']) && !$this->wasClassProcessed($result['parentClass'])) {
                 $this->getParentProperties($result['parentClass'], $properties);
@@ -91,13 +91,15 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
         $this->addProcessedClass($classUri, $result['parentClass'] ?? null, $properties);
     }
 
-    private function incrementProperties(array $res, array &$properties)
+    private function incrementProperties(array $res, array $properties): array
     {
         foreach ($res['propertiesTree'] as $prop) {
             if (empty($properties[$prop['propertyUri']])) {
                 $properties[$prop['propertyUri']] = $prop;
             }
         }
+
+        return $properties;
     }
 
     private function wasClassProcessed(string $classUri): bool
