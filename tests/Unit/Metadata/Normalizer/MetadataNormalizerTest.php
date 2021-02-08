@@ -81,7 +81,7 @@ class MetadataNormalizerTest extends TestCase
         int $getByClassRecursiveCount,
         ?string $propertyUri,
         int $getValuesCount,
-        array $getValuesResult
+        ?array $getValuesResult
     ): void {
         $this->classMock
             ->expects($this->exactly(4))
@@ -164,7 +164,7 @@ class MetadataNormalizerTest extends TestCase
                 0,
                 'Uri Example',
                 0,
-                []
+                null
             ],
             'rootClass' => [
                 'http://www.tao.lu/Ontologies/TAOItem.rdf#Item',
