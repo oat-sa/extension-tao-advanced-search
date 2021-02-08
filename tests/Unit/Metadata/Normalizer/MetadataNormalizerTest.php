@@ -27,6 +27,9 @@ use core_kernel_classes_Property;
 use InvalidArgumentException;
 use oat\generis\test\MockObject;
 use oat\generis\test\TestCase;
+use oat\tao\model\Lists\Business\Domain\Metadata;
+use oat\tao\model\Lists\Business\Domain\MetadataCollection;
+use oat\tao\model\Lists\Business\Service\GetClassMetadataValuesService;
 use oat\taoAdvancedSearch\model\Metadata\Normalizer\MetadataNormalizer;
 
 class MetadataNormalizerTest extends TestCase
@@ -40,11 +43,27 @@ class MetadataNormalizerTest extends TestCase
     /** @var core_kernel_classes_Property|MockObject */
     private $propertyMock;
 
+    /** @var GetClassMetadataValuesService|MockObject */
+    private $getClassMetadataValuesServiceMock;
+
+    /** @var Metadata|MockObject */
+    private $metadataMock;
+
     public function setUp(): void
     {
         $this->subject = new MetadataNormalizer();
         $this->classMock = $this->createMock(core_kernel_classes_Class::class);
         $this->propertyMock = $this->createMock(core_kernel_classes_Property::class);
+        $this->getClassMetadataValuesServiceMock = $this->createMock(GetClassMetadataValuesService::class);
+        $this->metadataMock = $this->createMock(Metadata::class);
+
+        $this->subject->setServiceLocator(
+            $this->getServiceLocatorMock(
+                [
+                    GetClassMetadataValuesService::class => $this->getClassMetadataValuesServiceMock
+                ]
+            )
+        );
     }
 
     public function testNormalizeTakesOnlyClass(): void
@@ -53,15 +72,25 @@ class MetadataNormalizerTest extends TestCase
         $this->subject->normalize('string');
     }
 
-    public function testNormalize(): void
-    {
+    /**
+     * @dataProvider getDataProvider
+     */
+    public function testNormalize(
+        string $classUri,
+        int $getByClassExplicitlyCount,
+        int $getByClassRecursiveCount,
+        ?string $propertyUri,
+        int $getValuesCount,
+        array $getValuesResult
+    ): void {
         $this->classMock
-            ->expects($this->exactly(3))
+            ->expects($this->exactly(4))
             ->method('getUri')
             ->willReturnOnConsecutiveCalls(
                 'exampleClassUri',
                 'exampleClassUri',
-                'exampleParentClassUri'
+                'exampleParentClassUri',
+                $classUri
             );
 
         $this->classMock
@@ -71,23 +100,39 @@ class MetadataNormalizerTest extends TestCase
 
         $this->classMock
             ->expects($this->once())
-            ->method('getProperties')
-            ->willReturn([$this->propertyMock]);
-
-        $this->classMock
-            ->expects($this->once())
             ->method('getParentClasses')
             ->willReturn([$this->classMock]);
 
-        $this->propertyMock
-            ->expects($this->once())
-            ->method('getUri')
-            ->willReturn('propertyUriExample');
+        $this->metadataMock
+            ->method('getPropertyUri')
+            ->willReturn('PropertyUri Example');
 
-        $this->propertyMock
-            ->expects($this->once())
+        $this->metadataMock
             ->method('getLabel')
-            ->willReturn('property label');
+            ->willReturn('Label Example');
+
+        $this->metadataMock
+            ->method('getType')
+            ->willReturn('Type Example');
+
+        $this->metadataMock
+            ->method('getUri')
+            ->willReturn($propertyUri);
+
+        $this->metadataMock
+            ->expects($this->exactly($getValuesCount))
+            ->method('getValues')
+            ->willReturn($getValuesResult);
+
+        $this->getClassMetadataValuesServiceMock
+            ->expects($this->exactly($getByClassExplicitlyCount))
+            ->method('getByClassExplicitly')
+            ->willReturn(new MetadataCollection($this->metadataMock));
+
+        $this->getClassMetadataValuesServiceMock
+            ->expects($this->exactly($getByClassRecursiveCount))
+            ->method('getByClassRecursive')
+            ->willReturn(new MetadataCollection($this->metadataMock));
 
         $result = $this->subject->normalize($this->classMock);
 
@@ -99,12 +144,36 @@ class MetadataNormalizerTest extends TestCase
                 'parentClass' => 'exampleParentClassUri',
                 'propertiesTree' => [
                     [
-                        'propertyUri' => 'propertyUriExample',
-                        'propertyLabel' => 'property label'
+                        'propertyUri' => 'PropertyUri Example',
+                        'propertyLabel' => 'Label Example',
+                        'propertyType' => 'Type Example',
+                        'propertyValues' => $getValuesResult
                     ]
                 ]
             ],
             $result->getData()
         );
+    }
+
+    public function getDataProvider()
+    {
+        return [
+            'notRootClass' => [
+                'http://www.tao.lu/Ontologies/NotRootClass',
+                1,
+                0,
+                'Uri Example',
+                0,
+                []
+            ],
+            'rootClass' => [
+                'http://www.tao.lu/Ontologies/TAOItem.rdf#Item',
+                0,
+                1,
+                null,
+                1,
+                ['value1', 'value2']
+            ]
+        ];
     }
 }
