@@ -104,7 +104,7 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
 
     private function wasClassProcessed(string $classUri): bool
     {
-        return in_array($classUri, array_keys($this->processedClasses));
+        return in_array($classUri, array_keys($this->processedClasses), true);
     }
 
     private function addProcessedClass(string $classUri, ?string $parentClass, array $properties)
