@@ -62,7 +62,7 @@ class MetadataChangedListenerTest extends TestCase
         );
     }
 
-    public function testListenThrowExceptionOnWrongEvent()
+    public function testListenThrowExceptionOnWrongEvent(): void
     {
         $this->expectException(WrongEventException::class);
         $this->subject->listen($this->createMock(Event::class));

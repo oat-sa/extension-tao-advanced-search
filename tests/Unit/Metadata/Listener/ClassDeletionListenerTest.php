@@ -66,7 +66,7 @@ class ClassDeletionListenerTest extends TestCase
         $this->eventMock = $this->createMock(ClassDeletedEvent::class);
     }
 
-    public function testListenThrowExceptionOnWrongEvent()
+    public function testListenThrowExceptionOnWrongEvent(): void
     {
         $this->expectException(WrongEventException::class);
         $this->subject->listen(
@@ -74,7 +74,7 @@ class ClassDeletionListenerTest extends TestCase
         );
     }
 
-    public function testListenCatchError()
+    public function testListenCatchError(): void
     {
         $this->elasticSearchMock
             ->expects($this->once())
@@ -88,7 +88,7 @@ class ClassDeletionListenerTest extends TestCase
         $this->subject->listen($this->eventMock);
     }
 
-    public function testListenRemovedSuccessfully()
+    public function testListenRemovedSuccessfully(): void
     {
         $this->elasticSearchMock
             ->expects($this->once())

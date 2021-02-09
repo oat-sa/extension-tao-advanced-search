@@ -45,7 +45,6 @@ class MetadataListenerTest extends TestCase
     /** @var MetadataNormalizer|MockObject */
     private $metadataNormalizerMock;
 
-
     public function setUp(): void
     {
         $this->event = $this->createMock(ClassPropertyDeletedEvent::class);
@@ -64,13 +63,13 @@ class MetadataListenerTest extends TestCase
         );
     }
 
-    public function testListenException()
+    public function testListenException(): void
     {
         $this->expectException(WrongEventException::class);
         $this->subject->listen(new stdClass());
     }
 
-    public function testListen()
+    public function testListen(): void
     {
         $this->resultIndexerMock
             ->expects($this->once())
@@ -86,6 +85,4 @@ class MetadataListenerTest extends TestCase
 
         $this->subject->listen($this->event);
     }
-
-
 }
