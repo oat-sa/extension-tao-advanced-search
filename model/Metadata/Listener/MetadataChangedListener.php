@@ -61,6 +61,11 @@ class MetadataChangedListener extends ConfigurableService implements ListenerInt
     private function getClassFromEvent(ClassPropertiesChangedEvent $event): core_kernel_classes_Class
     {
         $changedProperties = $event->getProperties();
+
+        if (count($changedProperties) > 1) {
+            $this->logNotice('Event produce more then one change on property and it will be not mapped in cache');
+        }
+
         return reset($changedProperties)['class'];
     }
 }
