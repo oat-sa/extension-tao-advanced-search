@@ -18,7 +18,7 @@
  * Copyright (c) 2021 (original work) Open Assessment Technologies SA;
  */
 
-use oat\taoAdvancedSearch\scripts\install\RegisterPropertyEvents;
+use oat\taoAdvancedSearch\scripts\install\RegisterEvents;
 
 $managerRole = 'http://www.tao.lu/Ontologies/generis.rdf#advancedSearchManager';
 
@@ -41,7 +41,7 @@ return [
     ],
     'install' => [
         'php' => [
-            RegisterPropertyEvents::class
+            RegisterEvents::class
         ],
         'rdf' => []
     ],

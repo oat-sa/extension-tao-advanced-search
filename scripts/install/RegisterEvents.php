@@ -32,14 +32,15 @@ use oat\taoAdvancedSearch\model\Metadata\Listener\ClassDeletionListener;
 use oat\taoAdvancedSearch\model\Metadata\Listener\MetadataChangedListener;
 use oat\taoAdvancedSearch\model\Metadata\Listener\MetadataListener;
 
-class RegisterPropertyEvents extends InstallAction
+class RegisterEvents extends InstallAction
 {
     public function __invoke($params)
     {
         $eventManager = $this->getServiceManager()->get(EventManager::SERVICE_ID);
-        $eventManager->registerService(MetadataChangedListener::SERVICE_ID, new MetadataChangedListener());
-        $eventManager->registerService(MetadataListener::SERVICE_ID, new MetadataListener());
-        $eventManager->registerService(ClassDeletionListener::SERVICE_ID, new ClassDeletionListener());
+
+        $this->registerService(MetadataChangedListener::SERVICE_ID, new MetadataChangedListener());
+        $this->registerService(MetadataListener::SERVICE_ID, new MetadataListener());
+        $this->registerService(ClassDeletionListener::SERVICE_ID, new ClassDeletionListener());
 
         $eventManager->attach(
             ClassPropertyDeletedEvent::class,
