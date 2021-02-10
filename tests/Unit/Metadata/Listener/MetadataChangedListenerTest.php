@@ -29,7 +29,7 @@ use oat\oatbox\event\Event;
 use oat\tao\model\event\ClassPropertiesChangedEvent;
 use oat\taoAdvancedSearch\model\Index\Service\ResultIndexer;
 use oat\taoAdvancedSearch\model\Metadata\Listener\MetadataChangedListener;
-use oat\taoAdvancedSearch\model\Metadata\Listener\WrongEventException;
+use oat\taoAdvancedSearch\model\Metadata\Listener\UnsupportedEventException;
 use oat\taoAdvancedSearch\model\Metadata\Normalizer\MetadataNormalizer;
 
 class MetadataChangedListenerTest extends TestCase
@@ -64,7 +64,7 @@ class MetadataChangedListenerTest extends TestCase
 
     public function testListenThrowExceptionOnWrongEvent(): void
     {
-        $this->expectException(WrongEventException::class);
+        $this->expectException(UnsupportedEventException::class);
         $this->subject->listen($this->createMock(Event::class));
     }
 

@@ -26,7 +26,7 @@ use oat\generis\model\data\event\ClassPropertyDeletedEvent;
 use oat\generis\test\TestCase;
 use oat\taoAdvancedSearch\model\Index\Service\ResultIndexer;
 use oat\taoAdvancedSearch\model\Metadata\Listener\MetadataListener;
-use oat\taoAdvancedSearch\model\Metadata\Listener\WrongEventException;
+use oat\taoAdvancedSearch\model\Metadata\Listener\UnsupportedEventException;
 use oat\taoAdvancedSearch\model\Metadata\Normalizer\MetadataNormalizer;
 use PHPUnit\Framework\MockObject\MockObject;
 use stdClass;
@@ -65,7 +65,7 @@ class MetadataListenerTest extends TestCase
 
     public function testListenException(): void
     {
-        $this->expectException(WrongEventException::class);
+        $this->expectException(UnsupportedEventException::class);
         $this->subject->listen(new stdClass());
     }
 

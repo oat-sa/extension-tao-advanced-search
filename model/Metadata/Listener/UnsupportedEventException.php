@@ -24,7 +24,7 @@ namespace oat\taoAdvancedSearch\model\Metadata\Listener;
 
 use Exception;
 
-class WrongEventException extends Exception
+class UnsupportedEventException extends Exception
 {
     public function __construct(string $expectedEvent)
     {

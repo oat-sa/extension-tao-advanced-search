@@ -29,7 +29,7 @@ use oat\generis\test\TestCase;
 use oat\tao\elasticsearch\ElasticSearch;
 use oat\tao\model\event\ClassPropertiesChangedEvent;
 use oat\taoAdvancedSearch\model\Metadata\Listener\ClassDeletionListener;
-use oat\taoAdvancedSearch\model\Metadata\Listener\WrongEventException;
+use oat\taoAdvancedSearch\model\Metadata\Listener\UnsupportedEventException;
 use oat\taoAdvancedSearch\model\Metadata\Normalizer\MetadataNormalizer;
 use Psr\Log\LoggerInterface;
 
@@ -68,7 +68,7 @@ class ClassDeletionListenerTest extends TestCase
 
     public function testListenThrowExceptionOnWrongEvent(): void
     {
-        $this->expectException(WrongEventException::class);
+        $this->expectException(UnsupportedEventException::class);
         $this->subject->listen(
             new ClassPropertiesChangedEvent([])
         );

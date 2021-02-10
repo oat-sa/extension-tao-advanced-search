@@ -36,12 +36,12 @@ class MetadataChangedListener extends ConfigurableService implements ListenerInt
     public const SERVICE_ID = 'taoAdvancedSearch/MetadataChangedListener';
 
     /**
-     * @throws WrongEventException
+     * @throws UnsupportedEventException
      */
     public function listen($event): void
     {
         if (!$event instanceof ClassPropertiesChangedEvent) {
-            throw new WrongEventException(ClassPropertiesChangedEvent::class);
+            throw new UnsupportedEventException(ClassPropertiesChangedEvent::class);
         }
 
         $this->getIndexer()->addIndex(

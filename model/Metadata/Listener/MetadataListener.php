@@ -42,7 +42,7 @@ class MetadataListener extends ConfigurableService implements ListenerInterface
     public function listen($event): void
     {
         if (!($event instanceof ClassPropertyDeletedEvent || $event instanceof ClassPropertyCreatedEvent)) {
-            throw new WrongEventException(
+            throw new UnsupportedEventException(
                 sprintf('%s or %s', ClassPropertyDeletedEvent::class, ClassPropertyCreatedEvent::class)
             );
         }
