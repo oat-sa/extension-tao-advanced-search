@@ -119,11 +119,6 @@ class MetadataNormalizerTest extends TestCase
             ->method('getUri')
             ->willReturn($propertyUri);
 
-        $this->metadataMock
-            ->expects($this->exactly($getValuesCount))
-            ->method('getValues')
-            ->willReturn($getValuesResult);
-
         $this->getClassMetadataValuesServiceMock
             ->expects($this->exactly($getByClassExplicitlyCount))
             ->method('getByClassExplicitly')
@@ -172,7 +167,7 @@ class MetadataNormalizerTest extends TestCase
                 1,
                 null,
                 1,
-                ['value1', 'value2']
+                null
             ]
         ];
     }

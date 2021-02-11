@@ -34,6 +34,7 @@ use oat\tao\model\Lists\Business\Domain\Metadata;
 use oat\tao\model\Lists\Business\Domain\MetadataCollection;
 use oat\tao\model\Lists\Business\Input\ClassMetadataSearchInput;
 use oat\tao\model\Lists\Business\Service\ClassMetadataService;
+use oat\tao\model\Lists\Business\Service\GetClassMetadataValuesService;
 use oat\tao\model\search\ResultSet;
 
 class ClassMetadataSearcher extends ConfigurableService implements ClassMetadataSearcherInterface
@@ -145,7 +146,7 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
 
     private function getPropertyListUri(string $propertyUri, string $type, ?array $values): ?string
     {
-        if (!$type !== 'list' || $values) {
+        if ($type !== GetClassMetadataValuesService::DATA_TYPE_LIST || $values) {
             return null;
         }
 
