@@ -19,6 +19,14 @@ php -d memory_limit=512M index.php "\oat\tao\scripts\tools\MigrationAction" \
 -t "oat\taoAdvancedSearch\model\DeliveryResult\Service\DeliveryResultMigrationTask" -rp
 
 #
+# Index class metadata
+#
+php -d memory_limit=512M index.php "\oat\tao\scripts\tools\MigrationAction" \
+-c $CHUNK_SIZE \
+-cp "start=0" \
+-t "oat\taoAdvancedSearch\model\Metadata\Task\MetadataResultMigrationTask" -rp
+
+#
 # Index RDF classes
 #
 while [ "$(awk 'FNR==2' ${EXPORTER_LOCK_FILE})" != 'FINISHED' ]; do
