@@ -24,7 +24,7 @@
     },
     "minimum-stability": "dev",
     "require": {
-        "oat-sa/oatbox-extension-installer": "~1.1||dev-master"
+        "oat-sa/oatbox-extension-installer": "~1.1||dev-master",
         "ext-json": "*"
     },
     "autoload" : {
