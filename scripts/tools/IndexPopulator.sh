@@ -21,7 +21,7 @@ php -d memory_limit=512M index.php "\oat\tao\scripts\tools\MigrationAction" \
 #
 # Index class metadata
 #
-php index.php "\oat\tao\scripts\tools\MigrationAction" \
+php -d memory_limit=512M index.php "\oat\tao\scripts\tools\MigrationAction" \
 -c $CHUNK_SIZE \
 -cp "start=0" \
 -t "oat\taoAdvancedSearch\model\Metadata\Task\MetadataResultMigrationTask" -rp
