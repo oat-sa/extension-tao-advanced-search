@@ -66,8 +66,8 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
     {
         $propertyCollection = [];
         $properties = $this->isRootClass($class)
-            ? $this->getGetClassMetadataValuesService()->getByClassRecursive($class)
-            : $this->getGetClassMetadataValuesService()->getByClassExplicitly($class);
+            ? $this->getGetClassMetadataValuesService()->getByClassRecursive($class, 0)
+            : $this->getGetClassMetadataValuesService()->getByClassExplicitly($class, 0);
 
         /** @var Metadata $property */
         foreach ($properties as $property) {
@@ -75,9 +75,7 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
                 'propertyUri' => $property->getPropertyUri(),
                 'propertyLabel' => $property->getLabel(),
                 'propertyType' => $property->getType(),
-                'propertyValues' => $property->getUri()
-                    ? null
-                    : $property->getValues(),
+                'propertyValues' => null,
             ];
         }
 
