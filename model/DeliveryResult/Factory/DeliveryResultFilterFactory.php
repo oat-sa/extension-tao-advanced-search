@@ -44,7 +44,7 @@ class DeliveryResultFilterFactory extends ResultFilterFactory implements ResultF
             $deliveryIds[] = $result->getUri();
         }
 
-        return $this->getResultsService()
+        return (int)$this->getResultsService()
             ->getImplementation()
             ->countResultByDelivery($deliveryIds);
     }
