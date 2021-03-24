@@ -1,43 +1,47 @@
 {
-    "name": "oat-sa/extension-tao-advanced-search",
-    "type": "tao-extension",
-    "description": "tao extension to advanced search",
-    "authors": [
-        {
-            "name": "Open Assessment Technologies SA"
-        }
-    ],
-    "support": {
-        "forum": "http://forum.taotesting.com",
-        "issues": "http://forge.taotesting.com"
-    },
-    "repositories": [
-    ],
-    "keywords": [
-        "tao",
-        "computer-based-assessment"
-    ],
-    "homepage": "http://www.taotesting.com",
-    "license": "GPL-2.0-only",
-    "extra": {
-        "tao-extension-name": "taoAdvancedSearch"
-    },
-    "minimum-stability": "dev",
-    "require": {
-        "oat-sa/oatbox-extension-installer": "~1.1||dev-master",
-        "ext-json": "*"
-    },
-    "autoload" : {
-        "psr-4" : {
-            "oat\\taoAdvancedSearch\\" : ""
-        }
-    },
-    "require-dev": {
-        "phpunit/phpunit": "^8.5"
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "oat\\taoAdvancedSearch\\tests\\": "test"
-        }
+  "name": "oat-sa/extension-tao-advanced-search",
+  "type": "tao-extension",
+  "description": "tao extension to advanced search",
+  "authors": [
+    {
+      "name": "Open Assessment Technologies SA"
     }
+  ],
+  "support": {
+    "forum": "http://forum.taotesting.com",
+    "issues": "http://forge.taotesting.com"
+  },
+  "repositories": [
+  ],
+  "keywords": [
+    "tao",
+    "computer-based-assessment"
+  ],
+  "homepage": "http://www.taotesting.com",
+  "license": "GPL-2.0-only",
+  "extra": {
+    "tao-extension-name": "taoAdvancedSearch"
+  },
+  "minimum-stability": "dev",
+  "require": {
+    "oat-sa/oatbox-extension-installer": "~1.1||dev-master",
+    "ext-json": "*",
+    "generis": ">=13.14.0",
+    "tao": ">=46.9.2",
+    "taoDelivery": ">=14.10.1",
+    "taoOutcomeUi": ">=9.4.3"
+  },
+  "autoload": {
+    "psr-4": {
+      "oat\\taoAdvancedSearch\\": ""
+    }
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^8.5"
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "oat\\taoAdvancedSearch\\tests\\": "test"
+    }
+  }
 }
