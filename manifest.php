@@ -28,14 +28,7 @@ return [
     'label' => 'Extension to manage advanced search',
     'description' => 'Extension to manage advanced search integration for all TAO resources',
     'license' => 'GPL-2.0',
-    'version' => '1.0.0',
     'author' => 'Open Assessment Technologies SA',
-    'requires' => [
-        'generis' => '>=13.14.0',
-        'tao' => '>=46.9.2',
-        'taoDelivery' => '>=14.10.1',
-        'taoOutcomeUi' => '>=9.4.3',
-    ],
     'managementRole' => $managerRole,
     'acl' => [
         ['grant', $managerRole, ['ext' => 'taoAdvancedSearch']],
