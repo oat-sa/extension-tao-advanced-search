@@ -1,45 +1,47 @@
 {
-    "name": "oat-sa/extension-tao-advance-search",
-    "type": "tao-extension",
-    "description": "tao extension to advanced search",
-    "authors": [
-        {
-            "name": "Open Assessment Technologies SA"
-        }
-    ],
-    "support": {
-        "forum": "http://forum.taotesting.com",
-        "issues": "http://forge.taotesting.com"
-    },
-    "repositories": [
-    ],
-    "keywords": [
-        "tao",
-        "computer-based-assessment"
-    ],
-    "homepage": "http://www.taotesting.com",
-    "license": "GPL-2.0-only",
-    "extra": {
-        "tao-extension-name": "taoAdvanceSearch"
-    },
-    "minimum-stability": "dev",
-    "require": {
-        "oat-sa/oatbox-extension-installer": "~1.1||dev-master",
-        "oat-sa/generis": "*",
-        "oat-sa/tao-core": "*",
-        "ext-json": "*"
-    },
-    "autoload" : {
-        "psr-4" : {
-            "oat\\taoAdvanceSearch\\" : ""
-        }
-    },
-    "require-dev": {
-        "phpunit/phpunit": "^8.5"
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "oat\\taoAdvanceSearch\\tests\\": "test"
-        }
+  "name": "oat-sa/extension-tao-advanced-search",
+  "type": "tao-extension",
+  "description": "tao extension to advanced search",
+  "authors": [
+    {
+      "name": "Open Assessment Technologies SA"
     }
+  ],
+  "support": {
+    "forum": "http://forum.taotesting.com",
+    "issues": "http://forge.taotesting.com"
+  },
+  "repositories": [
+  ],
+  "keywords": [
+    "tao",
+    "computer-based-assessment"
+  ],
+  "homepage": "http://www.taotesting.com",
+  "license": "GPL-2.0-only",
+  "extra": {
+    "tao-extension-name": "taoAdvancedSearch"
+  },
+  "minimum-stability": "dev",
+  "require": {
+    "oat-sa/oatbox-extension-installer": "~1.1||dev-master",
+    "ext-json": "*",
+    "oat-sa/generis": ">=14.2.0",
+    "oat-sa/tao-core": ">=48.0.0",
+    "oat-sa/extension-tao-delivery": ">=14.10.1",
+    "oat-sa/extension-tao-outcomeui": ">=10.4.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "oat\\taoAdvancedSearch\\": ""
+    }
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^8.5"
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "oat\\taoAdvancedSearch\\tests\\": "test"
+    }
+  }
 }
