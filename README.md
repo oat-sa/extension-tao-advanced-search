@@ -2,7 +2,7 @@
 
 ![TAO Logo](https://github.com/oat-sa/taohub-developer-guide/raw/master/resources/tao-logo.png)
 
-![GitHub](https://img.shields.io/github/license/oat-sa/extension-tao-advanced-search.svg)
+[![GitHub license](https://img.shields.io/github/license/oat-sa/extension-tao-advanced-search)](https://github.com/oat-sa/extension-tao-advanced-search/blob/master/LICENSE)
 ![GitHub release](https://img.shields.io/github/release/oat-sa/extension-tao-advanced-search.svg)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/y/oat-sa/extension-tao-advanced-search.svg)
 
