@@ -29,8 +29,9 @@
     "oat-sa/generis": ">=14.2.0",
     "oat-sa/tao-core": ">=48.0.0",
     "oat-sa/extension-tao-delivery": ">=14.10.1",
-    "oat-sa/extension-tao-outcomeui": ">=10.4.0"
-  },
+    "oat-sa/extension-tao-outcomeui": ">=10.4.0",
+    "oat-sa/lib-tao-elasticsearch": "dev-develop"
+},
   "autoload": {
     "psr-4": {
       "oat\\taoAdvancedSearch\\": ""
