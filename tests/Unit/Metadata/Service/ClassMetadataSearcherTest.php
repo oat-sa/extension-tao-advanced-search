@@ -52,7 +52,7 @@ class ClassMetadataSearcherTest extends TestCase
     /** @var Ontology|MockObject */
     private $model;
 
-
+    /** @var core_kernel_classes_Class|MockObject */
     private $classMock;
 
     public function setUp(): void
