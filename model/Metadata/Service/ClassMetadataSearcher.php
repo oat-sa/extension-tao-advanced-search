@@ -64,15 +64,10 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
 
     private function getSubProperties(string $classUri, array $properties = []): void
     {
-        $result = $this->executeQuery('parentClass', $classUri);
+        foreach ($this->getClass($classUri)->getSubClasses(true) as $subclass) {
+            $result = $this->executeQuery('_id', $subclass->getUri());
 
-        foreach ($result as $res) {
-            $newProperties = $this->incrementProperties($res, $properties);
-
-            if (!$this->wasClassProcessed($res['id'])) {
-                $this->addProcessedClass($res['id'], $classUri, $newProperties);
-                $this->getSubProperties($res['id'], $newProperties);
-            }
+            $this->processResult($result, $properties, $classUri);
         }
     }
 
@@ -166,5 +161,17 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
     private function getSearcher(): ElasticSearch
     {
         return $this->getServiceLocator()->get(ElasticSearch::class);
+    }
+
+    private function processResult(ResultSet $result, array $properties, string $classUri): void
+    {
+        foreach ($result as $res) {
+            $newProperties = $this->incrementProperties($res, $properties);
+
+            if (!$this->wasClassProcessed($res['id'])) {
+                $this->addProcessedClass($res['id'], $classUri, $newProperties);
+                $this->getSubProperties($res['id'], $newProperties);
+            }
+        }
     }
 }
