@@ -34,7 +34,7 @@ while [ "$(awk 'FNR==2' ${EXPORTER_LOCK_FILE})" != 'FINISHED' ]; do
     OFFSET=0;
   fi
 
-  php -d memory_limit=512M index.php "oat\tao\scripts\tools\index\IndexPopulator" \
+  php -d memory_limit=512M index.php "oat\taoAdvancedSearch\scripts\tools\IndexPopulator" \
   --indexBatchSize $BATCH_SIZE_LIMIT \
   --limit $LIMIT \
   --offset $OFFSET \
