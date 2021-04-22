@@ -41,5 +41,10 @@ while [ "$(awk 'FNR==2' ${EXPORTER_LOCK_FILE})" != 'FINISHED' ]; do
   --lock $EXPORTER_LOCK_FILE \
   --class $CLASS
 
+  # Necessary, cause CLASS is empty first time, since there is nothing in the lock file
+  if [ -z "$CLASS" ]; then
+     CLASS=$(awk 'FNR==1' ${EXPORTER_LOCK_FILE})
+  fi
+
   OFFSET=$(($OFFSET + $LIMIT))
 done
