@@ -1,48 +1,28 @@
 #!/bin/bash
-set -e
 
-EXPORTER_LOCK_FILE="/tmp/.export.lock"
-CHUNK_SIZE=100
-BATCH_SIZE_LIMIT=${1:-100} # if $1 is not provided, default is 100
-LIMIT=100
-OFFSET=0;
-CLASS=
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]
+then
+    FILE_NAME=$(basename "$0")
+    echo ""
+    echo " Populate all indexes. Usage:"
+    echo ""
+    echo "    BATCH_SIZE_LIMIT: Integer size of documents sent in each batch to index resources. Default: 50"
+    echo "    CHUNK_SIZE: Integer size of items to be processed on each migration task. Default: 100"
+    echo "    LIMIT: Limit of resources per class to be found. Default: 100"
+    echo ""
+    echo " Example:"
+    echo ""
+    echo "    ./${FILE_NAME} <<BATCH_SIZE_LIMIT>> <<CHUNK_SIZE>> <<LIMIT>>"
+    echo ""
 
-rm -f $EXPORTER_LOCK_FILE && touch $EXPORTER_LOCK_FILE
+    exit;
+fi
 
-#
-# Index delivery results
-#
-php -d memory_limit=512M index.php "\oat\tao\scripts\tools\MigrationAction" \
--c $CHUNK_SIZE \
--cp "start=0" \
--t "oat\taoAdvancedSearch\model\DeliveryResult\Service\DeliveryResultMigrationTask" -rp
+CURRENT_DIR=$(dirname "$0");
+BATCH_SIZE_LIMIT=${1:-50} # Default will be 50
+CHUNK_SIZE=${2:-100} # Default will be 100
+LIMIT=${3:-100} # Default will be 100
 
-#
-# Index class metadata
-#
-php -d memory_limit=512M index.php "\oat\tao\scripts\tools\MigrationAction" \
--c $CHUNK_SIZE \
--cp "start=0" \
--t "oat\taoAdvancedSearch\model\Metadata\Task\MetadataResultMigrationTask" -rp
-
-#
-# Index RDF classes
-#
-while [ "$(awk 'FNR==2' ${EXPORTER_LOCK_FILE})" != 'FINISHED' ]; do
-  LOCK_CLASS=$(awk 'FNR==1' ${EXPORTER_LOCK_FILE})
-
-  if [ "$CLASS" != "$LOCK_CLASS" ]; then
-    CLASS=$LOCK_CLASS
-    OFFSET=0;
-  fi
-
-  php -d memory_limit=512M index.php "oat\tao\scripts\tools\index\IndexPopulator" \
-  --indexBatchSize $BATCH_SIZE_LIMIT \
-  --limit $LIMIT \
-  --offset $OFFSET \
-  --lock $EXPORTER_LOCK_FILE \
-  --class $CLASS
-
-  OFFSET=$(($OFFSET + $LIMIT))
-done
+"${CURRENT_DIR}/indexResources.sh" "$BATCH_SIZE_LIMIT" "$LIMIT"
+"${CURRENT_DIR}/indexClassMetadata.sh" "$CHUNK_SIZE"
+"${CURRENT_DIR}/indexDeliveryResults.sh" "$CHUNK_SIZE"
