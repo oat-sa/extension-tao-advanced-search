@@ -22,6 +22,8 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\model\Metadata\Service;
 
+use core_kernel_classes_Class;
+use oat\generis\model\data\Ontology;
 use oat\generis\test\TestCase;
 use oat\tao\elasticsearch\ElasticSearch;
 use oat\tao\elasticsearch\SearchResult;
@@ -47,11 +49,19 @@ class ClassMetadataSearcherTest extends TestCase
     /** @var ElasticSearch|MockObject */
     private $elasticSearch;
 
+    /** @var Ontology|MockObject */
+    private $model;
+
+    /** @var core_kernel_classes_Class|MockObject */
+    private $classMock;
+
     public function setUp(): void
     {
         $this->classMetadataService = $this->createMock(ClassMetadataService::class);
         $this->advancedSearchChecker = $this->createMock(AdvancedSearchChecker::class);
         $this->elasticSearch = $this->createMock(ElasticSearch::class);
+        $this->model = $this->createMock(Ontology::class);
+        $this->classMock = $this->createMock(core_kernel_classes_Class::class);
 
         $this->subject = new ClassMetadataSearcher();
         $this->subject->setServiceLocator(
@@ -63,6 +73,7 @@ class ClassMetadataSearcherTest extends TestCase
                 ]
             )
         );
+        $this->subject->setModel($this->model);
     }
 
     public function testFindAllWhenAdvancedSearchIsDisabledWillFallbackToGeneris(): void
@@ -91,6 +102,20 @@ class ClassMetadataSearcherTest extends TestCase
         $this->advancedSearchChecker
             ->method('isEnabled')
             ->willReturn(true);
+
+        $this->model
+            ->method('getClass')
+            ->willReturn($this->classMock);
+
+        $this->classMock
+            ->method('getSubClasses')
+            ->willReturn([
+                $this->classMock
+            ]);
+
+        $this->classMock
+            ->method('getUri')
+            ->willReturn('someUri');
 
         $this->elasticSearch
             ->method('search')
