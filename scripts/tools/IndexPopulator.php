@@ -33,6 +33,7 @@ use oat\tao\model\menu\MenuService;
 use oat\tao\model\search\index\IndexIterator;
 use oat\tao\model\search\ResultSet;
 use oat\tao\model\search\Search;
+use oat\taoAdvancedSearch\model\Resource\Service\ResourceClassRetriever;
 use Throwable;
 use Zend\ServiceManager\ServiceLocatorAwareInterface;
 use Zend\ServiceManager\ServiceLocatorAwareTrait;
@@ -103,7 +104,7 @@ class IndexPopulator extends ScriptAction implements ServiceLocatorAwareInterfac
     protected function run(): Report
     {
         $report = Report::createInfo('Executing:');
-        $classIterator = new core_kernel_classes_ClassIterator($this->getIndexedClasses());
+        $classIterator = $this->getResourceClassRetriever()->retrieve();
         $currentClass = $this->getOption('class') ?: $classIterator->current()->getUri();
         $limit = (int)$this->getOption('limit');
         $offset = (int)$this->getOption('offset');
@@ -189,24 +190,6 @@ class IndexPopulator extends ScriptAction implements ServiceLocatorAwareInterfac
         }
 
         return $report;
-    }
-
-    private function getIndexedClasses(): array
-    {
-        $classes = [];
-
-        foreach (MenuService::getAllPerspectives() as $perspective) {
-            foreach ($perspective->getChildren() as $structure) {
-                foreach ($structure->getTrees() as $tree) {
-                    $rootNode = $tree->get('rootNode');
-                    if (!empty($rootNode)) {
-                        $classes[$rootNode] = $this->getClass($rootNode);
-                    }
-                }
-            }
-        }
-
-        return array_values($classes);
     }
 
     private function getScriptReport(int $result, string $class): Report
@@ -329,5 +312,10 @@ class IndexPopulator extends ScriptAction implements ServiceLocatorAwareInterfac
     private function getSearch(): Search
     {
         return $this->getServiceLocator()->get(Search::SERVICE_ID);
+    }
+
+    private function getResourceClassRetriever(): ResourceClassRetriever
+    {
+        return $this->getServiceLocator()->get(ResourceClassRetriever::class);
     }
 }
