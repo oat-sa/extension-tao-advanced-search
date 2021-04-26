@@ -57,8 +57,26 @@ php index.php "\oat\tao\scripts\tools\MigrationAction" -c 1 -cp "start=0" -t "oa
 
 ## Populating indexes
 
-To populate all indexes, execute:
+### To populate ALL indexes, execute:
 
 ```shell script
-./taoAdvancedSearch/scripts/tools/IndexPopulator.sh
+./taoAdvancedSearch/scripts/tools/IndexPopulator.sh --help
+```
+
+### To populate only resources indexes (Items, tests, etc), execute:
+
+```shell script
+./taoAdvancedSearch/scripts/tools/IndexResources.sh --help
+```
+
+### To populate only class metadata indexes, execute:
+
+```shell script
+./taoAdvancedSearch/scripts/tools/IndexClassMetatada.sh --help
+```
+
+### To populate only delivery results, execute:
+
+```shell script
+./taoAdvancedSearch/scripts/tools/IndexDeliveryResults.sh --help
 ```
