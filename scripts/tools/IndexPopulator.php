@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\scripts\tools;
 
+use core_kernel_classes_Class;
 use core_kernel_classes_ClassIterator;
 use DateTime;
 use oat\generis\model\kernel\persistence\smoothsql\search\ComplexSearchService;
@@ -118,7 +119,6 @@ class IndexPopulator extends ScriptAction implements ServiceLocatorAwareInterfac
             }
 
             $totalResources = $class->countInstances([], ['recursive' => true]);
-            $reportedClass = empty($currentClass) ? $class->getUri() : $currentClass;
             $resources = $this->searchResults($class->getUri(), $offset, $limit);
             $totalProcessedByBatch = 0;
 
@@ -126,7 +126,7 @@ class IndexPopulator extends ScriptAction implements ServiceLocatorAwareInterfac
                 $totalProcessedByBatch = $this->processRequestByBatch(
                     $report,
                     $resources,
-                    $reportedClass,
+                    $class,
                     $indexBatchSize,
                     $offset,
                     $limit
@@ -134,7 +134,7 @@ class IndexPopulator extends ScriptAction implements ServiceLocatorAwareInterfac
             } catch (Throwable $exception) {
                 $message = sprintf(
                     'Error indexing batch for class %s (offset %s, limit %s): %s',
-                    $reportedClass,
+                    $class->getUri(),
                     $offset,
                     $limit,
                     $exception->getMessage()
@@ -148,10 +148,12 @@ class IndexPopulator extends ScriptAction implements ServiceLocatorAwareInterfac
             $isClassFullyProcessed = $totalProcessedExpected >= $totalResources || $totalProcessedByBatch === 0;
 
             if ($isClassFullyProcessed) {
+                $totalProcessed = $offset + $totalProcessedByBatch;
+
                 $report->add(
                     $this->getScriptReport(
-                        $totalProcessedByBatch > 0 ? $totalProcessedExpected : $totalProcessedByBatch,
-                        $reportedClass
+                        $totalProcessedByBatch > 0 ? $totalProcessed : 0,
+                        $class
                     )
                 );
 
@@ -166,7 +168,7 @@ class IndexPopulator extends ScriptAction implements ServiceLocatorAwareInterfac
                     $report->add(Report::createInfo($message));
                     $this->logInfo($message);
 
-                    $this->finishPagination($reportedClass);
+                    $this->finishPagination($class->getUri());
 
                     break;
                 }
@@ -184,7 +186,7 @@ class IndexPopulator extends ScriptAction implements ServiceLocatorAwareInterfac
             }
 
             if (!$isClassFullyProcessed) {
-                $this->lockPagination($reportedClass);
+                $this->lockPagination($class->getUri());
             }
         }
 
@@ -209,23 +211,25 @@ class IndexPopulator extends ScriptAction implements ServiceLocatorAwareInterfac
         return array_values($classes);
     }
 
-    private function getScriptReport(int $result, string $class): Report
+    private function getScriptReport(int $result, core_kernel_classes_Class $class): Report
     {
         if (0 === $result) {
             return Report::createInfo(
                 sprintf(
-                    'There is no resources to be indexed for class: %s.',
-                    $class
+                    'There is no resources to be indexed for class: %s (%s).',
+                    $class->getLabel(),
+                    $class->getUri()
                 )
             );
         }
 
         return Report::createSuccess(
             sprintf(
-                'Finished at %s. Indexed %d resources for class: %s.',
+                'Finished at %s. Indexed %d resources for class: %s (%s).',
                 (new DateTime('now'))->format(DateTime::ATOM),
                 $result,
-                $class
+                $class->getLabel(),
+                $class->getUri()
             )
         );
     }
@@ -264,7 +268,7 @@ class IndexPopulator extends ScriptAction implements ServiceLocatorAwareInterfac
     private function processRequestByBatch(
         Report $report,
         ResultSetInterface $resources,
-        string $classUri,
+        core_kernel_classes_Class $class,
         int $batchSize,
         int $offset,
         int $limit
@@ -287,9 +291,10 @@ class IndexPopulator extends ScriptAction implements ServiceLocatorAwareInterfac
 
             if ($batchResults > 0) {
                 $message = sprintf(
-                    '%s resources indexed for class %s by %s. offset: %s, limit %s',
+                    '%s resources indexed for class %s (%s) by %s. offset: %s, limit %s',
                     $batchResults,
-                    $classUri,
+                    $class->getLabel(),
+                    $class->getUri(),
                     static::class,
                     $offset,
                     $limit
