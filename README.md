@@ -52,7 +52,7 @@ php index.php "\oat\tao\scripts\tools\MigrationAction" -c 1 -cp "start=0" -t "oa
 ```
 or
 ```shell
-php index.php "\oat\tao\scripts\tools\MigrationAction" -c 1 -cp "start=0" -t "oat\taoAdvancedSearch\model\Metadata\Task\MetadataResultMigrationTask" -rp
+php index.php "\oat\tao\scripts\tools\MigrationAction" -c 1 -cp "start=0" -t "oat\taoAdvancedSearch\model\Metadata\Task\MetadataMigrationTask" -rp
 ```
 
 ## Populating indexes

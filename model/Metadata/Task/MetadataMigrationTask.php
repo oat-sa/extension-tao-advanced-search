@@ -27,7 +27,7 @@ use oat\taoAdvancedSearch\model\Metadata\Factory\MetadataResultFilterFactory;
 use oat\taoAdvancedSearch\model\Metadata\Normalizer\MetadataNormalizer;
 use oat\taoAdvancedSearch\model\Metadata\Service\MetadataResultSearcher;
 
-class MetadataResultMigrationTask extends AbstractIndexMigrationTask
+class MetadataMigrationTask extends AbstractIndexMigrationTask
 {
     protected function getConfig(): array
     {
