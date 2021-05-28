@@ -25,12 +25,13 @@ namespace oat\taoAdvancedSearch\tests\Unit\model\Metadata\Normalizer;
 use core_kernel_classes_Class;
 use core_kernel_classes_Property;
 use InvalidArgumentException;
-use oat\generis\test\MockObject;
+use oat\generis\model\data\Ontology;
 use oat\generis\test\TestCase;
 use oat\tao\model\Lists\Business\Domain\Metadata;
 use oat\tao\model\Lists\Business\Domain\MetadataCollection;
 use oat\tao\model\Lists\Business\Service\GetClassMetadataValuesService;
 use oat\taoAdvancedSearch\model\Metadata\Normalizer\MetadataNormalizer;
+use PHPUnit\Framework\MockObject\MockObject;
 
 class MetadataNormalizerTest extends TestCase
 {
@@ -49,6 +50,9 @@ class MetadataNormalizerTest extends TestCase
     /** @var Metadata|MockObject */
     private $metadataMock;
 
+    /** @var Ontology|MockObject */
+    private $ontology;
+
     public function setUp(): void
     {
         $this->subject = new MetadataNormalizer();
@@ -56,11 +60,13 @@ class MetadataNormalizerTest extends TestCase
         $this->propertyMock = $this->createMock(core_kernel_classes_Property::class);
         $this->getClassMetadataValuesServiceMock = $this->createMock(GetClassMetadataValuesService::class);
         $this->metadataMock = $this->createMock(Metadata::class);
+        $this->ontology = $this->createMock(Ontology::class);
 
         $this->subject->setServiceLocator(
             $this->getServiceLocatorMock(
                 [
-                    GetClassMetadataValuesService::class => $this->getClassMetadataValuesServiceMock
+                    GetClassMetadataValuesService::class => $this->getClassMetadataValuesServiceMock,
+                    Ontology::SERVICE_ID => $this->ontology,
                 ]
             )
         );
@@ -68,6 +74,14 @@ class MetadataNormalizerTest extends TestCase
 
     public function testNormalizeTakesOnlyClass(): void
     {
+        $this->ontology
+            ->method('getClass')
+            ->willReturn($this->classMock);
+
+        $this->classMock
+            ->method('isClass')
+            ->willReturn(false);
+
         $this->expectException(InvalidArgumentException::class);
         $this->subject->normalize('string');
     }
@@ -80,9 +94,16 @@ class MetadataNormalizerTest extends TestCase
         int $getByClassExplicitlyCount,
         int $getByClassRecursiveCount,
         ?string $propertyUri,
-        int $getValuesCount,
         ?array $getValuesResult
     ): void {
+        $this->ontology
+            ->method('getClass')
+            ->willReturn($this->classMock);
+
+        $this->classMock
+            ->method('isClass')
+            ->willReturn(true);
+
         $this->classMock
             ->expects($this->exactly(4))
             ->method('getUri')
@@ -129,7 +150,7 @@ class MetadataNormalizerTest extends TestCase
             ->method('getByClassRecursive')
             ->willReturn(new MetadataCollection($this->metadataMock));
 
-        $result = $this->subject->normalize($this->classMock);
+        $result = $this->subject->normalize($classUri);
 
         $this->assertEquals('example Label', $result->getLabel());
         $this->assertEquals('exampleClassUri', $result->getId());
@@ -158,7 +179,6 @@ class MetadataNormalizerTest extends TestCase
                 1,
                 0,
                 'Uri Example',
-                0,
                 null
             ],
             'rootClass' => [
@@ -166,7 +186,6 @@ class MetadataNormalizerTest extends TestCase
                 0,
                 1,
                 null,
-                1,
                 null
             ]
         ];
