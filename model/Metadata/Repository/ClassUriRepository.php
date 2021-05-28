@@ -20,25 +20,34 @@
 
 declare(strict_types=1);
 
-namespace oat\taoAdvancedSearch\model\Metadata\Factory;
+namespace oat\taoAdvancedSearch\model\Metadata\Repository;
 
 use oat\generis\model\OntologyAwareTrait;
-use oat\tao\model\task\migration\service\ResultFilterFactory;
-use oat\tao\model\task\migration\service\ResultFilterFactoryInterface;
-use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriRepository;
-use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriRepositoryInterface;
+use oat\oatbox\service\ConfigurableService;
+use oat\taoAdvancedSearch\model\Metadata\Service\MetadataResultSearcher;
 
-class MetadataResultFilterFactory extends ResultFilterFactory implements ResultFilterFactoryInterface
+class ClassUriRepository extends ConfigurableService implements ClassUriRepositoryInterface
 {
     use OntologyAwareTrait;
 
-    protected function getMax(): int
+    public function findAll(): array
     {
-        return $this->getClassUriRepository()->getTotal();
+        //@TODO Create cached implementation
+        $classUris = [];
+
+        foreach (MetadataResultSearcher::ROOT_CLASSES as $rootClassUri) {
+            $classUris[] = $rootClassUri;
+
+            foreach ($this->getClass($rootClassUri)->getSubClasses(true) as $subClass) {
+                $classUris[] = $subClass->getUri();
+            }
+        }
+
+        return $classUris;
     }
 
-    private function getClassUriRepository(): ClassUriRepositoryInterface
+    public function getTotal(): int
     {
-        return $this->getServiceLocator()->get(ClassUriRepository::class);
+        return count($this->findAll());
     }
 }

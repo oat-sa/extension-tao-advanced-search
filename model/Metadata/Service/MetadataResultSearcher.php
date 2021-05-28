@@ -29,6 +29,8 @@ use oat\tao\model\task\migration\ResultUnit;
 use oat\tao\model\task\migration\service\ResultFilter;
 use oat\tao\model\task\migration\service\ResultSearcherInterface;
 use oat\tao\model\task\migration\ResultUnitCollection;
+use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriRepository;
+use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriRepositoryInterface;
 
 class MetadataResultSearcher extends ConfigurableService implements ResultSearcherInterface
 {
@@ -43,22 +45,30 @@ class MetadataResultSearcher extends ConfigurableService implements ResultSearch
 
     public function search(ResultFilter $filter): ResultUnitCollection
     {
+        //FIXME Remove after testing
+        \common_Logger::w('MetadataResultSearcher ============> ' . var_export($filter, true));
+
+        $offset = $filter->getParameter('start');
+        $limit = $filter->getParameter('end') - $filter->getParameter('start');
+
+        $allClassUris = $this->getClassUriRepository()->findAll();
+
+        $classesBatch = array_slice($allClassUris, $offset, $limit);
+
+        //FIXME Remove after testing
+        \common_Logger::w('MetadataResultSearcher BATCH ============> ' . var_export($classesBatch, true));
+
         $collection = new ResultUnitCollection();
 
-        foreach (self::ROOT_CLASSES as $rootClassUri) {
-            $rootClass = $this->getClass($rootClassUri);
-            $collection->add(new ResultUnit($rootClass));
-
-            $this->addSubclasses($rootClass->getSubClasses(true), $collection);
+        foreach ($classesBatch as $classUri) {
+            $collection->add(new ResultUnit($classUri));
         }
 
         return $collection;
     }
 
-    private function addSubclasses(array $subClasses, ResultUnitCollection $collection): void
+    private function getClassUriRepository(): ClassUriRepositoryInterface
     {
-        foreach ($subClasses as $class) {
-            $collection->add(new ResultUnit($class));
-        }
+        return $this->getServiceLocator()->get(ClassUriRepository::class);
     }
 }

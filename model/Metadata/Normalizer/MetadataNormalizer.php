@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\Metadata\Normalizer;
 
 use core_kernel_classes_Class;
-use InvalidArgumentException;
+use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\service\ConfigurableService;
 use oat\tao\model\Lists\Business\Domain\Metadata;
 use oat\tao\model\Lists\Business\Service\GetClassMetadataValuesService;
@@ -33,13 +33,11 @@ use oat\taoAdvancedSearch\model\Metadata\Service\MetadataResultSearcher;
 
 class MetadataNormalizer extends ConfigurableService implements NormalizerInterface
 {
-    public function normalize($class): IndexResource
+    use OntologyAwareTrait;
+
+    public function normalize($resource): IndexResource
     {
-        if (!$class instanceof core_kernel_classes_Class) {
-            throw new InvalidArgumentException(
-                '$class must be an instance of ' . core_kernel_classes_Class::class
-            );
-        }
+        $class = $this->getClass($resource);
 
         return new IndexResource(
             $class->getUri(),
