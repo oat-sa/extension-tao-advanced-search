@@ -22,7 +22,6 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\Metadata\Service;
 
-use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\service\ConfigurableService;
 use oat\tao\model\TaoOntology;
 use oat\tao\model\task\migration\ResultUnit;
@@ -34,8 +33,6 @@ use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriRepositoryInterface;
 
 class MetadataResultSearcher extends ConfigurableService implements ResultSearcherInterface
 {
-    use OntologyAwareTrait;
-
     public const ROOT_CLASSES = [
         TaoOntology::CLASS_URI_ITEM,
         TaoOntology::CLASS_URI_ASSEMBLED_DELIVERY,
