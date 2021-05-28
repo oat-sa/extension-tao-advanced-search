@@ -43,39 +43,35 @@ class DeliveryResultMigrationTask extends AbstractIndexMigrationTask
 }
 ``` 
 
-### 2) Run the indexation
+### 2) Populate the indexes
 
-Execute the migration pointing to the migration task you just created. Example:
+#### To warmup cache
 
-```shell script
-php index.php "\oat\tao\scripts\tools\MigrationAction" -c 1 -cp "start=0" -t "oat\taoAdvancedSearch\model\DeliveryResult\Service\DeliveryResultMigrationTask" -rp
-```
-or
+This is necessary to optimize indexation:
+
 ```shell
-php index.php "\oat\tao\scripts\tools\MigrationAction" -c 1 -cp "start=0" -t "oat\taoAdvancedSearch\model\Metadata\Task\MetadataMigrationTask" -rp
+./taoAdvancedSearch/scripts/tools/CacheWarmup.sh --help
 ```
 
-## Populating indexes
-
-### To populate ALL indexes, execute:
+#### To populate ALL indexes, execute:
 
 ```shell script
 ./taoAdvancedSearch/scripts/tools/IndexPopulator.sh --help
 ```
 
-### To populate only resources indexes (Items, tests, etc), execute:
+#### To populate only resources indexes (Items, tests, etc), execute:
 
 ```shell script
 ./taoAdvancedSearch/scripts/tools/IndexResources.sh --help
 ```
 
-### To populate only class metadata indexes, execute:
+#### To populate only class metadata indexes, execute:
 
 ```shell script
 ./taoAdvancedSearch/scripts/tools/IndexClassMetatada.sh --help
 ```
 
-### To populate only delivery results, execute:
+#### To populate only delivery results, execute:
 
 ```shell script
 ./taoAdvancedSearch/scripts/tools/IndexDeliveryResults.sh --help

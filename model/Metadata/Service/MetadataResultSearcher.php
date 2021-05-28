@@ -29,7 +29,7 @@ use oat\tao\model\task\migration\ResultUnit;
 use oat\tao\model\task\migration\service\ResultFilter;
 use oat\tao\model\task\migration\service\ResultSearcherInterface;
 use oat\tao\model\task\migration\ResultUnitCollection;
-use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriRepository;
+use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriCachedRepository;
 use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriRepositoryInterface;
 
 class MetadataResultSearcher extends ConfigurableService implements ResultSearcherInterface
@@ -45,18 +45,12 @@ class MetadataResultSearcher extends ConfigurableService implements ResultSearch
 
     public function search(ResultFilter $filter): ResultUnitCollection
     {
-        //FIXME Remove after testing
-        \common_Logger::w('MetadataResultSearcher ============> ' . var_export($filter, true));
-
         $offset = $filter->getParameter('start');
         $limit = $filter->getParameter('end') - $filter->getParameter('start');
 
         $allClassUris = $this->getClassUriRepository()->findAll();
 
         $classesBatch = array_slice($allClassUris, $offset, $limit);
-
-        //FIXME Remove after testing
-        \common_Logger::w('MetadataResultSearcher BATCH ============> ' . var_export($classesBatch, true));
 
         $collection = new ResultUnitCollection();
 
@@ -69,6 +63,6 @@ class MetadataResultSearcher extends ConfigurableService implements ResultSearch
 
     private function getClassUriRepository(): ClassUriRepositoryInterface
     {
-        return $this->getServiceLocator()->get(ClassUriRepository::class);
+        return $this->getServiceLocator()->get(ClassUriCachedRepository::class);
     }
 }
