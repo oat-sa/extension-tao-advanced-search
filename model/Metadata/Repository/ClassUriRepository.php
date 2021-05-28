@@ -32,7 +32,6 @@ class ClassUriRepository extends ConfigurableService implements ClassUriReposito
 
     public function findAll(): array
     {
-        //@TODO Create cached implementation
         $classUris = [];
 
         foreach (MetadataResultSearcher::ROOT_CLASSES as $rootClassUri) {

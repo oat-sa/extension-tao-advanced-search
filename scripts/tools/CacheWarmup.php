@@ -58,7 +58,7 @@ class CacheWarmup extends ScriptAction implements ServiceLocatorAwareInterface
      */
     protected function run(): Report
     {
-        $report = Report::createInfo('Warming up ClassUri cache...');
+        $report = Report::createInfo('Warming up cache...');
 
         $classUriCachedRepository = $this->getClassUriCachedRepository();
         $classUriCachedRepository->cacheWarmup();
