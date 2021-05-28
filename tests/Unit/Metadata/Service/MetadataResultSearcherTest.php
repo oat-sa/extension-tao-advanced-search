@@ -35,9 +35,6 @@ class MetadataResultSearcherTest extends TestCase
     /** @var MetadataResultSearcher */
     private $subject;
 
-    /** @var ResultFilter|MockObject */
-    private $filterMock;
-
     /** @var core_kernel_classes_Class|MockObject */
     private $classMock;
 
