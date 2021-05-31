@@ -20,25 +20,21 @@
 
 declare(strict_types=1);
 
-namespace oat\taoAdvancedSearch\model\Metadata\Factory;
+namespace oat\taoAdvancedSearch\model\Metadata\Task;
 
-use oat\generis\model\OntologyAwareTrait;
-use oat\tao\model\task\migration\service\ResultFilterFactory;
-use oat\tao\model\task\migration\service\ResultFilterFactoryInterface;
-use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriRepository;
-use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriRepositoryInterface;
+use oat\taoAdvancedSearch\model\Index\Service\AbstractIndexMigrationTask;
+use oat\taoAdvancedSearch\model\Metadata\Factory\MetadataResultFilterFactory;
+use oat\taoAdvancedSearch\model\Metadata\Normalizer\MetadataNormalizer;
+use oat\taoAdvancedSearch\model\Metadata\Service\MetadataResultSearcher;
 
-class MetadataResultFilterFactory extends ResultFilterFactory implements ResultFilterFactoryInterface
+class MetadataMigrationTask extends AbstractIndexMigrationTask
 {
-    use OntologyAwareTrait;
-
-    protected function getMax(): int
+    protected function getConfig(): array
     {
-        return $this->getClassUriRepository()->getTotal();
-    }
-
-    private function getClassUriRepository(): ClassUriRepositoryInterface
-    {
-        return $this->getServiceLocator()->get(ClassUriRepository::class);
+        return [
+            self::OPTION_NORMALIZER => MetadataNormalizer::class,
+            self::OPTION_RESULT_SEARCHER => MetadataResultSearcher::class,
+            self::OPTION_RESULT_FILTER_FACTORY => MetadataResultFilterFactory::class,
+        ];
     }
 }

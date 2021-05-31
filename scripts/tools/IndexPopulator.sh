@@ -23,6 +23,7 @@ BATCH_SIZE_LIMIT=${1:-50} # Default will be 50
 CHUNK_SIZE=${2:-100} # Default will be 100
 LIMIT=${3:-100} # Default will be 100
 
+"${CURRENT_DIR}/CacheWarmup.sh"
 "${CURRENT_DIR}/IndexResources.sh" "$BATCH_SIZE_LIMIT" "$LIMIT"
 "${CURRENT_DIR}/IndexClassMetadata.sh" "$CHUNK_SIZE"
 "${CURRENT_DIR}/IndexDeliveryResults.sh" "$CHUNK_SIZE"

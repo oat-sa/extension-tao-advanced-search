@@ -20,25 +20,11 @@
 
 declare(strict_types=1);
 
-namespace oat\taoAdvancedSearch\model\Metadata\Factory;
+namespace oat\taoAdvancedSearch\model\Metadata\Repository;
 
-use oat\generis\model\OntologyAwareTrait;
-use oat\tao\model\task\migration\service\ResultFilterFactory;
-use oat\tao\model\task\migration\service\ResultFilterFactoryInterface;
-use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriRepository;
-use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriRepositoryInterface;
-
-class MetadataResultFilterFactory extends ResultFilterFactory implements ResultFilterFactoryInterface
+interface ClassUriRepositoryInterface
 {
-    use OntologyAwareTrait;
+    public function findAll(): array;
 
-    protected function getMax(): int
-    {
-        return $this->getClassUriRepository()->getTotal();
-    }
-
-    private function getClassUriRepository(): ClassUriRepositoryInterface
-    {
-        return $this->getServiceLocator()->get(ClassUriRepository::class);
-    }
+    public function getTotal(): int;
 }
