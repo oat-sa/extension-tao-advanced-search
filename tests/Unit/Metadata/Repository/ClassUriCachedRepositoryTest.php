@@ -56,8 +56,8 @@ class ClassUriCachedRepositoryTest extends TestCase
             $this->getServiceLocatorMock(
                 [
                     Ontology::SERVICE_ID => $this->ontology,
-                    SimpleCache::SERVICE_ID => $this->classUriRepository,
-                    ClassUriRepository::class => $this->simpleCache,
+                    SimpleCache::SERVICE_ID => $this->simpleCache,
+                    ClassUriRepository::class => $this->classUriRepository,
                 ]
             )
         );
