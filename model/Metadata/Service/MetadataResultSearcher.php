@@ -22,18 +22,17 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\Metadata\Service;
 
-use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\service\ConfigurableService;
 use oat\tao\model\TaoOntology;
 use oat\tao\model\task\migration\ResultUnit;
 use oat\tao\model\task\migration\service\ResultFilter;
 use oat\tao\model\task\migration\service\ResultSearcherInterface;
 use oat\tao\model\task\migration\ResultUnitCollection;
+use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriCachedRepository;
+use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriRepositoryInterface;
 
 class MetadataResultSearcher extends ConfigurableService implements ResultSearcherInterface
 {
-    use OntologyAwareTrait;
-
     public const ROOT_CLASSES = [
         TaoOntology::CLASS_URI_ITEM,
         TaoOntology::CLASS_URI_ASSEMBLED_DELIVERY,
@@ -43,22 +42,24 @@ class MetadataResultSearcher extends ConfigurableService implements ResultSearch
 
     public function search(ResultFilter $filter): ResultUnitCollection
     {
+        $offset = $filter->getParameter('start');
+        $limit = $filter->getParameter('end') - $filter->getParameter('start');
+
+        $allClassUris = $this->getClassUriRepository()->findAll();
+
+        $classesBatch = array_slice($allClassUris, $offset, $limit);
+
         $collection = new ResultUnitCollection();
 
-        foreach (self::ROOT_CLASSES as $rootClassUri) {
-            $rootClass = $this->getClass($rootClassUri);
-            $collection->add(new ResultUnit($rootClass));
-
-            $this->addSubclasses($rootClass->getSubClasses(true), $collection);
+        foreach ($classesBatch as $classUri) {
+            $collection->add(new ResultUnit($classUri));
         }
 
         return $collection;
     }
 
-    private function addSubclasses(array $subClasses, ResultUnitCollection $collection): void
+    private function getClassUriRepository(): ClassUriRepositoryInterface
     {
-        foreach ($subClasses as $class) {
-            $collection->add(new ResultUnit($class));
-        }
+        return $this->getServiceLocator()->get(ClassUriCachedRepository::class);
     }
 }

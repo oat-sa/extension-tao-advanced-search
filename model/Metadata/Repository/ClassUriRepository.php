@@ -20,21 +20,33 @@
 
 declare(strict_types=1);
 
-namespace oat\taoAdvancedSearch\model\Metadata\Task;
+namespace oat\taoAdvancedSearch\model\Metadata\Repository;
 
-use oat\taoAdvancedSearch\model\Index\Service\AbstractIndexMigrationTask;
-use oat\taoAdvancedSearch\model\Metadata\Factory\MetadataResultFilterFactory;
-use oat\taoAdvancedSearch\model\Metadata\Normalizer\MetadataNormalizer;
+use oat\generis\model\OntologyAwareTrait;
+use oat\oatbox\service\ConfigurableService;
 use oat\taoAdvancedSearch\model\Metadata\Service\MetadataResultSearcher;
 
-class MetadataResultMigrationTask extends AbstractIndexMigrationTask
+class ClassUriRepository extends ConfigurableService implements ClassUriRepositoryInterface
 {
-    protected function getConfig(): array
+    use OntologyAwareTrait;
+
+    public function findAll(): array
     {
-        return [
-            self::OPTION_NORMALIZER => MetadataNormalizer::class,
-            self::OPTION_RESULT_SEARCHER => MetadataResultSearcher::class,
-            self::OPTION_RESULT_FILTER_FACTORY => MetadataResultFilterFactory::class,
-        ];
+        $classUris = [];
+
+        foreach (MetadataResultSearcher::ROOT_CLASSES as $rootClassUri) {
+            $classUris[] = $rootClassUri;
+
+            foreach ($this->getClass($rootClassUri)->getSubClasses(true) as $subClass) {
+                $classUris[] = $subClass->getUri();
+            }
+        }
+
+        return $classUris;
+    }
+
+    public function getTotal(): int
+    {
+        return count($this->findAll());
     }
 }

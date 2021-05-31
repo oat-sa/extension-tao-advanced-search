@@ -16,9 +16,9 @@ then
     exit;
 fi
 
-CHUNK_SIZE=${1:=100} # Default will be 100
+CHUNK_SIZE=${1:-100} # Default will be 100
 
 php -d memory_limit=512M index.php "\oat\tao\scripts\tools\MigrationAction" \
 -c $CHUNK_SIZE \
 -cp "start=0" \
--t "oat\taoAdvancedSearch\model\Metadata\Task\MetadataResultMigrationTask" -rp
+-t "oat\taoAdvancedSearch\model\Metadata\Task\MetadataMigrationTask" -rp
