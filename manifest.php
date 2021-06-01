@@ -20,6 +20,8 @@
 
 use oat\taoAdvancedSearch\scripts\install\RegisterEvents;
 use oat\taoAdvancedSearch\scripts\install\RegisterServices;
+use oat\taoAdvancedSearch\scripts\install\RegisterTaskQueueServices;
+use oat\taoAdvancedSearch\scripts\uninstall\UnRegisterTaskQueueServices;
 
 $managerRole = 'http://www.tao.lu/Ontologies/generis.rdf#advancedSearchManager';
 
@@ -36,11 +38,15 @@ return [
     'install' => [
         'php' => [
             RegisterServices::class,
-            RegisterEvents::class
+            RegisterEvents::class,
+            RegisterTaskQueueServices::class,
         ],
         'rdf' => []
     ],
     'uninstall' => [
+        'php' => [
+            UnRegisterTaskQueueServices::class,
+        ]
     ],
     'routes' => [
     ],
