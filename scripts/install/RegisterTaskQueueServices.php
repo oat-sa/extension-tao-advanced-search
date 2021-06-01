@@ -35,7 +35,7 @@ use oat\tao\model\taskQueue\QueueDispatcherInterface;
 
 class RegisterTaskQueueServices extends InstallAction
 {
-    public const QUEUE_NAME = 'indexation-queue';
+    public const QUEUE_NAME = 'indexation_queue';
 
     public function __invoke($params)
     {

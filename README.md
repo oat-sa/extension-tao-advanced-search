@@ -11,7 +11,7 @@
 ## Installation instructions
 
 ### Worker configuration
-Event processing related to the indexing isolated within separate taskQueue named `indexation-queue`. 
+Event processing related to the indexing isolated within separate taskQueue named `indexation_queue`. 
 It must be configured to work though RDS broker according to [this instruction](https://github.com/oat-sa/extension-tao-task-queue/blob/master/README.md)
 
 ## Create an Indexer
