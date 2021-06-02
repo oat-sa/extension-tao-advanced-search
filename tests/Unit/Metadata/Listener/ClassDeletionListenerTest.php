@@ -28,6 +28,7 @@ use oat\generis\test\MockObject;
 use oat\generis\test\TestCase;
 use oat\tao\elasticsearch\ElasticSearch;
 use oat\tao\model\event\ClassPropertiesChangedEvent;
+use oat\tao\model\search\SearchProxy;
 use oat\taoAdvancedSearch\model\Metadata\Listener\ClassDeletionListener;
 use oat\taoAdvancedSearch\model\Metadata\Listener\UnsupportedEventException;
 use oat\taoAdvancedSearch\model\Metadata\Normalizer\MetadataNormalizer;
@@ -58,7 +59,7 @@ class ClassDeletionListenerTest extends TestCase
         $this->subject->setServiceLocator(
             $this->getServiceLocatorMock(
                 [
-                    ElasticSearch::SERVICE_ID => $this->elasticSearchMock
+                    SearchProxy::SERVICE_ID => $this->elasticSearchMock
                 ]
             )
         );
