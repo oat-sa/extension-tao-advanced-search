@@ -24,8 +24,8 @@ namespace oat\taoAdvancedSearch\model\Metadata\Service;
 
 use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\service\ConfigurableService;
-use oat\tao\elasticsearch\ElasticSearch;
 use oat\tao\elasticsearch\Query;
+use oat\tao\elasticsearch\SearchInterface;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\Lists\Business\Contract\ClassMetadataSearcherInterface;
 use oat\tao\model\Lists\Business\Domain\ClassCollection;
@@ -36,6 +36,7 @@ use oat\tao\model\Lists\Business\Input\ClassMetadataSearchInput;
 use oat\tao\model\Lists\Business\Service\ClassMetadataService;
 use oat\tao\model\Lists\Business\Service\GetClassMetadataValuesService;
 use oat\tao\model\search\ResultSet;
+use oat\tao\model\search\SearchProxy;
 
 class ClassMetadataSearcher extends ConfigurableService implements ClassMetadataSearcherInterface
 {
@@ -158,9 +159,14 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
         return $this->getServiceLocator()->get(AdvancedSearchChecker::class);
     }
 
-    private function getSearcher(): ElasticSearch
+    private function getSearcher(): SearchInterface
     {
-        return $this->getServiceLocator()->get(ElasticSearch::class);
+        return $this->getSearchProxy()->getOption(SearchProxy::OPTION_ADVANCED_SEARCH_CLASS);
+    }
+
+    private function getSearchProxy(): SearchProxy
+    {
+        return $this->getServiceLocator()->get(SearchProxy::class);
     }
 
     private function processResult(ResultSet $result, array $properties, string $classUri): void
