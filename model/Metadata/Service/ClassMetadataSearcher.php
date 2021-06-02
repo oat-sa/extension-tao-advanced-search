@@ -166,7 +166,7 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
 
     private function getSearchProxy(): SearchProxy
     {
-        return $this->getServiceLocator()->get(SearchProxy::class);
+        return $this->getServiceLocator()->get(SearchProxy::SERVICE_ID);
     }
 
     private function processResult(ResultSet $result, array $properties, string $classUri): void

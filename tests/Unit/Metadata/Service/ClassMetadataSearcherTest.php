@@ -32,6 +32,7 @@ use oat\tao\model\Lists\Business\Domain\ClassCollection;
 use oat\tao\model\Lists\Business\Domain\ClassMetadataSearchRequest;
 use oat\tao\model\Lists\Business\Input\ClassMetadataSearchInput;
 use oat\tao\model\Lists\Business\Service\ClassMetadataService;
+use oat\tao\model\search\SearchProxy;
 use oat\taoAdvancedSearch\model\Metadata\Service\ClassMetadataSearcher;
 use PHPUnit\Framework\MockObject\MockObject;
 
@@ -55,13 +56,21 @@ class ClassMetadataSearcherTest extends TestCase
     /** @var core_kernel_classes_Class|MockObject */
     private $classMock;
 
+    /** @var SearchProxy|MockObject */
+    private $searchProxy;
+
     public function setUp(): void
     {
         $this->classMetadataService = $this->createMock(ClassMetadataService::class);
         $this->advancedSearchChecker = $this->createMock(AdvancedSearchChecker::class);
         $this->elasticSearch = $this->createMock(ElasticSearch::class);
+        $this->searchProxy = $this->createMock(SearchProxy::class);
         $this->model = $this->createMock(Ontology::class);
         $this->classMock = $this->createMock(core_kernel_classes_Class::class);
+
+        $this->searchProxy
+            ->method('getOption')
+            ->willReturn($this->elasticSearch);
 
         $this->subject = new ClassMetadataSearcher();
         $this->subject->setServiceLocator(
@@ -69,7 +78,7 @@ class ClassMetadataSearcherTest extends TestCase
                 [
                     ClassMetadataService::SERVICE_ID => $this->classMetadataService,
                     AdvancedSearchChecker::class => $this->advancedSearchChecker,
-                    ElasticSearch::class => $this->elasticSearch,
+                    SearchProxy::SERVICE_ID => $this->searchProxy
                 ]
             )
         );
