@@ -59,9 +59,9 @@ class UnRegisterTaskQueueServices extends InstallAction
         return new Report(Report::TYPE_SUCCESS, 'Indexation TaskQueue unregistered');
     }
 
-    private function isNotIndexationQueue(string $el): bool
+    private function isNotIndexationQueue(string $queueName): bool
     {
-        return $el !== self::QUEUE_NAME;
+        return $queueName !== self::QUEUE_NAME;
     }
 
 }
