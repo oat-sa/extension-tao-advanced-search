@@ -23,6 +23,7 @@ namespace oat\taoAdvancedSearch\scripts\install;
 
 use oat\oatbox\extension\InstallAction;
 use oat\oatbox\reporting\Report;
+use oat\tao\model\search\tasks\AddSearchIndexFromArray;
 use oat\tao\model\search\tasks\DeleteIndexProperty;
 use oat\tao\model\search\tasks\RenameIndexProperties;
 use oat\tao\model\search\tasks\UpdateClassInIndex;
@@ -88,6 +89,7 @@ class RegisterTaskQueueServices extends InstallAction
             DeleteIndexProperty::class => self::QUEUE_NAME,
             RenameIndexProperties::class => self::QUEUE_NAME,
             UpdateDataAccessControlInIndex::class => self::QUEUE_NAME,
+            AddSearchIndexFromArray::class => self::QUEUE_NAME,
         ];
     }
 
