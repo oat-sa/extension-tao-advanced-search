@@ -69,7 +69,7 @@ class ClassMetadataSearcherTest extends TestCase
         $this->classMock = $this->createMock(core_kernel_classes_Class::class);
 
         $this->searchProxy
-            ->method('getOption')
+            ->method('getAdvancedSearch')
             ->willReturn($this->elasticSearch);
 
         $this->subject = new ClassMetadataSearcher();
