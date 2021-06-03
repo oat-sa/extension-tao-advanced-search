@@ -29,9 +29,9 @@ use oat\tao\model\search\tasks\UpdateClassInIndex;
 use oat\tao\model\search\tasks\UpdateDataAccessControlInIndex;
 use oat\tao\model\search\tasks\UpdateResourceInIndex;
 use oat\tao\model\taskQueue\Queue;
-use oat\tao\model\taskQueue\Queue\Broker\InMemoryQueueBroker;
 use oat\tao\model\taskQueue\QueueDispatcher;
 use oat\tao\model\taskQueue\QueueDispatcherInterface;
+use oat\taoTaskQueue\scripts\tools\BrokerFactory;
 
 class RegisterTaskQueueServices extends InstallAction
 {
@@ -39,11 +39,17 @@ class RegisterTaskQueueServices extends InstallAction
 
     public function __invoke($params)
     {
-        /** @var QueueDispatcher $queueService */
-        $queueService = $this->getServiceManager()->get(QueueDispatcher::SERVICE_ID);
-        $existingQueues = $queueService->getOption(QueueDispatcherInterface::OPTION_QUEUES);
+        $factory = $this->getBrokerFactory();
 
-        $newQueue = new Queue(self::QUEUE_NAME, new InMemoryQueueBroker(5), 30);
+        $queueService = $this->getQueueDispatcher();
+        $existingQueues = $queueService->getOption(QueueDispatcherInterface::OPTION_QUEUES);
+        if (in_array(self::QUEUE_NAME, $queueService->getQueueNames())){
+            return new Report(Report::TYPE_ERROR, sprintf('`%s` already exists', self::QUEUE_NAME));
+        }
+        $broker = $factory->create($this->getAddedBrokerType(), 'default', 2);
+        $newQueue = new Queue(self::QUEUE_NAME, $broker, 30);
+        $this->propagate($broker);
+        $broker->createQueue();
 
         $existingOptions = $queueService->getOptions();
         $existingOptions[QueueDispatcherInterface::OPTION_QUEUES] = array_merge($existingQueues, [$newQueue]);
@@ -54,7 +60,24 @@ class RegisterTaskQueueServices extends InstallAction
         $queueService->setOptions($existingOptions);
         $this->getServiceManager()->register(QueueDispatcherInterface::SERVICE_ID, $queueService);
 
-        return new Report(Report::TYPE_SUCCESS, 'Indexation TaskQueue registered');
+        return new Report(
+            Report::TYPE_SUCCESS,
+            sprintf(
+                'Indexation TaskQueue `%s` registered, with broker type of `%s`',
+                self::QUEUE_NAME,
+                get_class($broker)
+            )
+        );
+    }
+
+    public function getAddedBrokerType(): string
+    {
+        $factory =  $this->getBrokerFactory();
+        $queueService = $this->getQueueDispatcher();
+
+        $existingQueues = $queueService->getOption(QueueDispatcherInterface::OPTION_QUEUES);
+
+        return $factory->detectId($existingQueues[0]);
     }
 
     private function getNewAssociations(): array
@@ -66,5 +89,15 @@ class RegisterTaskQueueServices extends InstallAction
             RenameIndexProperties::class => self::QUEUE_NAME,
             UpdateDataAccessControlInIndex::class => self::QUEUE_NAME,
         ];
+    }
+
+    private function getQueueDispatcher(): QueueDispatcher
+    {
+        return $this->getServiceManager()->get(QueueDispatcher::SERVICE_ID);
+    }
+
+    private function getBrokerFactory(): BrokerFactory
+    {
+        return $this->getServiceManager()->get(BrokerFactory::class);
     }
 }
