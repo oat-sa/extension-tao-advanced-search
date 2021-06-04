@@ -30,8 +30,12 @@ use oat\tao\model\search\tasks\UpdateClassInIndex;
 use oat\tao\model\search\tasks\UpdateDataAccessControlInIndex;
 use oat\tao\model\search\tasks\UpdateResourceInIndex;
 use oat\tao\model\taskQueue\Queue;
+use oat\tao\model\taskQueue\Queue\Broker\InMemoryQueueBroker;
 use oat\tao\model\taskQueue\QueueDispatcher;
 use oat\tao\model\taskQueue\QueueDispatcherInterface;
+use oat\taoTaskQueue\model\QueueBroker\NewSqlQueueBroker;
+use oat\taoTaskQueue\model\QueueBroker\RdsQueueBroker;
+use oat\taoTaskQueue\model\QueueBroker\SqsQueueBroker;
 use oat\taoTaskQueue\scripts\tools\BrokerFactory;
 
 class RegisterTaskQueueServices extends InstallAction
@@ -47,7 +51,7 @@ class RegisterTaskQueueServices extends InstallAction
         if (in_array(self::QUEUE_NAME, $queueService->getQueueNames())){
             return new Report(Report::TYPE_ERROR, sprintf('`%s` already exists', self::QUEUE_NAME));
         }
-        $broker = $factory->create($this->getAddedBrokerType(), 'default', 2);
+        $broker = $factory->create($this->detectNeededBrokerType(), 'default', 2);
         $newQueue = new Queue(self::QUEUE_NAME, $broker, 30);
         $this->propagate($broker);
         $broker->createQueue();
@@ -71,14 +75,25 @@ class RegisterTaskQueueServices extends InstallAction
         );
     }
 
-    public function getAddedBrokerType(): string
+    public function detectNeededBrokerType(): ?string
     {
-        $factory =  $this->getBrokerFactory();
         $queueService = $this->getQueueDispatcher();
 
         $existingQueues = $queueService->getOption(QueueDispatcherInterface::OPTION_QUEUES);
+        $queue = $existingQueues[0];
 
-        return $factory->detectId($existingQueues[0]);
+        switch (get_class($queue->getBroker())) {
+            case InMemoryQueueBroker::class:
+                return BrokerFactory::BROKER_MEMORY;
+            case RdsQueueBroker::class:
+                return BrokerFactory::BROKER_RDS;
+            case NewSqlQueueBroker::class:
+                return BrokerFactory::BROKER_NEW_SQL;
+            case SqsQueueBroker::class:
+                return BrokerFactory::BROKER_SQS;
+        }
+
+        return null;
     }
 
     private function getNewAssociations(): array

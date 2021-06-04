@@ -25,7 +25,7 @@ final class Version202106011320101488_taoAdvancedSearch extends AbstractMigratio
         $this->propagate($registrationService);
         $registrationService->__invoke([]);
 
-        if ( BrokerFactory::BROKER_MEMORY !== $registrationService->getAddedBrokerType()){
+        if ( BrokerFactory::BROKER_MEMORY !== $registrationService->detectNeededBrokerType()){
             $this->addReport(Report::createWarning(
                 sprintf('New worker must be created to proceed tasks from queue named `%s`',RegisterTaskQueueServices::QUEUE_NAME)
             ));
