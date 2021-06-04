@@ -30,6 +30,7 @@ use oat\tao\model\search\tasks\RenameIndexProperties;
 use oat\tao\model\search\tasks\UpdateClassInIndex;
 use oat\tao\model\search\tasks\UpdateDataAccessControlInIndex;
 use oat\tao\model\search\tasks\UpdateResourceInIndex;
+use oat\tao\model\taskQueue\QueueDispatcherInterface;
 use oat\taoTaskQueue\model\Service\QueueAssociationService;
 
 class RegisterTaskQueueServices extends InstallAction
@@ -41,13 +42,13 @@ class RegisterTaskQueueServices extends InstallAction
         $newQueueName = $this->getQueueName();
         $newAssociations = $this->getNewAssociations($this->getQueueName());
 
-        try{
-            $broker = $this->getAssociationService()->createAndAssociate($newQueueName, $newAssociations);
-        }catch (Exception $exception){
+        try {
+            $broker = $this->getAssociationService()->associateBulk($newQueueName, $newAssociations);
+        } catch (Exception $exception) {
             return new Report(Report::TYPE_ERROR, $exception->getMessage());
         }
 
-        $broker->createQueue();
+        $this->getQueueDispatcher()->initialize();
 
         return new Report(
             Report::TYPE_SUCCESS,
@@ -78,5 +79,10 @@ class RegisterTaskQueueServices extends InstallAction
 
     private function getAssociationService(): QueueAssociationService{
         return $this->getServiceManager()->get(QueueAssociationService::class);
+    }
+
+    private function getQueueDispatcher(): QueueDispatcherInterface
+    {
+        return $this->getServiceLocator()->get(QueueDispatcherInterface::SERVICE_ID);
     }
 }
