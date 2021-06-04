@@ -15,12 +15,13 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2017-2021 (original work) Open Assessment Technologies SA (under the project TAO-PRODUCT);
+ * Copyright (c) 2021 (original work) Open Assessment Technologies SA (under the project TAO-PRODUCT);
  *
  */
 
 namespace oat\taoAdvancedSearch\scripts\install;
 
+use Exception;
 use oat\oatbox\extension\InstallAction;
 use oat\oatbox\reporting\Report;
 use oat\tao\model\search\tasks\AddSearchIndexFromArray;
@@ -29,14 +30,7 @@ use oat\tao\model\search\tasks\RenameIndexProperties;
 use oat\tao\model\search\tasks\UpdateClassInIndex;
 use oat\tao\model\search\tasks\UpdateDataAccessControlInIndex;
 use oat\tao\model\search\tasks\UpdateResourceInIndex;
-use oat\tao\model\taskQueue\Queue;
-use oat\tao\model\taskQueue\Queue\Broker\InMemoryQueueBroker;
-use oat\tao\model\taskQueue\QueueDispatcher;
-use oat\tao\model\taskQueue\QueueDispatcherInterface;
-use oat\taoTaskQueue\model\QueueBroker\NewSqlQueueBroker;
-use oat\taoTaskQueue\model\QueueBroker\RdsQueueBroker;
-use oat\taoTaskQueue\model\QueueBroker\SqsQueueBroker;
-use oat\taoTaskQueue\scripts\tools\BrokerFactory;
+use oat\taoTaskQueue\model\Service\QueueAssociationService;
 
 class RegisterTaskQueueServices extends InstallAction
 {
@@ -44,77 +38,45 @@ class RegisterTaskQueueServices extends InstallAction
 
     public function __invoke($params)
     {
-        $factory = $this->getBrokerFactory();
+        $newQueueName = $this->getQueueName();
+        $newAssociations = $this->getNewAssociations($this->getQueueName());
 
-        $queueService = $this->getQueueDispatcher();
-        $existingQueues = $queueService->getOption(QueueDispatcherInterface::OPTION_QUEUES);
-        if (in_array(self::QUEUE_NAME, $queueService->getQueueNames())){
-            return new Report(Report::TYPE_ERROR, sprintf('`%s` already exists', self::QUEUE_NAME));
+        try{
+            $broker = $this->getAssociationService()->createAndAssociate($newQueueName, $newAssociations);
+        }catch (Exception $exception){
+            return new Report(Report::TYPE_ERROR, $exception->getMessage());
         }
-        $broker = $factory->create($this->detectNeededBrokerType(), 'default', 2);
-        $newQueue = new Queue(self::QUEUE_NAME, $broker, 30);
-        $this->propagate($broker);
+
         $broker->createQueue();
-
-        $existingOptions = $queueService->getOptions();
-        $existingOptions[QueueDispatcherInterface::OPTION_QUEUES] = array_merge($existingQueues, [$newQueue]);
-
-        $existingAssociations = $existingOptions[QueueDispatcherInterface::OPTION_TASK_TO_QUEUE_ASSOCIATIONS];
-        $existingOptions[QueueDispatcherInterface::OPTION_TASK_TO_QUEUE_ASSOCIATIONS] = array_merge($existingAssociations, $this->getNewAssociations());
-
-        $queueService->setOptions($existingOptions);
-        $this->getServiceManager()->register(QueueDispatcherInterface::SERVICE_ID, $queueService);
 
         return new Report(
             Report::TYPE_SUCCESS,
             sprintf(
                 'Indexation TaskQueue `%s` registered, with broker type of `%s`',
-                self::QUEUE_NAME,
+                $newQueueName,
                 get_class($broker)
             )
         );
     }
 
-    public function detectNeededBrokerType(): ?string
-    {
-        $queueService = $this->getQueueDispatcher();
-
-        $existingQueues = $queueService->getOption(QueueDispatcherInterface::OPTION_QUEUES);
-        $queue = $existingQueues[0];
-
-        switch (get_class($queue->getBroker())) {
-            case InMemoryQueueBroker::class:
-                return BrokerFactory::BROKER_MEMORY;
-            case RdsQueueBroker::class:
-                return BrokerFactory::BROKER_RDS;
-            case NewSqlQueueBroker::class:
-                return BrokerFactory::BROKER_NEW_SQL;
-            case SqsQueueBroker::class:
-                return BrokerFactory::BROKER_SQS;
-        }
-
-        return null;
-    }
-
-    private function getNewAssociations(): array
+    private function getNewAssociations(string $queueName): array
     {
         return [
-            UpdateResourceInIndex::class => self::QUEUE_NAME,
-            UpdateClassInIndex::class => self::QUEUE_NAME,
-            DeleteIndexProperty::class => self::QUEUE_NAME,
-            RenameIndexProperties::class => self::QUEUE_NAME,
-            UpdateDataAccessControlInIndex::class => self::QUEUE_NAME,
-            AddSearchIndexFromArray::class => self::QUEUE_NAME,
+            UpdateResourceInIndex::class => $queueName,
+            UpdateClassInIndex::class => $queueName,
+            DeleteIndexProperty::class => $queueName,
+            RenameIndexProperties::class => $queueName,
+            UpdateDataAccessControlInIndex::class => $queueName,
+            AddSearchIndexFromArray::class => $queueName,
         ];
     }
 
-    private function getQueueDispatcher(): QueueDispatcher
+    public function getQueueName(): string
     {
-        return $this->getServiceManager()->get(QueueDispatcher::SERVICE_ID);
+        return self::QUEUE_NAME;
     }
 
-    private function getBrokerFactory(): BrokerFactory
-    {
-        return $this->getServiceManager()->get(BrokerFactory::class);
+    private function getAssociationService(): QueueAssociationService{
+        return $this->getServiceManager()->get(QueueAssociationService::class);
     }
 }

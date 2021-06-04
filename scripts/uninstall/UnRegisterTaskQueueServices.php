@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2017-2021 (original work) Open Assessment Technologies SA (under the project TAO-PRODUCT);
+ * Copyright (c) 2021 (original work) Open Assessment Technologies SA (under the project TAO-PRODUCT);
  *
  */
 
@@ -23,10 +23,8 @@ namespace oat\taoAdvancedSearch\scripts\uninstall;
 
 use oat\oatbox\extension\InstallAction;
 use oat\oatbox\reporting\Report;
-use oat\tao\model\taskQueue\Queue;
-use oat\tao\model\taskQueue\QueueDispatcher;
-use oat\tao\model\taskQueue\QueueDispatcherInterface;
 use oat\taoAdvancedSearch\scripts\install\RegisterTaskQueueServices;
+use oat\taoTaskQueue\model\Service\QueueAssociationService;
 
 class UnRegisterTaskQueueServices extends InstallAction
 {
@@ -34,34 +32,15 @@ class UnRegisterTaskQueueServices extends InstallAction
 
     public function __invoke($params)
     {
-        /** @var QueueDispatcher $queueService */
-        $queueService   = $this->getServiceManager()->get(QueueDispatcher::SERVICE_ID);
-        $existingQueues = $queueService->getOption(QueueDispatcherInterface::OPTION_QUEUES);
+        $queueName = self::QUEUE_NAME;
 
-        $newQueue = [];
-        /** @var Queue $queue */
-        foreach ($existingQueues as $queue) {
-            if ($queue->getName() !== self::QUEUE_NAME) {
-                $newQueue[] = $queue;
-            }
-        }
+        $this->getAssociationService()->deleteAndRemoveAssociations($queueName);
 
-        $existingOptions = $queueService->getOptions();
-        $existingOptions[QueueDispatcherInterface::OPTION_QUEUES] = $newQueue;
-
-        $existingAssociations = $existingOptions[QueueDispatcherInterface::OPTION_TASK_TO_QUEUE_ASSOCIATIONS];
-        $newAssociations = array_filter($existingAssociations, [$this, 'isNotIndexationQueue']);
-        $existingOptions[QueueDispatcherInterface::OPTION_TASK_TO_QUEUE_ASSOCIATIONS] = $newAssociations;
-
-        $queueService->setOptions($existingOptions);
-        $this->getServiceManager()->register(QueueDispatcherInterface::SERVICE_ID, $queueService);
-
-        return new Report(Report::TYPE_SUCCESS, 'Indexation TaskQueue unregistered');
+        return new Report(Report::TYPE_SUCCESS, 'Indexation TaskQueue `%s` was unregistered', $queueName);
     }
 
-    private function isNotIndexationQueue(string $queueName): bool
-    {
-        return $queueName !== self::QUEUE_NAME;
+    private function getAssociationService(): QueueAssociationService{
+        return $this->getServiceManager()->get(QueueAssociationService::class);
     }
 
 }

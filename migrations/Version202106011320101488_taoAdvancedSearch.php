@@ -9,6 +9,7 @@ use oat\oatbox\reporting\Report;
 use oat\tao\scripts\tools\migrations\AbstractMigration;
 use oat\taoAdvancedSearch\scripts\install\RegisterTaskQueueServices;
 use oat\taoAdvancedSearch\scripts\uninstall\UnRegisterTaskQueueServices;
+use oat\taoTaskQueue\model\Service\QueueAssociationService;
 use oat\taoTaskQueue\scripts\tools\BrokerFactory;
 
 final class Version202106011320101488_taoAdvancedSearch extends AbstractMigration
@@ -25,9 +26,9 @@ final class Version202106011320101488_taoAdvancedSearch extends AbstractMigratio
         $this->propagate($registrationService);
         $registrationService->__invoke([]);
 
-        if ( BrokerFactory::BROKER_MEMORY !== $registrationService->detectNeededBrokerType()){
+        if ( BrokerFactory::BROKER_MEMORY !== $this->getAssocitationService()->detectNeededBrokerType()){
             $this->addReport(Report::createWarning(
-                sprintf('New worker must be created to proceed tasks from queue named `%s`',RegisterTaskQueueServices::QUEUE_NAME)
+                sprintf('New worker must be created to proceed tasks from queue named `%s`',$registrationService->getQueueName())
             ));
         }
     }
@@ -37,5 +38,10 @@ final class Version202106011320101488_taoAdvancedSearch extends AbstractMigratio
         $registrationService = new UnRegisterTaskQueueServices();
         $this->propagate($registrationService);
         $registrationService->__invoke([]);
+    }
+
+    private function getAssocitationService(): QueueAssociationService
+    {
+        return $this->getServiceManager()->get(QueueAssociationService::class);
     }
 }
