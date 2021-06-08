@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\tests\Unit\Index\Service;
 
 use oat\generis\test\TestCase;
+use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\search\tasks\AddSearchIndexFromArray;
 use oat\tao\model\task\migration\ResultUnit;
 use oat\tao\model\taskQueue\QueueDispatcherInterface;
@@ -41,18 +42,22 @@ class ResultIndexerTest extends TestCase
 
     /** @var QueueDispatcherInterface|MockObject */
     private $queueDispatcher;
+    /** @var AdvancedSearchChecker|MockObject  */
+    private $advancedSearchChecker;
 
     public function setUp(): void
     {
         $this->normalizer = $this->createMock(NormalizerInterface::class);
         $this->queueDispatcher = $this->createMock(QueueDispatcherInterface::class);
+        $this->advancedSearchChecker = $this->createMock(AdvancedSearchChecker::class);
 
         $this->indexer = new ResultIndexer();
         $this->indexer->setNormalizer($this->normalizer);
         $this->indexer->setServiceLocator(
             $this->getServiceLocatorMock(
                 [
-                    QueueDispatcherInterface::SERVICE_ID => $this->queueDispatcher
+                    QueueDispatcherInterface::SERVICE_ID => $this->queueDispatcher,
+                    AdvancedSearchChecker::class => $this->advancedSearchChecker,
                 ]
             )
         );
@@ -62,6 +67,7 @@ class ResultIndexerTest extends TestCase
     {
         $resource = new ResultUnit('something');
 
+        $this->advancedSearchChecker->method('isEnabled')->willReturn(true);
         $this->normalizer
             ->expects($this->once())
             ->method('normalize')
@@ -85,6 +91,18 @@ class ResultIndexerTest extends TestCase
                 ],
                 __('Adding/Updating search index for label')
             );
+
+        $this->indexer->addIndex($resource);
+    }
+
+    public function testAddIndexNonQueued(): void
+    {
+        $resource = new ResultUnit('something');
+
+        $this->advancedSearchChecker->method('isEnabled')->willReturn(false);
+        $this->queueDispatcher
+            ->expects($this->never())
+            ->method('createTask');
 
         $this->indexer->addIndex($resource);
     }
