@@ -42,6 +42,7 @@ class ResultIndexerTest extends TestCase
 
     /** @var QueueDispatcherInterface|MockObject */
     private $queueDispatcher;
+
     /** @var AdvancedSearchChecker|MockObject  */
     private $advancedSearchChecker;
 

@@ -45,6 +45,7 @@ class ResultIndexer extends ConfigurableService implements IndexerInterface
         if (!$this->getServiceLocator()->get(AdvancedSearchChecker::class)->isEnabled()) {
             return;
         }
+        
         $normalizedResource = $this->normalizer->normalize($resource);
 
         $this->getQueueDispatcher()->createTask(
