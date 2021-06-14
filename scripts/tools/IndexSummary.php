@@ -84,10 +84,15 @@ class IndexSummary extends ScriptAction implements ServiceLocatorAwareInterface
             $query->setLimit(1);
 
             $result = $advancedSearch->search($query);
+            $totalIndexed = $result->getTotalCount();
+            $percentage = $totalIndexed === 0 || $total === 0 ? 0 : (float) min(round($totalIndexed / $total * 100, 2), 100);
+            $missingIndex = $total - $totalIndexed;
 
             $report = Report::createInfo($classPresentation);
             $report->add(Report::createInfo('Total in DB: ' . $total));
-            $report->add(Report::createInfo('Total indexed "' . $classData['index'] . '": ' . $result->getTotalCount()));
+            $report->add(Report::createInfo('Total indexed "' . $classData['index'] . '": ' . $totalIndexed));
+            $report->add(Report::createInfo('Percentage indexed: ' . $percentage . '%'));
+            $report->add(Report::createInfo('Missing items: ' . $missingIndex));
 
             $mainReport->add($report);
         }
