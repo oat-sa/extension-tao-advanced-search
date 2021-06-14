@@ -25,6 +25,7 @@ namespace oat\taoAdvancedSearch\scripts\tools;
 use core_kernel_classes_Class;
 use core_kernel_classes_ClassIterator;
 use DateTime;
+use DateTimeInterface;
 use oat\generis\model\kernel\persistence\smoothsql\search\ComplexSearchService;
 use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\extension\script\ScriptAction;
@@ -226,7 +227,7 @@ class IndexPopulator extends ScriptAction implements ServiceLocatorAwareInterfac
         return Report::createSuccess(
             sprintf(
                 'Finished at %s. Indexed %d resources for class: %s (%s).',
-                (new DateTime('now'))->format(DateTime::ATOM),
+                (new DateTime('now'))->format(DateTimeInterface::ATOM),
                 $result,
                 $class->getLabel(),
                 $class->getUri()
