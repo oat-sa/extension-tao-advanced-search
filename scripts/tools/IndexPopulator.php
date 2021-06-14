@@ -279,6 +279,7 @@ class IndexPopulator extends ScriptAction implements ServiceLocatorAwareInterfac
             $this->propagate($indexIterator);
 
             try {
+                //@FIXME @TODO Cut in 100k inside
                 $batchResults = $this->getSearch()->index($indexIterator);
                 $totalResults += $batchResults;
 

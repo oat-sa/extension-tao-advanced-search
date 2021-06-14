@@ -20,22 +20,23 @@
 
 declare(strict_types=1);
 
-namespace oat\taoAdvancedSearch\model\DeliveryResult\Factory;
+namespace oat\taoAdvancedSearch\tests\Unit\Index\Report;
 
-use oat\tao\model\task\migration\service\ResultFilterFactory;
-use oat\tao\model\task\migration\service\ResultFilterFactoryInterface;
-use oat\taoAdvancedSearch\model\DeliveryResult\Repository\DeliveryResultRepository;
-use oat\taoAdvancedSearch\model\DeliveryResult\Repository\DeliveryResultRepositoryInterface;
+use oat\generis\test\TestCase;
+use oat\taoAdvancedSearch\model\Index\Report\IndexSummarizer;
 
-class DeliveryResultFilterFactory extends ResultFilterFactory implements ResultFilterFactoryInterface
+class IndexSummarizerTest extends TestCase
 {
-    protected function getMax(): int
+    /** @var IndexSummarizer */
+    private $subject;
+
+    public function setUp(): void
     {
-        return $this->getDeliveryResultRepository()->getTotal();
+        $this->subject = new IndexSummarizer();
     }
 
-    private function getDeliveryResultRepository(): DeliveryResultRepositoryInterface
+    public function testProcess(): void
     {
-        return $this->getServiceLocator()->get(DeliveryResultRepository::class);
+        $this->markTestSkipped('TODO');
     }
 }

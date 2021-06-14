@@ -25,14 +25,7 @@ namespace oat\taoAdvancedSearch\scripts\tools;
 use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\extension\script\ScriptAction;
 use oat\oatbox\reporting\Report;
-use oat\tao\elasticsearch\ElasticSearch;
-use oat\tao\elasticsearch\IndexerInterface;
-use oat\tao\elasticsearch\Query;
-use oat\tao\model\search\SearchProxy;
-use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriCachedRepository;
-use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriRepositoryInterface;
-use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepository;
-use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepositoryInterface;
+use oat\taoAdvancedSearch\model\Index\Report\IndexSummarizer;
 use Zend\ServiceManager\ServiceLocatorAwareInterface;
 use Zend\ServiceManager\ServiceLocatorAwareTrait;
 
@@ -65,73 +58,27 @@ class IndexSummary extends ScriptAction implements ServiceLocatorAwareInterface
      */
     protected function run(): Report
     {
-        $mainReport = Report::createSuccess('Index vs Storage');
+        $mainReport = Report::createInfo('Index vs Storage');
 
-        foreach ($this->getIndexableClassRepository()->findAll() as $class) {
-            $report = $this->createReport(
-                $class->getLabel() . ' (' . $class->getUri() . ')',
-                $this->getIndexName($class->getUri()),
-                $class->countInstances([], ['recursive' => true])
-            );
+        foreach ($this->getIndexSummarizer()->summarize() as $data) {
+            $totalIndexed = $data['totalIndexed'];
+            $percentage = $data['percentageIndexed'];
+            $missingIndex = $data['totalMissingIndexation'];
+
+            $report = Report::createInfo($data['label']);
+            $report->add(Report::createSuccess('Total in DB: ' . $data['totalInDb']));
+            $report->add(Report::createSuccess('Total indexed "' . $data['index'] . '": ' . $totalIndexed));
+            $report->add(new Report($percentage < 100 ? Report::TYPE_ERROR : Report::TYPE_SUCCESS, 'Percentage indexed: ' . $percentage . '%'));
+            $report->add(new Report($missingIndex > 0 ? Report::TYPE_ERROR : Report::TYPE_SUCCESS, 'Missing items: ' . $missingIndex));
 
             $mainReport->add($report);
         }
 
-        $mainReport->add(
-            $this->createReport(
-                'Metadata',
-                'property-list',
-                $this->getClassUriRepository()->getTotal()
-            )
-        );
-
         return $mainReport;
     }
 
-    private function getIndexName(string $classUri): ?string
+    private function getIndexSummarizer(): IndexSummarizer
     {
-        return IndexerInterface::AVAILABLE_INDEXES[$classUri] ?? null;
-    }
-
-    private function getTotalResults(string $index): int
-    {
-        /** @var ElasticSearch $advancedSearch */
-        $advancedSearch = $this->getSearchProxy()->getAdvancedSearch();
-
-        $query = new Query($index);
-        $query->addCondition('*');
-        $query->setLimit(1);
-
-        return $advancedSearch->search($query)->getTotalCount();
-    }
-
-    private function createReport(string $classPresentation, string $index, int $totalInDb): Report
-    {
-        $totalIndexed = $this->getTotalResults($index);
-        $percentage = $totalIndexed === 0 || $totalInDb === 0 ? 0 : (float)min(round($totalIndexed / $totalInDb * 100, 2), 100);
-        $missingIndex = $totalInDb - $totalIndexed;
-
-        $report = Report::createInfo($classPresentation);
-        $report->add(Report::createSuccess('Total in DB: ' . $totalInDb));
-        $report->add(Report::createSuccess('Total indexed "' . $index . '": ' . $totalIndexed));
-        $report->add(new Report($percentage < 100 ? Report::TYPE_ERROR : Report::TYPE_SUCCESS, 'Percentage indexed: ' . $percentage . '%'));
-        $report->add(new Report($missingIndex > 0 ? Report::TYPE_ERROR : Report::TYPE_SUCCESS, 'Missing items: ' . $missingIndex));
-
-        return $report;
-    }
-
-    private function getIndexableClassRepository(): IndexableClassRepositoryInterface
-    {
-        return $this->getServiceLocator()->get(IndexableClassRepository::class);
-    }
-
-    private function getSearchProxy(): SearchProxy
-    {
-        return $this->getServiceLocator()->get(SearchProxy::SERVICE_ID);
-    }
-
-    private function getClassUriRepository(): ClassUriRepositoryInterface
-    {
-        return $this->getServiceLocator()->get(ClassUriCachedRepository::class);
+        return $this->getServiceLocator()->get(IndexSummarizer::class);
     }
 }

@@ -22,15 +22,11 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\DeliveryResult\Factory;
 
-use core_kernel_classes_Resource;
-use oat\generis\model\kernel\persistence\smoothsql\search\ResourceSearchService;
 use oat\generis\test\TestCase;
-use oat\search\ResultSet;
 use oat\tao\test\unit\helpers\NoPrivacyTrait;
 use oat\taoAdvancedSearch\model\DeliveryResult\Factory\DeliveryResultFilterFactory;
-use oat\taoOutcomeUi\model\Builder\ResultsServiceBuilder;
-use oat\taoOutcomeUi\model\ResultsService;
-use oat\taoResultServer\models\classes\ResultManagement;
+use oat\taoAdvancedSearch\model\DeliveryResult\Repository\DeliveryResultRepository;
+use oat\taoAdvancedSearch\model\DeliveryResult\Repository\DeliveryResultRepositoryInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 
 class DeliveryResultFilterFactoryTest extends TestCase
@@ -40,39 +36,18 @@ class DeliveryResultFilterFactoryTest extends TestCase
     /** @var DeliveryResultFilterFactory */
     private $subject;
 
-    /** @var ResultsService|MockObject */
-    private $resultsService;
-
-    /** @var ResultsServiceBuilder|MockObject */
-    private $resultsServiceBuilder;
-
-    /** @var ResourceSearchService|MockObject */
-    private $resourceSearchService;
-
-    /** @var ResultManagement|MockObject */
-    private $resultManagement;
+    /** @var DeliveryResultRepositoryInterface|MockObject */
+    private $deliveryResultRepository;
 
     public function setUp(): void
     {
-        $this->resultsService = $this->createMock(ResultsService::class);
-        $this->resultManagement = $this->createMock(ResultManagement::class);
-        $this->resultsServiceBuilder = $this->createMock(ResultsServiceBuilder::class);
-        $this->resourceSearchService = $this->createMock(ResourceSearchService::class);
-
-        $this->resultsServiceBuilder
-            ->method('build')
-            ->willReturn($this->resultsService);
-
-        $this->resultsService
-            ->method('getImplementation')
-            ->willReturn($this->resultManagement);
+        $this->deliveryResultRepository = $this->createMock(DeliveryResultRepositoryInterface::class);
 
         $this->subject = new DeliveryResultFilterFactory();
         $this->subject->setServiceLocator(
             $this->getServiceLocatorMock(
                 [
-                    ResultsServiceBuilder::class => $this->resultsServiceBuilder,
-                    ResourceSearchService::class => $this->resourceSearchService,
+                    DeliveryResultRepository::class => $this->deliveryResultRepository,
                 ]
             )
         );
@@ -80,20 +55,8 @@ class DeliveryResultFilterFactoryTest extends TestCase
 
     public function testGetMax(): void
     {
-        $this->resourceSearchService
-            ->method('findByClassUri')
-            ->willReturn(
-                new ResultSet(
-                    [
-                        new core_kernel_classes_Resource('uri')
-                    ],
-                    1
-                )
-            );
-
-        $this->resultManagement
-            ->method('countResultByDelivery')
-            ->with(['uri'])
+        $this->deliveryResultRepository
+            ->method('getTotal')
             ->willReturn(777);
 
         $this->assertEquals(777, $this->invokePrivateMethod($this->subject, 'getMax', []));
