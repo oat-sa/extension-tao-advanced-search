@@ -22,15 +22,15 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\scripts\tools;
 
-use core_kernel_classes_Class;
 use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\extension\script\ScriptAction;
 use oat\oatbox\reporting\Report;
 use oat\tao\elasticsearch\ElasticSearch;
 use oat\tao\elasticsearch\IndexerInterface;
 use oat\tao\elasticsearch\Query;
-use oat\tao\model\menu\MenuService;
 use oat\tao\model\search\SearchProxy;
+use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriCachedRepository;
+use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriRepositoryInterface;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepository;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepositoryInterface;
 use Zend\ServiceManager\ServiceLocatorAwareInterface;
@@ -65,52 +65,59 @@ class IndexSummary extends ScriptAction implements ServiceLocatorAwareInterface
      */
     protected function run(): Report
     {
-        $classes = $this->getIndexedClasses();
+        $mainReport = Report::createSuccess('Index vs Storage');
 
-        $mainReport = Report::createInfo('Index vs Storage');
-
-        /** @var ElasticSearch $advancedSearch */
-        $advancedSearch = $this->getSearchProxy()->getAdvancedSearch();
-
-        foreach ($classes as $classData) {
-            /** @var core_kernel_classes_Class $class */
-            $class = $classData['class'];
-            $classPresentation = $class->getLabel() . '(' . $class->getUri() . ')';
-            $total = $class->countInstances([], ['recursive' => true]);
-
-            $query = new Query($classData['index']);
-            $query->addCondition('*');
-            $query->setLimit(1);
-
-            $result = $advancedSearch->search($query);
-            $totalIndexed = $result->getTotalCount();
-            $percentage = $totalIndexed === 0 || $total === 0 ? 0 : (float)min(round($totalIndexed / $total * 100, 2), 100);
-            $missingIndex = $total - $totalIndexed;
-
-            $report = Report::createInfo($classPresentation);
-            $report->add(Report::createSuccess('Total in DB: ' . $total));
-            $report->add(Report::createSuccess('Total indexed "' . $classData['index'] . '": ' . $totalIndexed));
-            $report->add(new Report($percentage < 100 ? Report::TYPE_ERROR : Report::TYPE_SUCCESS, 'Percentage indexed: ' . $percentage . '%'));
-            $report->add(new Report($missingIndex > 0 ? Report::TYPE_ERROR : Report::TYPE_SUCCESS, 'Missing items: ' . $missingIndex));
+        foreach ($this->getIndexableClassRepository()->findAll() as $class) {
+            $report = $this->createReport(
+                $class->getLabel() . '(' . $class->getUri() . ')',
+                $this->getIndexName($class->getUri()),
+                $class->countInstances([], ['recursive' => true])
+            );
 
             $mainReport->add($report);
         }
 
+        $mainReport->add(
+            $this->createReport(
+                'Metadata',
+                'property-list',
+                $this->getClassUriRepository()->getTotal()
+            )
+        );
+
         return $mainReport;
     }
 
-    private function getIndexedClasses(): array
+    private function getIndexName(string $classUri): ?string
     {
-        $classes = [];
+        return IndexerInterface::AVAILABLE_INDEXES[$classUri] ?? null;
+    }
 
-        foreach ($this->getIndexableClassRepository()->findAll() as $class) {
-            $classes[] = [
-                'index' => IndexerInterface::AVAILABLE_INDEXES[$class->getUri()] ?? null,
-                'class' => $class,
-            ];
-        }
+    private function getTotalResults(string $index): int
+    {
+        /** @var ElasticSearch $advancedSearch */
+        $advancedSearch = $this->getSearchProxy()->getAdvancedSearch();
 
-        return $classes;
+        $query = new Query($index);
+        $query->addCondition('*');
+        $query->setLimit(1);
+
+        return $advancedSearch->search($query)->getTotalCount();
+    }
+
+    private function createReport(string $classPresentation, string $index, int $totalInDb): Report
+    {
+        $totalIndexed = $this->getTotalResults($index);
+        $percentage = $totalIndexed === 0 || $totalInDb === 0 ? 0 : (float)min(round($totalIndexed / $totalInDb * 100, 2), 100);
+        $missingIndex = $totalInDb - $totalIndexed;
+
+        $report = Report::createInfo($classPresentation);
+        $report->add(Report::createSuccess('Total in DB: ' . $totalInDb));
+        $report->add(Report::createSuccess('Total indexed "' . $index . '": ' . $totalIndexed));
+        $report->add(new Report($percentage < 100 ? Report::TYPE_ERROR : Report::TYPE_SUCCESS, 'Percentage indexed: ' . $percentage . '%'));
+        $report->add(new Report($missingIndex > 0 ? Report::TYPE_ERROR : Report::TYPE_SUCCESS, 'Missing items: ' . $missingIndex));
+
+        return $report;
     }
 
     private function getIndexableClassRepository(): IndexableClassRepositoryInterface
@@ -121,5 +128,10 @@ class IndexSummary extends ScriptAction implements ServiceLocatorAwareInterface
     private function getSearchProxy(): SearchProxy
     {
         return $this->getServiceLocator()->get(SearchProxy::SERVICE_ID);
+    }
+
+    private function getClassUriRepository(): ClassUriRepositoryInterface
+    {
+        return $this->getServiceLocator()->get(ClassUriCachedRepository::class);
     }
 }
