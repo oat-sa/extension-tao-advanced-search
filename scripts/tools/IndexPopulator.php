@@ -24,6 +24,7 @@ namespace oat\taoAdvancedSearch\scripts\tools;
 
 use core_kernel_classes_Class;
 use core_kernel_classes_ClassIterator;
+use core_kernel_classes_Resource;
 use DateTime;
 use DateTimeInterface;
 use oat\generis\model\kernel\persistence\smoothsql\search\ComplexSearchService;
@@ -308,8 +309,15 @@ class IndexPopulator extends ScriptAction implements ServiceLocatorAwareInterfac
                     $this->logInfo($message);
                 }
             } catch (Throwable $exception) {
+                $resourceIds = array_map(
+                    function (core_kernel_classes_Resource $resource) {
+                        return $resource->getUri() . ': ' . $resource->getLabel();
+                    },
+                    $resources
+                );
+
                 $message = sprintf(
-                    'Error indexing batch for class %s (%s) by %s. offset: %s, limit %s: %s',
+                    'Error indexing batch for class %s (%s) by %s. offset: %s, limit %s: %s. Check logs for details',
                     $class->getLabel(),
                     $class->getUri(),
                     static::class,
@@ -320,7 +328,7 @@ class IndexPopulator extends ScriptAction implements ServiceLocatorAwareInterfac
 
                 $report->add(Report::createError($message));
 
-                $this->logError($message);
+                $this->logError($message . ' - Resources: ' . implode(',', $resourceIds));
             }
         }
 
