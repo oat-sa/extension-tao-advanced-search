@@ -69,7 +69,7 @@ class IndexSummary extends ScriptAction implements ServiceLocatorAwareInterface
 
         foreach ($this->getIndexableClassRepository()->findAll() as $class) {
             $report = $this->createReport(
-                $class->getLabel() . '(' . $class->getUri() . ')',
+                $class->getLabel() . ' (' . $class->getUri() . ')',
                 $this->getIndexName($class->getUri()),
                 $class->countInstances([], ['recursive' => true])
             );

@@ -78,3 +78,50 @@ This is necessary to optimize indexation:
 ```shell script
 ./taoAdvancedSearch/scripts/tools/IndexDeliveryResults.sh --help
 ```
+
+## Getting statistics
+
+Execute following command:
+```shell
+php index.php '\oat\taoAdvancedSearch\scripts\tools\IndexSummary'
+```
+
+Output example:
+```shell
+Index vs Storage
+  Item (http://www.tao.lu/Ontologies/TAOItem.rdf#Item)
+    Total in DB: 14
+    Total indexed "items": 14
+    Percentage indexed: 100%
+    Missing items: 0
+  Test (http://www.tao.lu/Ontologies/TAOTest.rdf#Test)
+    Total in DB: 10
+    Total indexed "tests": 10
+    Percentage indexed: 100%
+    Missing items: 0
+  Test-taker (http://www.tao.lu/Ontologies/TAOSubject.rdf#Subject)
+    Total in DB: 6
+    Total indexed "test-takers": 6
+    Percentage indexed: 100%
+    Missing items: 0
+  Group (http://www.tao.lu/Ontologies/TAOGroup.rdf#Group)
+    Total in DB: 5
+    Total indexed "groups": 5
+    Percentage indexed: 100%
+    Missing items: 0
+  Assembled Delivery (http://www.tao.lu/Ontologies/TAODelivery.rdf#AssembledDelivery)
+    Total in DB: 0
+    Total indexed "deliveries": 0
+    Percentage indexed: 0%
+    Missing items: 0
+  Assets (http://www.tao.lu/Ontologies/TAOMedia.rdf#Media)
+    Total in DB: 4
+    Total indexed "assets": 4
+    Percentage indexed: 100%
+    Missing items: 0
+  Metadata
+    Total in DB: 23
+    Total indexed "property-list": 2
+    Percentage indexed: 8.7%
+    Missing items: 21
+```
