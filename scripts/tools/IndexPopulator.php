@@ -272,7 +272,8 @@ class IndexPopulator extends ScriptAction implements ServiceLocatorAwareInterfac
         int $batchSize,
         int $offset,
         int $limit
-    ): int {
+    ): int
+    {
         $paginatedResources = $this->groupResourcesByBatch($resources, $batchSize);
         $totalResults = 0;
 
@@ -286,22 +287,39 @@ class IndexPopulator extends ScriptAction implements ServiceLocatorAwareInterfac
             $indexIterator = new IndexIterator(new ResultSet($resources, $totalResources));
             $this->propagate($indexIterator);
 
-            $batchResults = $this->getSearch()->index($indexIterator);
-            $totalResults += $batchResults;
+            try {
+                $batchResults = $this->getSearch()->index($indexIterator);
+                $totalResults += $batchResults;
 
-            if ($batchResults > 0) {
+                if ($batchResults > 0) {
+                    $message = sprintf(
+                        '%s resources indexed for class %s (%s) by %s. offset: %s, limit %s',
+                        $batchResults,
+                        $class->getLabel(),
+                        $class->getUri(),
+                        static::class,
+                        $offset,
+                        $limit
+                    );
+
+                    $report->add(Report::createInfo($message));
+
+                    $this->logInfo($message);
+                }
+            } catch (Throwable $exception) {
                 $message = sprintf(
-                    '%s resources indexed for class %s (%s) by %s. offset: %s, limit %s',
-                    $batchResults,
+                    'Error indexing batch for class %s (%s) by %s. offset: %s, limit %s: %s',
                     $class->getLabel(),
                     $class->getUri(),
                     static::class,
                     $offset,
-                    $limit
+                    $limit,
+                    $exception->getMessage()
                 );
 
-                $report->add(Report::createInfo($message));
-                $this->logInfo($message);
+                $report->add(Report::createError($message));
+
+                $this->logError($message);
             }
         }
 

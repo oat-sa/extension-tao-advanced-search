@@ -36,6 +36,7 @@ use oat\tao\model\Lists\Business\Input\ClassMetadataSearchInput;
 use oat\tao\model\Lists\Business\Service\ClassMetadataService;
 use oat\tao\model\Lists\Business\Service\GetClassMetadataValuesService;
 use oat\tao\model\search\ResultSet;
+use oat\tao\model\search\SearchProxy;
 
 class ClassMetadataSearcher extends ConfigurableService implements ClassMetadataSearcherInterface
 {
@@ -160,7 +161,12 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
 
     private function getSearcher(): ElasticSearch
     {
-        return $this->getServiceLocator()->get(ElasticSearch::class);
+        return $this->getSearch()->getAdvancedSearch();
+    }
+
+    private function getSearch(): SearchProxy
+    {
+        return $this->getServiceLocator()->get(SearchProxy::SERVICE_ID);
     }
 
     private function processResult(ResultSet $result, array $properties, string $classUri): void

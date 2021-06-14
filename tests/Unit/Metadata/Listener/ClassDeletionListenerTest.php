@@ -26,8 +26,9 @@ use Exception;
 use oat\generis\model\data\event\ClassDeletedEvent;
 use oat\generis\test\MockObject;
 use oat\generis\test\TestCase;
-use oat\tao\elasticsearch\ElasticSearch;
 use oat\tao\model\event\ClassPropertiesChangedEvent;
+use oat\tao\model\search\SearchInterface;
+use oat\tao\model\search\SearchProxy;
 use oat\taoAdvancedSearch\model\Metadata\Listener\ClassDeletionListener;
 use oat\taoAdvancedSearch\model\Metadata\Listener\UnsupportedEventException;
 use oat\taoAdvancedSearch\model\Metadata\Normalizer\MetadataNormalizer;
@@ -44,8 +45,8 @@ class ClassDeletionListenerTest extends TestCase
     /** @var LoggerInterface|MockObject */
     private $loggerMock;
 
-    /** @var ElasticSearch|MockObject */
-    private $elasticSearchMock;
+    /** @var SearchInterface|MockObject */
+    private $search;
 
     public function setUp(): void
     {
@@ -53,12 +54,12 @@ class ClassDeletionListenerTest extends TestCase
 
         $this->loggerMock = $this->createMock(LoggerInterface::class);
         $this->subject->setLogger($this->loggerMock);
-        $this->elasticSearchMock = $this->createMock(ElasticSearch::class);
+        $this->search = $this->createMock(SearchInterface::class);
 
         $this->subject->setServiceLocator(
             $this->getServiceLocatorMock(
                 [
-                    ElasticSearch::SERVICE_ID => $this->elasticSearchMock
+                    SearchProxy::SERVICE_ID => $this->search
                 ]
             )
         );
@@ -76,7 +77,7 @@ class ClassDeletionListenerTest extends TestCase
 
     public function testListenCatchError(): void
     {
-        $this->elasticSearchMock
+        $this->search
             ->expects($this->once())
             ->method('remove')
             ->willThrowException(new Exception('Message'));
@@ -90,7 +91,7 @@ class ClassDeletionListenerTest extends TestCase
 
     public function testListenRemovedSuccessfully(): void
     {
-        $this->elasticSearchMock
+        $this->search
             ->expects($this->once())
             ->method('remove')
             ->willReturn(true);
