@@ -36,6 +36,8 @@ use oat\tao\model\menu\MenuService;
 use oat\tao\model\search\index\IndexIterator;
 use oat\tao\model\search\ResultSet;
 use oat\tao\model\search\Search;
+use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepository;
+use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepositoryInterface;
 use Throwable;
 use Zend\ServiceManager\ServiceLocatorAwareInterface;
 use Zend\ServiceManager\ServiceLocatorAwareTrait;
@@ -197,20 +199,7 @@ class IndexPopulator extends ScriptAction implements ServiceLocatorAwareInterfac
 
     private function getIndexedClasses(): array
     {
-        $classes = [];
-
-        foreach (MenuService::getAllPerspectives() as $perspective) {
-            foreach ($perspective->getChildren() as $structure) {
-                foreach ($structure->getTrees() as $tree) {
-                    $rootNode = $tree->get('rootNode');
-                    if (!empty($rootNode)) {
-                        $classes[$rootNode] = $this->getClass($rootNode);
-                    }
-                }
-            }
-        }
-
-        return array_values($classes);
+        return $this->getIndexableClassRepository()->findAll();
     }
 
     private function getScriptReport(int $result, core_kernel_classes_Class $class): Report
@@ -356,6 +345,11 @@ class IndexPopulator extends ScriptAction implements ServiceLocatorAwareInterfac
     private function getComplexSearchService(): ComplexSearchService
     {
         return $this->getServiceLocator()->get(ComplexSearchService::SERVICE_ID);
+    }
+
+    private function getIndexableClassRepository(): IndexableClassRepositoryInterface
+    {
+        return $this->getServiceLocator()->get(IndexableClassRepository::class);
     }
 
     private function getSearch(): Search

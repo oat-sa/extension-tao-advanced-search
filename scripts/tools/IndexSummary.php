@@ -31,6 +31,8 @@ use oat\tao\elasticsearch\IndexerInterface;
 use oat\tao\elasticsearch\Query;
 use oat\tao\model\menu\MenuService;
 use oat\tao\model\search\SearchProxy;
+use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepository;
+use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepositoryInterface;
 use Zend\ServiceManager\ServiceLocatorAwareInterface;
 use Zend\ServiceManager\ServiceLocatorAwareTrait;
 
@@ -67,11 +69,8 @@ class IndexSummary extends ScriptAction implements ServiceLocatorAwareInterface
 
         $mainReport = Report::createInfo('Index vs Storage');
 
-        /** @var SearchProxy $searchProxy */
-        $searchProxy = $this->getServiceLocator()->get(SearchProxy::SERVICE_ID);
-
         /** @var ElasticSearch $advancedSearch */
-        $advancedSearch = $searchProxy->getAdvancedSearch();
+        $advancedSearch = $this->getSearchProxy()->getAdvancedSearch();
 
         foreach ($classes as $classData) {
             /** @var core_kernel_classes_Class $class */
@@ -85,14 +84,14 @@ class IndexSummary extends ScriptAction implements ServiceLocatorAwareInterface
 
             $result = $advancedSearch->search($query);
             $totalIndexed = $result->getTotalCount();
-            $percentage = $totalIndexed === 0 || $total === 0 ? 0 : (float) min(round($totalIndexed / $total * 100, 2), 100);
+            $percentage = $totalIndexed === 0 || $total === 0 ? 0 : (float)min(round($totalIndexed / $total * 100, 2), 100);
             $missingIndex = $total - $totalIndexed;
 
             $report = Report::createInfo($classPresentation);
-            $report->add(Report::createInfo('Total in DB: ' . $total));
-            $report->add(Report::createInfo('Total indexed "' . $classData['index'] . '": ' . $totalIndexed));
-            $report->add(Report::createInfo('Percentage indexed: ' . $percentage . '%'));
-            $report->add(Report::createInfo('Missing items: ' . $missingIndex));
+            $report->add(Report::createSuccess('Total in DB: ' . $total));
+            $report->add(Report::createSuccess('Total indexed "' . $classData['index'] . '": ' . $totalIndexed));
+            $report->add(new Report($percentage < 100 ? Report::TYPE_ERROR : Report::TYPE_SUCCESS, 'Percentage indexed: ' . $percentage . '%'));
+            $report->add(new Report($missingIndex > 0 ? Report::TYPE_ERROR : Report::TYPE_SUCCESS, 'Missing items: ' . $missingIndex));
 
             $mainReport->add($report);
         }
@@ -104,26 +103,23 @@ class IndexSummary extends ScriptAction implements ServiceLocatorAwareInterface
     {
         $classes = [];
 
-        foreach (MenuService::getAllPerspectives() as $perspective) {
-            foreach ($perspective->getChildren() as $structure) {
-                foreach ($structure->getTrees() as $tree) {
-                    $rootNode = $tree->get('rootNode');
-                    if (!empty($rootNode)) {
-                        $indexName = IndexerInterface::AVAILABLE_INDEXES[$rootNode] ?? null;
-
-                        if ($indexName !== null) {
-                            $classes[$rootNode] = [
-                                'index' => $indexName,
-                                'class' => $this->getClass($rootNode),
-                            ];
-
-                            continue;
-                        }
-                    }
-                }
-            }
+        foreach ($this->getIndexableClassRepository()->findAll() as $class) {
+            $classes[] = [
+                'index' => IndexerInterface::AVAILABLE_INDEXES[$class->getUri()] ?? null,
+                'class' => $class,
+            ];
         }
 
-        return array_values($classes);
+        return $classes;
+    }
+
+    private function getIndexableClassRepository(): IndexableClassRepositoryInterface
+    {
+        return $this->getServiceLocator()->get(IndexableClassRepository::class);
+    }
+
+    private function getSearchProxy(): SearchProxy
+    {
+        return $this->getServiceLocator()->get(SearchProxy::SERVICE_ID);
     }
 }
