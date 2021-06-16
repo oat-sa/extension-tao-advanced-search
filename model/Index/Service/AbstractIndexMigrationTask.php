@@ -89,7 +89,7 @@ abstract class AbstractIndexMigrationTask extends AbstractMigrationTask
 
     private function getIndexer(): ResultIndexer
     {
-        return $this->getServiceLocator()->get(ResultIndexer::class);
+        return $this->getServiceLocator()->get(SyncResultIndexer::class);
     }
 
     private function getNormalizer(): NormalizerInterface

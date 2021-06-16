@@ -23,11 +23,12 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\Index\Service;
 
 use oat\oatbox\service\ConfigurableService;
-use oat\tao\model\search\tasks\AddSearchIndexFromArray;
-use oat\tao\model\taskQueue\QueueDispatcherInterface;
+use oat\tao\model\search\index\IndexService;
+use oat\tao\model\search\SearchInterface;
+use oat\tao\model\search\SearchProxy;
 use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
 
-class ResultIndexer extends ConfigurableService implements IndexerInterface
+class SyncResultIndexer extends ConfigurableService implements IndexerInterface
 {
     /** @var NormalizerInterface */
     private $normalizer;
@@ -43,18 +44,27 @@ class ResultIndexer extends ConfigurableService implements IndexerInterface
     {
         $normalizedResource = $this->normalizer->normalize($resource);
 
-        $this->getQueueDispatcher()->createTask(
-            new AddSearchIndexFromArray(),
+        $document = $this->getIndexerService()->getDocumentBuilder()->createDocumentFromArray(
             [
-                $normalizedResource->getId(),
-                $normalizedResource->getData()
-            ],
-            __('Adding/Updating search index for %s', $normalizedResource->getLabel())
+                'id' => $normalizedResource->getId(),
+                'body' => $normalizedResource->getData()
+            ]
+        );
+
+        $this->getSearch()->index(
+            [
+                $document
+            ]
         );
     }
 
-    private function getQueueDispatcher(): QueueDispatcherInterface
+    private function getSearch(): SearchInterface
     {
-        return $this->getServiceLocator()->get(QueueDispatcherInterface::SERVICE_ID);
+        return $this->getServiceLocator()->get(SearchProxy::SERVICE_ID);
+    }
+
+    private function getIndexerService(): IndexService
+    {
+        return $this->getServiceLocator()->get(IndexService::SERVICE_ID);
     }
 }

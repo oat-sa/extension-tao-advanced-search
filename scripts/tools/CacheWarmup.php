@@ -26,6 +26,8 @@ use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\extension\script\ScriptAction;
 use oat\oatbox\reporting\Report;
 use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriCachedRepository;
+use oat\taoAdvancedSearch\model\Resource\Cache\CacheIndexableResourceUrisService;
+use oat\taoAdvancedSearch\model\Resource\Repository\IndexableResourceUrisRepository;
 use Zend\ServiceManager\ServiceLocatorAwareInterface;
 use Zend\ServiceManager\ServiceLocatorAwareTrait;
 
@@ -58,14 +60,32 @@ class CacheWarmup extends ScriptAction implements ServiceLocatorAwareInterface
      */
     protected function run(): Report
     {
+        //FIXME
+        //FIXME Testing
+        //FIXME
+        /** @var IndexableResourceUrisRepository $aaa */
+//        $aaa = $this->getServiceLocator()->get(IndexableResourceUrisRepository::class);
+//        $aaa->findAll(0, 100);
+//        exit();
+        //FIXME
+        //FIXME
+
         $report = Report::createInfo('Warming up cache...');
 
         $classUriCachedRepository = $this->getClassUriCachedRepository();
         $classUriCachedRepository->cacheWarmup();
 
+        $cacheIndexableResourceUrisService = $this->getCacheIndexableResourceUrisService();
+        $cacheIndexableResourceUrisService->warmup();
+
         $report->add(
             Report::createSuccess(
                 sprintf('Cache warmed up! %s classUris in cache', $classUriCachedRepository->getTotal())
+            )
+        );
+        $report->add(
+            Report::createSuccess(
+                sprintf('Cache warmed up! %s resourceUris in cache', $cacheIndexableResourceUrisService->getTotal())
             )
         );
 
@@ -75,5 +95,10 @@ class CacheWarmup extends ScriptAction implements ServiceLocatorAwareInterface
     private function getClassUriCachedRepository(): ClassUriCachedRepository
     {
         return $this->getServiceLocator()->get(ClassUriCachedRepository::class);
+    }
+
+    private function getCacheIndexableResourceUrisService(): CacheIndexableResourceUrisService
+    {
+        return $this->getServiceLocator()->get(CacheIndexableResourceUrisService::class);
     }
 }
