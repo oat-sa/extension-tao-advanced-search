@@ -35,8 +35,8 @@ use SplFileInfo;
 
 class CacheIndexableResourceUrisService extends ConfigurableService
 {
-    private const TOTAL = 'taoAdvancedSearch/total.txt';
-    private const RESOURCES = 'taoAdvancedSearch/resourceUris.txt';
+    private const TOTAL = '/tmp/taoAdvancedSearchTotalResources.txt';
+    private const RESOURCES = '/tmp/taoAdvancedSearchResources.txt';
 
     use OntologyAwareTrait;
 
@@ -45,23 +45,19 @@ class CacheIndexableResourceUrisService extends ConfigurableService
         $classes = $this->getIndexableClassRepository()->findAll();
         $total = 0;
 
-        $fileSystem = $this->getFileSystem();
-
         $resourceUrisPath = self::RESOURCES;
         $totalPath = self::TOTAL;
 
-        if ($fileSystem->has($resourceUrisPath)) {
-            $fileSystem->delete($resourceUrisPath);
+        if ($this->hasFile($resourceUrisPath)) {
+            $this->deleteFile($resourceUrisPath);
         }
 
-        if ($fileSystem->has($totalPath)) {
-            $fileSystem->delete($totalPath);
+        if ($this->hasFile($totalPath)) {
+            $this->deleteFile($totalPath);
         }
 
-        $fileSystem->put($resourceUrisPath, '');
-        $fileSystem->put($totalPath, '');
-
-        $content = '';
+        $this->createFile($resourceUrisPath);
+        $this->createFile($totalPath);
 
         foreach ($classes as $class) {
             $offset = 0;
@@ -76,37 +72,26 @@ class CacheIndexableResourceUrisService extends ConfigurableService
                 foreach ($resources as $resource) {
                     $total++;
 
-                    //@TODO Find better way to populate it
-                    $content .= $resource->getUri() . PHP_EOL;
+                    $this->appendFile($resourceUrisPath, $resource->getUri() . PHP_EOL);
                 }
             } while ($hasResults);
         }
 
-        $fileSystem->put($resourceUrisPath, $content);
-        $fileSystem->put($totalPath, $total);
+        $this->appendFile($totalPath, (string)$total);
     }
 
     public function getTotal(): int
     {
-        $fileSystem = $this->getFileSystem();
-
-        if ($fileSystem->has(self::TOTAL)) {
-            return (int)$fileSystem->read(self::TOTAL);
+        if (is_readable(self::TOTAL)) {
+            return (int)file_get_contents(self::TOTAL);
         }
 
         return 0;
     }
 
-    /**
-     * @return false|resource|null|SplFileInfo
-     *
-     * @throws \League\Flysystem\FileNotFoundException
-     */
     public function getStream(): ?SplFileInfo
     {
-        $fileSystem = $this->getFileSystem();
-
-        if ($fileSystem->has(self::RESOURCES)) {
+        if (is_readable(self::RESOURCES)) {
             return new SplFileInfo(self::RESOURCES);
         }
 
@@ -130,30 +115,22 @@ class CacheIndexableResourceUrisService extends ConfigurableService
 
     private function hasFile(string $filePath): bool
     {
-        $fileSystem = $this->getFileSystem();
-
-        return $fileSystem->has($filePath);
+        return file_exists($filePath);
     }
 
     private function appendFile(string $filePath, string $data): bool
     {
-        $fileSystem = $this->getFileSystem();
-
-        return $fileSystem->put($filePath, $data);
+        return boolval(file_put_contents($filePath, $data, FILE_APPEND));
     }
 
     private function createFile(string $filePath): bool
     {
-        $fileSystem = $this->getFileSystem();
-
-        return $fileSystem->put($filePath, '');
+        return boolval(file_put_contents($filePath, ''));
     }
 
     private function deleteFile(string $filePath): bool
     {
-        $fileSystem = $this->getFileSystem();
-
-        return $fileSystem->delete($filePath);
+        return unlink($filePath);
     }
 
     private function getIndexableClassRepository(): IndexableClassRepositoryInterface
@@ -164,16 +141,5 @@ class CacheIndexableResourceUrisService extends ConfigurableService
     private function getComplexSearchService(): ComplexSearchService
     {
         return $this->getServiceLocator()->get(ComplexSearchService::SERVICE_ID);
-    }
-
-    private function getFileSystem(): FilesystemInterface
-    {
-        return $this->getFileSystemService()
-            ->getFileSystem('default');
-    }
-
-    private function getFileSystemService(): FileSystemService
-    {
-        return $this->getServiceLocator()->get(FileSystemService::SERVICE_ID);
     }
 }
