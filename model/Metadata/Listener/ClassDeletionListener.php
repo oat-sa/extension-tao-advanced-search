@@ -25,7 +25,8 @@ namespace oat\taoAdvancedSearch\model\Metadata\Listener;
 use Exception;
 use oat\generis\model\data\event\ClassDeletedEvent;
 use oat\oatbox\service\ConfigurableService;
-use oat\tao\elasticsearch\ElasticSearch;
+use oat\tao\model\search\SearchInterface;
+use oat\tao\model\search\SearchProxy;
 use oat\taoAdvancedSearch\model\Index\Listener\ListenerInterface;
 
 class ClassDeletionListener extends ConfigurableService implements ListenerInterface
@@ -48,8 +49,8 @@ class ClassDeletionListener extends ConfigurableService implements ListenerInter
         }
     }
 
-    private function getElasticSearch(): ElasticSearch
+    private function getElasticSearch(): SearchInterface
     {
-        return $this->getServiceLocator()->get(ElasticSearch::SERVICE_ID);
+        return $this->getServiceLocator()->get(SearchProxy::SERVICE_ID);
     }
 }
