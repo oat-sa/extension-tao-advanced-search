@@ -6,24 +6,22 @@ then
     echo ""
     echo " Populate all indexes. Usage:"
     echo ""
-    echo "    BATCH_SIZE_LIMIT: Integer size of documents sent in each batch to index resources. Default: 50"
-    echo "    CHUNK_SIZE: Integer size of items to be processed on each migration task. Default: 100"
-    echo "    LIMIT: Limit of resources per class to be found. Default: 100"
+    echo "    OFFSET: Offset to start index. Default: 0"
+    echo "    LIMIT: Limit of resources per class to be found. Default: 50"
     echo ""
     echo " Example:"
     echo ""
-    echo "    ./${FILE_NAME} <<BATCH_SIZE_LIMIT>> <<CHUNK_SIZE>> <<LIMIT>>"
+    echo "    ./${FILE_NAME} <<OFFSET>> <<LIMIT>>"
     echo ""
 
     exit;
 fi
 
 CURRENT_DIR=$(dirname "$0");
-BATCH_SIZE_LIMIT=${1:-50} # Default will be 50
-CHUNK_SIZE=${2:-100} # Default will be 100
-LIMIT=${3:-100} # Default will be 100
+OFFSET=${1:-0} # Default will be 0
+LIMIT=${2:-50} # Default will be 50
 
 "${CURRENT_DIR}/CacheWarmup.sh"
-"${CURRENT_DIR}/IndexResources.sh" "$BATCH_SIZE_LIMIT" "$LIMIT"
-"${CURRENT_DIR}/IndexClassMetadata.sh" "$CHUNK_SIZE"
-"${CURRENT_DIR}/IndexDeliveryResults.sh" "$CHUNK_SIZE"
+"${CURRENT_DIR}/IndexResources.sh" "$OFFSET" "$LIMIT"
+"${CURRENT_DIR}/IndexClassMetadata.sh" "$OFFSET" "$LIMIT"
+"${CURRENT_DIR}/IndexDeliveryResults.sh" "$OFFSET" "$LIMIT"
