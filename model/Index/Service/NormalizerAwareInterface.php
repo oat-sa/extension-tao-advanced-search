@@ -20,22 +20,11 @@
 
 declare(strict_types=1);
 
-namespace oat\taoAdvancedSearch\model\DeliveryResult\Service;
+namespace oat\taoAdvancedSearch\model\Index\Service;
 
-use oat\taoAdvancedSearch\model\DeliveryResult\Factory\DeliveryResultFilterFactory;
-use oat\taoAdvancedSearch\model\DeliveryResult\Normalizer\DeliveryResultNormalizer;
-use oat\taoAdvancedSearch\model\Index\Service\AbstractIndexMigrationTask;
-use oat\taoAdvancedSearch\model\Index\Service\SyncResultIndexer;
+use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
 
-class DeliveryResultMigrationTask extends AbstractIndexMigrationTask
+interface NormalizerAwareInterface
 {
-    protected function getConfig(): array
-    {
-        return [
-            self::OPTION_NORMALIZER => DeliveryResultNormalizer::class,
-            self::OPTION_RESULT_SEARCHER => DeliveryResultSearcher::class,
-            self::OPTION_RESULT_FILTER_FACTORY => DeliveryResultFilterFactory::class,
-            self::OPTION_INDEXER => SyncResultIndexer::class,
-        ];
-    }
+    public function setNormalizer(NormalizerInterface $normalizer): void;
 }

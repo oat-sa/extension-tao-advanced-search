@@ -20,23 +20,23 @@
 
 declare(strict_types=1);
 
-namespace oat\taoAdvancedSearch\model\Metadata\Task;
+namespace oat\taoAdvancedSearch\model\Resource\Service;
 
+use oat\tao\model\TaoOntology;
+use oat\taoAdvancedSearch\model\DeliveryResult\Factory\DeliveryResultFilterFactory;
+use oat\taoAdvancedSearch\model\DeliveryResult\Normalizer\DeliveryResultNormalizer;
 use oat\taoAdvancedSearch\model\Index\Service\AbstractIndexMigrationTask;
 use oat\taoAdvancedSearch\model\Index\Service\SyncResultIndexer;
-use oat\taoAdvancedSearch\model\Metadata\Factory\MetadataResultFilterFactory;
-use oat\taoAdvancedSearch\model\Metadata\Normalizer\MetadataNormalizer;
-use oat\taoAdvancedSearch\model\Metadata\Service\MetadataResultSearcher;
+use oat\taoAdvancedSearch\model\Resource\Factory\ResourceResultFilterFactory;
 
-class MetadataMigrationTask extends AbstractIndexMigrationTask
+class ResourceMigrationTask extends AbstractIndexMigrationTask
 {
     protected function getConfig(): array
     {
         return [
-            self::OPTION_NORMALIZER => MetadataNormalizer::class,
-            self::OPTION_RESULT_SEARCHER => MetadataResultSearcher::class,
-            self::OPTION_RESULT_FILTER_FACTORY => MetadataResultFilterFactory::class,
-            self::OPTION_INDEXER => SyncResultIndexer::class,
+            self::OPTION_RESULT_SEARCHER => ResourceSearcher::class,
+            self::OPTION_RESULT_FILTER_FACTORY => ResourceResultFilterFactory::class,
+            self::OPTION_INDEXER => SyncResourceResultIndexer::class,
         ];
     }
 }

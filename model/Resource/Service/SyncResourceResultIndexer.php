@@ -20,34 +20,34 @@
 
 declare(strict_types=1);
 
-namespace oat\taoAdvancedSearch\model\Index\Service;
+namespace oat\taoAdvancedSearch\model\Resource\Service;
 
+use core_kernel_classes_Resource;
+use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\service\ConfigurableService;
 use oat\tao\model\search\index\IndexService;
 use oat\tao\model\search\SearchInterface;
 use oat\tao\model\search\SearchProxy;
 use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
+use oat\taoAdvancedSearch\model\Index\Service\IndexerInterface;
+use oat\taoDelivery\model\execution\DeliveryExecutionInterface;
 
-class SyncResultIndexer extends ConfigurableService implements IndexerInterface, NormalizerAwareInterface
+class SyncResourceResultIndexer extends ConfigurableService implements IndexerInterface
 {
-    /** @var NormalizerInterface */
-    private $normalizer;
-
-    public function setNormalizer(NormalizerInterface $normalizer): void
-    {
-        $this->normalizer = $normalizer;
-    }
+    use OntologyAwareTrait;
 
     public function addIndex($resource): void
     {
-        $normalizedResource = $this->normalizer->normalize($resource);
+        if (!$resource instanceof core_kernel_classes_Resource || !$resource->exists()) {
+            throw new \InvalidArgumentException(
+                '$resource must an existent resource ' . core_kernel_classes_Resource::class
+            );
+        }
 
-        $document = $this->getIndexerService()->getDocumentBuilder()->createDocumentFromArray(
-            [
-                'id' => $normalizedResource->getId(),
-                'body' => $normalizedResource->getData()
-            ]
-        );
+        $documentBuilder = $this->getIndexerService()->getDocumentBuilder();
+        $this->propagate($documentBuilder);
+
+        $document = $documentBuilder->createDocumentFromResource($resource);
 
         $this->getSearch()->index(
             [

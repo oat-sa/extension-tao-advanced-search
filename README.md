@@ -67,6 +67,12 @@ This is necessary to optimize indexation:
 ./taoAdvancedSearch/scripts/tools/IndexResources.sh --help
 ```
 
+#### To populate only resources from one class, execute:
+
+```shell script
+./taoAdvancedSearch/scripts/tools/IndexClassResources.sh --help
+```
+
 #### To populate only class metadata indexes, execute:
 
 ```shell script

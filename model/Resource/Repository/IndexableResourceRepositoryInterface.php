@@ -22,9 +22,11 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\Resource\Repository;
 
-interface IndexableResourceUrisRepositoryInterface
-{
-    public function findAll(): array;
+use oat\search\base\ResultSetInterface;
 
-    public function getTotal(): int;
+interface IndexableResourceRepositoryInterface
+{
+    public function findAll(string $classUri, int $offset, int $limit): ResultSetInterface;
+
+    public function getTotal(string $classUri): int;
 }

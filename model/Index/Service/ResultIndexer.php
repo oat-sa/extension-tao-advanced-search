@@ -27,16 +27,14 @@ use oat\tao\model\search\tasks\AddSearchIndexFromArray;
 use oat\tao\model\taskQueue\QueueDispatcherInterface;
 use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
 
-class ResultIndexer extends ConfigurableService implements IndexerInterface
+class ResultIndexer extends ConfigurableService implements IndexerInterface, NormalizerAwareInterface
 {
     /** @var NormalizerInterface */
     private $normalizer;
 
-    public function setNormalizer(NormalizerInterface $normalizer): self
+    public function setNormalizer(NormalizerInterface $normalizer): void
     {
         $this->normalizer = $normalizer;
-
-        return $this;
     }
 
     public function addIndex($resource): void
