@@ -31,6 +31,7 @@ use oat\tao\model\search\SearchProxy;
 use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
 use oat\taoAdvancedSearch\model\Index\Service\IndexerInterface;
 use oat\taoDelivery\model\execution\DeliveryExecutionInterface;
+use Throwable;
 
 class SyncResourceResultIndexer extends ConfigurableService implements IndexerInterface
 {
@@ -38,22 +39,27 @@ class SyncResourceResultIndexer extends ConfigurableService implements IndexerIn
 
     public function addIndex($resource): void
     {
-        if (!$resource instanceof core_kernel_classes_Resource || !$resource->exists()) {
-            throw new \InvalidArgumentException(
-                '$resource must an existent resource ' . core_kernel_classes_Resource::class
+        try {
+            $documentBuilder = $this->getIndexerService()->getDocumentBuilder();
+            $this->propagate($documentBuilder);
+
+            $document = $documentBuilder->createDocumentFromResource($resource);
+
+            $this->getSearch()->index(
+                [
+                    $document,
+                ]
+            );
+        } catch (Throwable $exception) {
+            $this->logError(
+                sprintf(
+                    'Could not index resource %s (%s). Error: %s',
+                    $resource->getLabel(),
+                    $resource->getUri(),
+                    $exception->getMessage()
+                )
             );
         }
-
-        $documentBuilder = $this->getIndexerService()->getDocumentBuilder();
-        $this->propagate($documentBuilder);
-
-        $document = $documentBuilder->createDocumentFromResource($resource);
-
-        $this->getSearch()->index(
-            [
-                $document
-            ]
-        );
     }
 
     private function getSearch(): SearchInterface
