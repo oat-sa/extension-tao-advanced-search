@@ -51,8 +51,6 @@ class SyncResourceResultIndexer extends ConfigurableService implements IndexerIn
                 ]
             );
         } catch (Throwable $exception) {
-            var_export($exception->getMessage()); //FIXME
-
             $this->logError(
                 sprintf(
                     'Could not index resource %s (%s). Error: %s',
