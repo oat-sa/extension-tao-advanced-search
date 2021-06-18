@@ -88,7 +88,9 @@ class IndexSummarizer extends ConfigurableService
     ): array
     {
         $totalIndexed = $this->getTotalResults($index);
-        $percentageIndexed = $totalIndexed === 0 || $totalInDb === 0 ? 0 : (float)min(round($totalIndexed / $totalInDb * 100, 2), 100);
+        $percentageIndexed = $totalIndexed === 0 || $totalInDb === 0
+            ? 0
+            : (float)min(round($totalIndexed / $totalInDb * 100, 2), 100);
         $totalMissingIndexation = $totalInDb - $totalIndexed;
 
         return [

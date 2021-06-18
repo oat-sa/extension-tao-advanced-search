@@ -31,6 +31,9 @@ use oat\tao\model\search\tasks\UpdateClassInIndex;
 use oat\tao\model\search\tasks\UpdateDataAccessControlInIndex;
 use oat\tao\model\search\tasks\UpdateResourceInIndex;
 use oat\tao\model\taskQueue\QueueDispatcherInterface;
+use oat\taoAdvancedSearch\model\DeliveryResult\Service\DeliveryResultMigrationTask;
+use oat\taoAdvancedSearch\model\Metadata\Task\MetadataMigrationTask;
+use oat\taoAdvancedSearch\model\Resource\Task\ResourceMigrationTask;
 use oat\taoTaskQueue\model\Service\QueueAssociationService;
 
 class RegisterTaskQueueServices extends InstallAction
@@ -43,7 +46,7 @@ class RegisterTaskQueueServices extends InstallAction
         $newAssociations = $this->getNewAssociations($this->getQueueName());
 
         try {
-            $broker = $this->getAssociationService()->associateBulk($newQueueName, $newAssociations);
+            $this->getAssociationService()->associateBulk($newQueueName, $newAssociations);
         } catch (Exception $exception) {
             return new Report(Report::TYPE_ERROR, $exception->getMessage());
         }
@@ -53,9 +56,8 @@ class RegisterTaskQueueServices extends InstallAction
         return new Report(
             Report::TYPE_SUCCESS,
             sprintf(
-                'Indexation TaskQueue `%s` registered, with broker type of `%s`',
-                $newQueueName,
-                get_class($broker)
+                'Indexation TaskQueue `%s` registered',
+                $newQueueName
             )
         );
     }
@@ -69,6 +71,9 @@ class RegisterTaskQueueServices extends InstallAction
             RenameIndexProperties::class => $queueName,
             UpdateDataAccessControlInIndex::class => $queueName,
             AddSearchIndexFromArray::class => $queueName,
+            ResourceMigrationTask::class => $queueName,
+            DeliveryResultMigrationTask::class => $queueName,
+            MetadataMigrationTask::class => $queueName,
         ];
     }
 
