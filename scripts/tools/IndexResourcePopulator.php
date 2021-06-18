@@ -87,7 +87,7 @@ class IndexResourcePopulator extends ScriptAction implements ServiceLocatorAware
                 $migration->__invoke(
                     [
                         '-c', $limit,
-                        '-cp', 'start= ' . $offset . '&classUri=' . $class->getUri(),
+                        '-cp', 'start=' . $offset . '&classUri=' . $class->getUri(),
                         '-t', ResourceMigrationTask::class,
                         '-rp'
                     ]
