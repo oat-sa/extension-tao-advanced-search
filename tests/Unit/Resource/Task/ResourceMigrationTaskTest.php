@@ -20,7 +20,7 @@
 
 declare(strict_types=1);
 
-namespace oat\taoAdvancedSearch\tests\Unit\Resource\Service;
+namespace oat\taoAdvancedSearch\tests\Unit\Resource\Task;
 
 use oat\generis\test\TestCase;
 use oat\tao\test\unit\helpers\NoPrivacyTrait;
@@ -31,7 +31,7 @@ use oat\taoAdvancedSearch\model\DeliveryResult\Service\DeliveryResultSearcher;
 use oat\taoAdvancedSearch\model\Index\Service\AbstractIndexMigrationTask;
 use oat\taoAdvancedSearch\model\Index\Service\SyncResultIndexer;
 use oat\taoAdvancedSearch\model\Resource\Factory\ResourceResultFilterFactory;
-use oat\taoAdvancedSearch\model\Resource\Service\ResourceMigrationTask;
+use oat\taoAdvancedSearch\model\Resource\Task\ResourceMigrationTask;
 use oat\taoAdvancedSearch\model\Resource\Service\ResourceSearcher;
 use oat\taoAdvancedSearch\model\Resource\Service\SyncResourceResultIndexer;
 

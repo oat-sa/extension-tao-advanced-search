@@ -27,7 +27,7 @@ use oat\oatbox\reporting\Report;
 use oat\tao\scripts\tools\MigrationAction;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepository;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepositoryInterface;
-use oat\taoAdvancedSearch\model\Resource\Service\ResourceMigrationTask;
+use oat\taoAdvancedSearch\model\Resource\Task\ResourceMigrationTask;
 use Zend\ServiceManager\ServiceLocatorAwareInterface;
 use Zend\ServiceManager\ServiceLocatorAwareTrait;
 

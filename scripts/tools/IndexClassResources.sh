@@ -28,4 +28,4 @@ PARAMETERS="start=${OFFSET}&classUri=${CLASS_URI}"
 php -d memory_limit=512M index.php "\oat\tao\scripts\tools\MigrationAction" \
 -c $LIMIT \
 -cp $PARAMETERS \
--t "oat\taoAdvancedSearch\model\Resource\Service\ResourceMigrationTask" -rp
+-t "oat\taoAdvancedSearch\model\Resource\Task\ResourceMigrationTask" -rp
