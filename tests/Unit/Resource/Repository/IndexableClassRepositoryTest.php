@@ -20,45 +20,44 @@
 
 declare(strict_types=1);
 
-namespace oat\taoAdvancedSearch\tests\Unit\DeliveryResult\Factory;
+namespace oat\taoAdvancedSearch\tests\Unit\model\Resource\Repository;
 
+use core_kernel_classes_Class;
+use oat\generis\model\data\Ontology;
 use oat\generis\test\TestCase;
-use oat\tao\test\unit\helpers\NoPrivacyTrait;
-use oat\taoAdvancedSearch\model\DeliveryResult\Factory\DeliveryResultFilterFactory;
-use oat\taoAdvancedSearch\model\DeliveryResult\Repository\DeliveryResultRepository;
-use oat\taoAdvancedSearch\model\DeliveryResult\Repository\DeliveryResultRepositoryInterface;
+use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepository;
 use PHPUnit\Framework\MockObject\MockObject;
 
-class DeliveryResultFilterFactoryTest extends TestCase
+class IndexableClassRepositoryTest extends TestCase
 {
-    use NoPrivacyTrait;
-
-    /** @var DeliveryResultFilterFactory */
+    /** @var IndexableClassRepository */
     private $subject;
 
-    /** @var DeliveryResultRepositoryInterface|MockObject */
-    private $deliveryResultRepository;
+    /** @var Ontology|MockObject */
+    private $ontology;
 
     public function setUp(): void
     {
-        $this->deliveryResultRepository = $this->createMock(DeliveryResultRepositoryInterface::class);
-
-        $this->subject = new DeliveryResultFilterFactory();
+        $this->ontology = $this->createMock(Ontology::class);
+        $this->subject = new IndexableClassRepository();
+        $this->subject->withMenuPerspectives([]);
         $this->subject->setServiceLocator(
             $this->getServiceLocatorMock(
                 [
-                    DeliveryResultRepository::class => $this->deliveryResultRepository,
+                    Ontology::SERVICE_ID => $this->ontology,
                 ]
             )
         );
     }
 
-    public function testGetMax(): void
+    public function testFindAll(): void
     {
-        $this->deliveryResultRepository
-            ->method('getTotal')
-            ->willReturn(777);
+        $classMock = $this->createMock(core_kernel_classes_Class::class);
 
-        $this->assertEquals(777, $this->invokePrivateMethod($this->subject, 'getMax', []));
+        $this->ontology
+            ->method('getClass')
+            ->willReturn($classMock);
+
+        $this->assertIsArray($this->subject->findAll());
     }
 }

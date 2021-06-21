@@ -6,19 +6,21 @@ then
     echo ""
     echo " Populate delivery results indexes. Usage:"
     echo ""
-    echo "    CHUNK_SIZE: Integer size of items to be processed on each migration task. Default: 100"
+    echo "    OFFSET: Integer offset. Default: 0"
+    echo "    LIMIT: Integer size of items to be processed on each migration task. Default: 100"
     echo ""
     echo " Example:"
     echo ""
-    echo "    ./${FILE_NAME} <<CHUNK_SIZE>>"
+    echo "    ./${FILE_NAME} <<OFFSET>> <<LIMIT>>"
     echo ""
 
     exit;
 fi
 
-CHUNK_SIZE=${1:-100} # Default will be 100
+OFFSET=${1:-0} # Default will be 0
+LIMIT=${2:-100} # Default will be 100
 
 php -d memory_limit=512M index.php "\oat\tao\scripts\tools\MigrationAction" \
--c "$CHUNK_SIZE" \
--cp "start=0" \
+-c "$LIMIT" \
+-cp "start=${OFFSET}" \
 -t "oat\taoAdvancedSearch\model\DeliveryResult\Service\DeliveryResultMigrationTask" -rp

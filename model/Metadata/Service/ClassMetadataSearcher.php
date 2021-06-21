@@ -156,6 +156,11 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
 
     private function getAdvancedSearchChecker(): AdvancedSearchChecker
     {
+        return $this->getServiceLocator()->get(AdvancedSearchChecker::class);
+    }
+
+    private function getSearcher(): ElasticSearch
+    {
         return $this->getSearch()->getAdvancedSearch();
     }
 

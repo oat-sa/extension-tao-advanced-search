@@ -20,22 +20,13 @@
 
 declare(strict_types=1);
 
-namespace oat\taoAdvancedSearch\model\DeliveryResult\Factory;
+namespace oat\taoAdvancedSearch\model\Resource\Repository;
 
-use oat\tao\model\task\migration\service\ResultFilterFactory;
-use oat\tao\model\task\migration\service\ResultFilterFactoryInterface;
-use oat\taoAdvancedSearch\model\DeliveryResult\Repository\DeliveryResultRepository;
-use oat\taoAdvancedSearch\model\DeliveryResult\Repository\DeliveryResultRepositoryInterface;
+use oat\search\base\ResultSetInterface;
 
-class DeliveryResultFilterFactory extends ResultFilterFactory implements ResultFilterFactoryInterface
+interface IndexableResourceRepositoryInterface
 {
-    protected function getMax(): int
-    {
-        return $this->getDeliveryResultRepository()->getTotal();
-    }
+    public function findAll(string $classUri, int $offset, int $limit): ResultSetInterface;
 
-    private function getDeliveryResultRepository(): DeliveryResultRepositoryInterface
-    {
-        return $this->getServiceLocator()->get(DeliveryResultRepository::class);
-    }
+    public function getTotal(string $classUri): int;
 }
