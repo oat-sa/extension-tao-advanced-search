@@ -29,6 +29,7 @@ use oat\taoAdvancedSearch\model\DeliveryResult\Normalizer\DeliveryResultNormaliz
 use oat\taoAdvancedSearch\model\DeliveryResult\Service\DeliveryResultMigrationTask;
 use oat\taoAdvancedSearch\model\DeliveryResult\Service\DeliveryResultSearcher;
 use oat\taoAdvancedSearch\model\Index\Service\AbstractIndexMigrationTask;
+use oat\taoAdvancedSearch\model\Index\Service\SyncResultIndexer;
 
 class DeliveryResultMigrationTaskTest extends TestCase
 {
@@ -49,6 +50,7 @@ class DeliveryResultMigrationTaskTest extends TestCase
                 AbstractIndexMigrationTask::OPTION_NORMALIZER => DeliveryResultNormalizer::class,
                 AbstractIndexMigrationTask::OPTION_RESULT_SEARCHER => DeliveryResultSearcher::class,
                 AbstractIndexMigrationTask::OPTION_RESULT_FILTER_FACTORY => DeliveryResultFilterFactory::class,
+                AbstractIndexMigrationTask::OPTION_INDEXER => SyncResultIndexer::class,
             ],
             $this->invokePrivateMethod($this->subject, 'getConfig', [])
         );

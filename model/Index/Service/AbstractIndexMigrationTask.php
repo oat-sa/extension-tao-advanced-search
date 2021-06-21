@@ -36,17 +36,19 @@ use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
 abstract class AbstractIndexMigrationTask extends AbstractMigrationTask
 {
     public const OPTION_NORMALIZER = 'normalizer';
+    public const OPTION_INDEXER = 'indexer';
     public const OPTION_RESULT_SEARCHER = 'resultSearcher';
     public const OPTION_RESULT_FILTER_FACTORY = 'filterFactory';
 
     protected function getUnitProcessor(): ResultUnitProcessorInterface
     {
-        $indexer = $this->getIndexer()
-            ->setNormalizer($this->getNormalizer());
+        $indexer = $this->getIndexer();
 
-        $unitProcessor = $this->getIndexUnitProcessor();
+        if ($indexer instanceof NormalizerAwareInterface) {
+            $indexer->setNormalizer($this->getNormalizer());
+        }
 
-        return $unitProcessor->setIndexer($indexer);
+        return $this->getIndexUnitProcessor()->setIndexer($indexer);
     }
 
     protected function getResultSearcher(): ResultSearcherInterface
@@ -87,9 +89,9 @@ abstract class AbstractIndexMigrationTask extends AbstractMigrationTask
         return $this->getServiceLocator()->get(IndexUnitProcessor::class);
     }
 
-    private function getIndexer(): ResultIndexer
+    private function getIndexer(): IndexerInterface
     {
-        return $this->getServiceLocator()->get(ResultIndexer::class);
+        return $this->getServiceLocator()->get($this->getConfigValue(self::OPTION_INDEXER));
     }
 
     private function getNormalizer(): NormalizerInterface

@@ -20,37 +20,40 @@
 
 declare(strict_types=1);
 
-namespace oat\taoAdvancedSearch\tests\Unit\Metadata\Task;
+namespace oat\taoAdvancedSearch\tests\Unit\Resource\Task;
 
 use oat\generis\test\TestCase;
 use oat\tao\test\unit\helpers\NoPrivacyTrait;
+use oat\taoAdvancedSearch\model\DeliveryResult\Factory\DeliveryResultFilterFactory;
+use oat\taoAdvancedSearch\model\DeliveryResult\Normalizer\DeliveryResultNormalizer;
+use oat\taoAdvancedSearch\model\DeliveryResult\Service\DeliveryResultMigrationTask;
+use oat\taoAdvancedSearch\model\DeliveryResult\Service\DeliveryResultSearcher;
 use oat\taoAdvancedSearch\model\Index\Service\AbstractIndexMigrationTask;
 use oat\taoAdvancedSearch\model\Index\Service\SyncResultIndexer;
-use oat\taoAdvancedSearch\model\Metadata\Factory\MetadataResultFilterFactory;
-use oat\taoAdvancedSearch\model\Metadata\Normalizer\MetadataNormalizer;
-use oat\taoAdvancedSearch\model\Metadata\Service\MetadataResultSearcher;
-use oat\taoAdvancedSearch\model\Metadata\Task\MetadataMigrationTask;
+use oat\taoAdvancedSearch\model\Resource\Factory\ResourceResultFilterFactory;
+use oat\taoAdvancedSearch\model\Resource\Task\ResourceMigrationTask;
+use oat\taoAdvancedSearch\model\Resource\Service\ResourceSearcher;
+use oat\taoAdvancedSearch\model\Resource\Service\SyncResourceResultIndexer;
 
-class MetadataMigrationTaskTest extends TestCase
+class ResourceMigrationTaskTest extends TestCase
 {
     use NoPrivacyTrait;
 
-    /** @var MetadataMigrationTask */
+    /** @var ResourceMigrationTask */
     private $subject;
 
     public function setUp(): void
     {
-        $this->subject = new MetadataMigrationTask();
+        $this->subject = new ResourceMigrationTask();
     }
 
     public function testGetConfig(): void
     {
         $this->assertSame(
             [
-                AbstractIndexMigrationTask::OPTION_NORMALIZER => MetadataNormalizer::class,
-                AbstractIndexMigrationTask::OPTION_RESULT_SEARCHER => MetadataResultSearcher::class,
-                AbstractIndexMigrationTask::OPTION_RESULT_FILTER_FACTORY => MetadataResultFilterFactory::class,
-                AbstractIndexMigrationTask::OPTION_INDEXER => SyncResultIndexer::class,
+                AbstractIndexMigrationTask::OPTION_RESULT_SEARCHER => ResourceSearcher::class,
+                AbstractIndexMigrationTask::OPTION_RESULT_FILTER_FACTORY => ResourceResultFilterFactory::class,
+                AbstractIndexMigrationTask::OPTION_INDEXER => SyncResourceResultIndexer::class,
             ],
             $this->invokePrivateMethod($this->subject, 'getConfig', [])
         );
