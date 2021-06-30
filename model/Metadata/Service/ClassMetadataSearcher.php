@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\Metadata\Service;
 
 use oat\generis\model\OntologyAwareTrait;
+use oat\oatbox\cache\SimpleCache;
 use oat\oatbox\service\ConfigurableService;
 use oat\tao\elasticsearch\ElasticSearch;
 use oat\tao\elasticsearch\Query;
@@ -42,6 +43,7 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
 {
     use OntologyAwareTrait;
 
+    public const CACHE = __CLASS__ . '::%s';
     private const BASE_LIST_ITEMS_URI = '/tao/PropertyValues/get?propertyUri=%s';
 
     /** @var array */
@@ -134,10 +136,31 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
 
     private function executeQuery(string $field, string $value): ResultSet
     {
+        //FIXME
+        //FIXME
+        //FIXME Add cache here...
+        $cache = $this->getCache();
+        $cacheKey = sprintf(self::CACHE, $value);
+
+        if ($cache->has($cacheKey)) {
+            return $cache->get($cacheKey);
+        }
+        //FIXME
+        //FIXME
+        //FIXME
+
         $query = (new Query('property-list'))
             ->addCondition(sprintf('%s:"%s"', $field, $value));
 
-        return $this->getSearcher()->search($query);
+        $result = $this->getSearcher()->search($query);
+
+        //FIXME
+        //FIXME
+        $cache->set($cacheKey, $result);
+        //FIXME
+        //FIXME
+
+        return $result;
     }
 
     private function getPropertyListUri(string $propertyUri, string $type, ?array $values): ?string
@@ -174,5 +197,10 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
                 $this->getSubProperties($res['id'], $newProperties);
             }
         }
+    }
+
+    private function getCache(): SimpleCache
+    {
+        return $this->getServiceLocator()->get(SimpleCache::SERVICE_ID);
     }
 }
