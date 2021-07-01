@@ -42,7 +42,6 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
 {
     use OntologyAwareTrait;
 
-    public const CACHE = __CLASS__ . '::%s';
     private const BASE_LIST_ITEMS_URI = '/tao/PropertyValues/get?propertyUri=%s';
 
     /** @var array */
