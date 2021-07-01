@@ -23,7 +23,6 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\Metadata\Service;
 
 use oat\generis\model\OntologyAwareTrait;
-use oat\oatbox\cache\SimpleCache;
 use oat\oatbox\service\ConfigurableService;
 use oat\tao\elasticsearch\ElasticSearch;
 use oat\tao\elasticsearch\Query;
@@ -55,10 +54,18 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
         if ($this->getAdvancedSearchChecker()->isEnabled()) {
             $currentClassUri = $input->getSearchRequest()->getClassUri();
 
-            $properties = [];
+            $cachedValue = $this->getCache()->retrieve($currentClassUri);
 
-            $this->getParentProperties($currentClassUri, $properties);
-            $this->getSubProperties($currentClassUri, $properties);
+            $this->addProcessedClass(
+                $currentClassUri,
+                $cachedValue['parentClass'],
+                $this->incrementProperties($cachedValue, [])
+            );
+
+//            $properties = [];
+//
+//            $this->getParentProperties($currentClassUri, $properties);
+//            $this->getSubProperties($currentClassUri, $properties);
 
             return new ClassCollection(...array_values($this->processedClasses));
         }
@@ -153,11 +160,11 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
             );
         }
 
-        //FIXME
-        //FIXME
-        //FIXME
-        //FIXME
         return new ResultSet([], 0);
+        //FIXME
+        //FIXME
+        //FIXME
+        //FIXME
 
         $query = (new Query('property-list'))
             ->addCondition(sprintf('%s:"%s"', $field, $value));

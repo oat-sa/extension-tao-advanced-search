@@ -70,18 +70,36 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
     private function getPropertiesFromClass(core_kernel_classes_Class $class): array
     {
         $propertyCollection = [];
-        $properties = $this->isRootClass($class)
-            ? $this->getGetClassMetadataValuesService()->getByClassRecursive($class, 0)
-            : $this->getGetClassMetadataValuesService()->getByClassExplicitly($class, 0);
+//        $properties = $this->isRootClass($class)
+//            ? $this->getGetClassMetadataValuesService()->getByClassRecursive($class, 0)
+//            : $this->getGetClassMetadataValuesService()->getByClassExplicitly($class, 0);
 
-        /** @var Metadata $property */
-        foreach ($properties as $property) {
-            $propertyCollection[] = [
-                'propertyUri' => $property->getPropertyUri(),
-                'propertyLabel' => $property->getLabel(),
-                'propertyType' => $property->getType(),
-                'propertyValues' => null,
-            ];
+        $properties[] = $this->getGetClassMetadataValuesService()->getByClassRecursive($class);
+
+        foreach ($class->getSubClasses(true) as $subClass) {
+            if (empty($subClass->getSubClasses())) {
+                $properties[] = $this->getGetClassMetadataValuesService()->getByClassRecursive($subClass);
+            }
+        }
+
+        $processed = [];
+
+        foreach ($properties as $propertyList) {
+            /** @var Metadata $property */
+            foreach ($propertyList as $property) {
+                if (in_array($property->getPropertyUri(), $processed)) {
+                    continue;
+                }
+
+                $processed[] = $property->getPropertyUri();
+
+                $propertyCollection[] = [
+                    'propertyUri' => $property->getPropertyUri(),
+                    'propertyLabel' => $property->getLabel(),
+                    'propertyType' => $property->getType(),
+                    'propertyValues' => null,
+                ];
+            }
         }
 
         return $propertyCollection;
