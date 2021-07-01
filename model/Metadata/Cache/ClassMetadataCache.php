@@ -36,7 +36,7 @@ class ClassMetadataCache extends ConfigurableService
     {
         $key = sprintf(self::CACHE, $id);
 
-        $this->getCache()->set($key, $data);
+        $this->getCache()->set($key, json_encode($data));
     }
 
     public function retrieve(string $id): ?array
@@ -46,7 +46,7 @@ class ClassMetadataCache extends ConfigurableService
         $cache = $this->getCache();
 
         if ($cache->has($key)) {
-            return $cache->get($key);
+            return json_decode($cache->get($key), true);
         }
 
         return null;
