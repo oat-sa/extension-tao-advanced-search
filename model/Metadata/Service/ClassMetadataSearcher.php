@@ -37,7 +37,6 @@ use oat\tao\model\Lists\Business\Service\ClassMetadataService;
 use oat\tao\model\Lists\Business\Service\GetClassMetadataValuesService;
 use oat\tao\model\search\ResultSet;
 use oat\tao\model\search\SearchProxy;
-use oat\taoAdvancedSearch\model\Metadata\Cache\ClassMetadataCache;
 
 class ClassMetadataSearcher extends ConfigurableService implements ClassMetadataSearcherInterface
 {
@@ -54,18 +53,11 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
         if ($this->getAdvancedSearchChecker()->isEnabled()) {
             $currentClassUri = $input->getSearchRequest()->getClassUri();
 
-            $cachedValue = $this->getCache()->retrieve($currentClassUri);
-
             $this->addProcessedClass(
                 $currentClassUri,
-                $cachedValue['parentClass'],
-                $this->incrementProperties($cachedValue, [])
+                null, //@TODO Check if this is required
+                $this->getRelatedProperties($currentClassUri)
             );
-
-//            $properties = [];
-//
-//            $this->getParentProperties($currentClassUri, $properties);
-//            $this->getSubProperties($currentClassUri, $properties);
 
             return new ClassCollection(...array_values($this->processedClasses));
         }
@@ -73,45 +65,66 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
         return $this->getClassMetadataSearcher()->findAll($input);
     }
 
-    private function getSubProperties(string $classUri, array $properties = []): void
+    /**
+     * Given the following class tree relation:
+     *
+     * a []
+     * b [a]
+     *   b1 [a,b]
+     *   b2 [a,b]
+     * c [a]
+     *   c1 [a,c]
+     *      c1.1 [a,c,c1]
+     *      c1.2 [a,c,c1]
+     *   c2 [a,c]
+     *      c2.1 [a,c,c2]
+     *
+     * - If I select class c1, then I get properties from: c1.1, c1.2, c1, c, a
+     * - If I select class b2, then I get properties from: b2, b, a
+     * - If I select class a, then I get properties from: a, b, b1, b2, c, c1, c1.1, c1.2, c2, c2.1
+     */
+    private function getRelatedProperties(string $classUri): array
     {
-        foreach ($this->getClass($classUri)->getSubClasses(true) as $subclass) {
-            $result = $this->executeQuery('_id', $subclass->getUri());
+        $allProperties = [];
 
-            $this->processResult($result, $properties, $classUri);
-        }
-    }
-
-    private function getParentProperties(string $classUri, array &$properties): void
-    {
+        // 1 - Get data for class by id
         $result = $this->executeQuery('_id', $classUri);
         $result = current($result);
 
-        if ($result) {
-            $properties = $this->incrementProperties($result, $properties);
+        $allProperties[] = $result;
 
-            if (!empty($result['parentClass']) && !$this->wasClassProcessed($result['parentClass'])) {
-                $this->getParentProperties($result['parentClass'], $properties);
+        // 2 - Get properties for all in the classPath (parent classes);
+        foreach ($result['classPath'] as $parentClassId) {
+            $result = $this->executeQuery('_id', $parentClassId);
+
+            foreach ($result as $resultUnit) {
+                $allProperties[] = $resultUnit;
             }
         }
 
-        $this->addProcessedClass($classUri, $result['parentClass'] ?? null, $properties);
-    }
+        // 3 - Get properties fro children
+        $result = $this->executeQuery('classPath', $classUri);
 
-    private function incrementProperties(array $res, array $properties): array
-    {
-        foreach ($res['propertiesTree'] as $prop) {
-            if (empty($properties[$prop['propertyUri']])) {
-                $properties[$prop['propertyUri']] = $prop;
+        foreach ($result as $resultUnit) {
+            $allProperties[] = $resultUnit;
+        }
+
+        // 4 - Filter out possible duplicated properties:
+        $filteredProperties = [];
+        $processedProperties = [];
+
+        foreach ($allProperties as $propertyGroup) {
+            foreach ($propertyGroup['propertiesTree'] as $property) {
+                if (in_array($property['propertyUri'], $processedProperties)) {
+                    continue;
+                }
+
+                $processedProperties[] = $property['propertyUri'];
+                $filteredProperties[] = $property;
             }
         }
 
-        return $properties;
-    }
-
-    private function wasClassProcessed(string $classUri): bool
-    {
-        return in_array($classUri, array_keys($this->processedClasses), true);
+        return $filteredProperties;
     }
 
     private function addProcessedClass(string $classUri, ?string $parentClass, array $properties)
@@ -144,34 +157,10 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
 
     private function executeQuery(string $field, string $value): ResultSet
     {
-        $cachedValue = $this->getCache()->retrieve($value);
-
-        if ($cachedValue !== null) {
-            return new ResultSet(
-                [
-                    array_merge(
-                        [
-                            'id' => $value,
-                        ],
-                        $cachedValue
-                    )
-                ],
-                1
-            );
-        }
-
-        return new ResultSet([], 0);
-        //FIXME
-        //FIXME
-        //FIXME
-        //FIXME
-
         $query = (new Query('property-list'))
             ->addCondition(sprintf('%s:"%s"', $field, $value));
 
-        $result = $this->getSearcher()->search($query);
-
-        return $result;
+        return $this->getSearcher()->search($query);
     }
 
     private function getPropertyListUri(string $propertyUri, string $type, ?array $values): ?string
@@ -201,22 +190,5 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
     private function getSearch(): SearchProxy
     {
         return $this->getServiceLocator()->get(SearchProxy::SERVICE_ID);
-    }
-
-    private function processResult(ResultSet $result, array $properties, string $classUri): void
-    {
-        foreach ($result as $res) {
-            $newProperties = $this->incrementProperties($res, $properties);
-
-            if (!$this->wasClassProcessed($res['id'])) {
-                $this->addProcessedClass($res['id'], $classUri, $newProperties);
-                $this->getSubProperties($res['id'], $newProperties);
-            }
-        }
-    }
-
-    private function getCache(): ClassMetadataCache
-    {
-        return $this->getServiceLocator()->get(ClassMetadataCache::class);
     }
 }

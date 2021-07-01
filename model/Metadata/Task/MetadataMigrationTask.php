@@ -23,9 +23,9 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\Metadata\Task;
 
 use oat\taoAdvancedSearch\model\Index\Service\AbstractIndexMigrationTask;
+use oat\taoAdvancedSearch\model\Index\Service\SyncResultIndexer;
 use oat\taoAdvancedSearch\model\Metadata\Factory\MetadataResultFilterFactory;
 use oat\taoAdvancedSearch\model\Metadata\Normalizer\MetadataNormalizer;
-use oat\taoAdvancedSearch\model\Metadata\Service\MetadataResultIndexer;
 use oat\taoAdvancedSearch\model\Metadata\Service\MetadataResultSearcher;
 
 class MetadataMigrationTask extends AbstractIndexMigrationTask
@@ -36,7 +36,7 @@ class MetadataMigrationTask extends AbstractIndexMigrationTask
             self::OPTION_NORMALIZER => MetadataNormalizer::class,
             self::OPTION_RESULT_SEARCHER => MetadataResultSearcher::class,
             self::OPTION_RESULT_FILTER_FACTORY => MetadataResultFilterFactory::class,
-            self::OPTION_INDEXER => MetadataResultIndexer::class,
+            self::OPTION_INDEXER => SyncResultIndexer::class,
         ];
     }
 }

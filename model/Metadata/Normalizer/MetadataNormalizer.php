@@ -52,9 +52,31 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
             [
                 'type' => 'property-list',
                 'parentClass' => $this->getParentClass($class),
+                'classPath' => $this->getClassPath($class),
                 'propertiesTree' => $this->getPropertiesFromClass($class),
             ]
         );
+    }
+
+    private function getClassPath(core_kernel_classes_Class $class): array
+    {
+        $path = [$class->getUri()];
+
+        foreach ($class->getParentClasses(true) as $parentClass) {
+            if ($this->isRootClass($class)) {
+                break;
+            }
+
+            if ($this->isRootClass($parentClass)) {
+                $path[] = $parentClass->getUri();
+
+                break;
+            }
+
+            $path[] = $parentClass->getUri();
+        }
+
+        return $path;
     }
 
     private function getParentClass(core_kernel_classes_Class $class): ?string
@@ -70,36 +92,18 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
     private function getPropertiesFromClass(core_kernel_classes_Class $class): array
     {
         $propertyCollection = [];
-//        $properties = $this->isRootClass($class)
-//            ? $this->getGetClassMetadataValuesService()->getByClassRecursive($class, 0)
-//            : $this->getGetClassMetadataValuesService()->getByClassExplicitly($class, 0);
+        $properties = $this->isRootClass($class)
+            ? $this->getGetClassMetadataValuesService()->getByClassRecursive($class, 0)
+            : $this->getGetClassMetadataValuesService()->getByClassExplicitly($class, 0);
 
-        $properties[] = $this->getGetClassMetadataValuesService()->getByClassRecursive($class);
-
-        foreach ($class->getSubClasses(true) as $subClass) {
-            if (empty($subClass->getSubClasses())) {
-                $properties[] = $this->getGetClassMetadataValuesService()->getByClassRecursive($subClass);
-            }
-        }
-
-        $processed = [];
-
-        foreach ($properties as $propertyList) {
-            /** @var Metadata $property */
-            foreach ($propertyList as $property) {
-                if (in_array($property->getPropertyUri(), $processed)) {
-                    continue;
-                }
-
-                $processed[] = $property->getPropertyUri();
-
-                $propertyCollection[] = [
-                    'propertyUri' => $property->getPropertyUri(),
-                    'propertyLabel' => $property->getLabel(),
-                    'propertyType' => $property->getType(),
-                    'propertyValues' => null,
-                ];
-            }
+        /** @var Metadata $property */
+        foreach ($properties as $property) {
+            $propertyCollection[] = [
+                'propertyUri' => $property->getPropertyUri(),
+                'propertyLabel' => $property->getLabel(),
+                'propertyType' => $property->getType(),
+                'propertyValues' => null,
+            ];
         }
 
         return $propertyCollection;
