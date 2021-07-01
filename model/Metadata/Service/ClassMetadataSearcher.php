@@ -38,6 +38,7 @@ use oat\tao\model\Lists\Business\Service\ClassMetadataService;
 use oat\tao\model\Lists\Business\Service\GetClassMetadataValuesService;
 use oat\tao\model\search\ResultSet;
 use oat\tao\model\search\SearchProxy;
+use oat\taoAdvancedSearch\model\Metadata\Cache\ClassMetadataCache;
 
 class ClassMetadataSearcher extends ConfigurableService implements ClassMetadataSearcherInterface
 {
@@ -136,29 +137,32 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
 
     private function executeQuery(string $field, string $value): ResultSet
     {
-        //FIXME
-        //FIXME
-        //FIXME Add cache here...
-        $cache = $this->getCache();
-        $cacheKey = sprintf(self::CACHE, $value);
+        $cachedValue = $this->getCache()->retrieve($value);
 
-        if ($cache->has($cacheKey)) {
-            return $cache->get($cacheKey);
+        if ($cachedValue !== null) {
+            return new ResultSet(
+                [
+                    array_merge(
+                        [
+                            'id' => $value,
+                        ],
+                        $cachedValue
+                    )
+                ],
+                1
+            );
         }
+
         //FIXME
         //FIXME
         //FIXME
+        //FIXME
+        return new ResultSet([], 0);
 
         $query = (new Query('property-list'))
             ->addCondition(sprintf('%s:"%s"', $field, $value));
 
         $result = $this->getSearcher()->search($query);
-
-        //FIXME
-        //FIXME
-        $cache->set($cacheKey, $result);
-        //FIXME
-        //FIXME
 
         return $result;
     }
@@ -204,8 +208,8 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
         }
     }
 
-    private function getCache(): SimpleCache
+    private function getCache(): ClassMetadataCache
     {
-        return $this->getServiceLocator()->get(SimpleCache::SERVICE_ID);
+        return $this->getServiceLocator()->get(ClassMetadataCache::class);
     }
 }
