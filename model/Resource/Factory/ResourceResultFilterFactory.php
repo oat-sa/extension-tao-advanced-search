@@ -20,22 +20,32 @@
 
 declare(strict_types=1);
 
-namespace oat\taoAdvancedSearch\model\DeliveryResult\Factory;
+namespace oat\taoAdvancedSearch\model\Resource\Factory;
 
+use oat\tao\model\task\migration\MigrationConfig;
+use oat\tao\model\task\migration\service\ResultFilter;
 use oat\tao\model\task\migration\service\ResultFilterFactory;
 use oat\tao\model\task\migration\service\ResultFilterFactoryInterface;
 use oat\taoAdvancedSearch\model\DeliveryResult\Repository\DeliveryResultRepository;
 use oat\taoAdvancedSearch\model\DeliveryResult\Repository\DeliveryResultRepositoryInterface;
+use oat\taoAdvancedSearch\model\Resource\Repository\IndexableResourceRepository;
+use oat\taoAdvancedSearch\model\Resource\Repository\IndexableResourceRepositoryInterface;
 
-class DeliveryResultFilterFactory extends ResultFilterFactory implements ResultFilterFactoryInterface
+class ResourceResultFilterFactory extends ResultFilterFactory implements ResultFilterFactoryInterface
 {
     protected function getMax(): int
     {
-        return $this->getDeliveryResultRepository()->getTotal();
+        $classUri = $this->config->getCustomParameter('classUri');
+
+        if ($classUri) {
+            return $this->getIndexableResourceUrisRepository()->getTotal($classUri);
+        }
+
+        return 0;
     }
 
-    private function getDeliveryResultRepository(): DeliveryResultRepositoryInterface
+    private function getIndexableResourceUrisRepository(): IndexableResourceRepositoryInterface
     {
-        return $this->getServiceLocator()->get(DeliveryResultRepository::class);
+        return $this->getServiceLocator()->get(IndexableResourceRepository::class);
     }
 }

@@ -20,37 +20,49 @@
 
 declare(strict_types=1);
 
-namespace oat\taoAdvancedSearch\model\Metadata\Listener;
+namespace oat\taoAdvancedSearch\model\Index\Service;
 
-use Exception;
-use oat\generis\model\data\event\ClassDeletedEvent;
 use oat\oatbox\service\ConfigurableService;
+use oat\tao\model\search\index\IndexService;
 use oat\tao\model\search\SearchInterface;
 use oat\tao\model\search\SearchProxy;
-use oat\taoAdvancedSearch\model\Index\Listener\ListenerInterface;
+use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
 
-class ClassDeletionListener extends ConfigurableService implements ListenerInterface
+class SyncResultIndexer extends ConfigurableService implements IndexerInterface, NormalizerAwareInterface
 {
-    public const SERVICE_ID = 'taoAdvancedSearch/ClassDeletionListener';
+    /** @var NormalizerInterface */
+    private $normalizer;
 
-    /**
-     * @throws UnsupportedEventException
-     */
-    public function listen($event): void
+    public function setNormalizer(NormalizerInterface $normalizer): void
     {
-        if (!$event instanceof ClassDeletedEvent) {
-            throw new UnsupportedEventException(ClassDeletedEvent::class);
-        }
+        $this->normalizer = $normalizer;
+    }
 
-        try {
-            $this->getSearch()->remove($event->getClass()->getUri());
-        } catch (Exception $exception) {
-            $this->getLogger()->error($exception->getMessage());
-        }
+    public function addIndex($resource): void
+    {
+        $normalizedResource = $this->normalizer->normalize($resource);
+
+        $document = $this->getIndexerService()->getDocumentBuilder()->createDocumentFromArray(
+            [
+                'id' => $normalizedResource->getId(),
+                'body' => $normalizedResource->getData()
+            ]
+        );
+
+        $this->getSearch()->index(
+            [
+                $document
+            ]
+        );
     }
 
     private function getSearch(): SearchInterface
     {
         return $this->getServiceLocator()->get(SearchProxy::SERVICE_ID);
+    }
+
+    private function getIndexerService(): IndexService
+    {
+        return $this->getServiceLocator()->get(IndexService::SERVICE_ID);
     }
 }

@@ -98,11 +98,12 @@ class AbstractIndexMigrationTaskTest extends TestCase
                     AbstractIndexMigrationTask::OPTION_NORMALIZER => DeliveryResultNormalizer::class,
                     AbstractIndexMigrationTask::OPTION_RESULT_SEARCHER => DeliveryResultSearcher::class,
                     AbstractIndexMigrationTask::OPTION_RESULT_FILTER_FACTORY => DeliveryResultFilterFactory::class,
+                    AbstractIndexMigrationTask::OPTION_INDEXER => ResultIndexer::class,
                 ]
             );
 
         $indexer = $this->resultIndexer->setNormalizer($this->normalizer);
-        $indexUnitProcessor = $this->indexUnitProcessor->setIndexer($indexer);
+        $indexUnitProcessor = $this->indexUnitProcessor->setIndexer($this->resultIndexer);
 
         $this->assertEquals(
             $indexUnitProcessor,

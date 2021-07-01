@@ -25,6 +25,7 @@ namespace oat\taoAdvancedSearch\model\DeliveryResult\Service;
 use oat\taoAdvancedSearch\model\DeliveryResult\Factory\DeliveryResultFilterFactory;
 use oat\taoAdvancedSearch\model\DeliveryResult\Normalizer\DeliveryResultNormalizer;
 use oat\taoAdvancedSearch\model\Index\Service\AbstractIndexMigrationTask;
+use oat\taoAdvancedSearch\model\Index\Service\SyncResultIndexer;
 
 class DeliveryResultMigrationTask extends AbstractIndexMigrationTask
 {
@@ -34,6 +35,7 @@ class DeliveryResultMigrationTask extends AbstractIndexMigrationTask
             self::OPTION_NORMALIZER => DeliveryResultNormalizer::class,
             self::OPTION_RESULT_SEARCHER => DeliveryResultSearcher::class,
             self::OPTION_RESULT_FILTER_FACTORY => DeliveryResultFilterFactory::class,
+            self::OPTION_INDEXER => SyncResultIndexer::class,
         ];
     }
 }
