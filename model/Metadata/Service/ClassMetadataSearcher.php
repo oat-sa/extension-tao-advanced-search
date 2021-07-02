@@ -52,11 +52,7 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
         if ($this->getAdvancedSearchChecker()->isEnabled()) {
             $currentClassUri = $input->getSearchRequest()->getClassUri();
 
-            $this->addProcessedClass(
-                $currentClassUri,
-                null, //@TODO Check if this is required
-                $this->getRelatedProperties($currentClassUri)
-            );
+            $this->addProcessedClass($currentClassUri, $this->getProperties($currentClassUri));
 
             return new ClassCollection(...array_values($this->processedClasses));
         }
@@ -82,53 +78,36 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
      * - If I select class b2, then I get properties from: b2, b, a
      * - If I select class a, then I get properties from: a, b, b1, b2, c, c1, c1.1, c1.2, c2, c2.1
      */
-    private function getRelatedProperties(string $classUri): array
+    private function getProperties(string $classUri): array
     {
-        $allProperties = [];
+        $result = $this->getMainClassProperties($classUri);
 
-        // 1 - Get data for class by id
-        $result = $this->executeQuery('_id', $classUri);
-
-        if ($result->getTotalCount() === 0) {
-            $this->logWarning(
-                sprintf(
-                    'Error at %s. There is not metadata saved for class for %s',
-                    __METHOD__,
-                    $classUri
-                )
-            );
-
+        if (empty($result)) {
             return [];
         }
 
-        $result = current($result);
+        $allProperties = [$result];
+        $allProperties = $this->getRelatedProperties($result, $allProperties);
+        $allProperties = $this->getClassPathProperties($classUri, $allProperties);
 
-        $allProperties[] = $result;
+        return $this->filterDuplicatedProperties($allProperties);
+    }
 
-        // 2 - Get properties for all in the classPath (parent classes);
-        $classPath = $result['classPath'] ?? [];
-        if (empty($result['classPath'])) {
-            $this->logWarning(
-                sprintf(
-                    'Error at %s. The value of classPath was not indexed properly for %s',
-                    __METHOD__,
-                    $classUri
-                )
-            );
+    private function getClassPathProperties(string $classUri, array $allProperties): array
+    {
+        foreach ($this->executeQuery('classPath', $classUri) as $resultUnit) {
+            $allProperties[] = $resultUnit;
         }
 
-        foreach ($classPath as $parentClassId) {
+        return $allProperties;
+    }
+
+    private function getRelatedProperties(array $result, array $allProperties): array
+    {
+        foreach (($result['classPath'] ?? []) as $parentClassId) {
             $result = $this->executeQuery('_id', $parentClassId);
 
             if ($result->getTotalCount() === 0) {
-                $this->logWarning(
-                    sprintf(
-                        'Error at %s. There is not metadata saved for class for %s',
-                        __METHOD__,
-                        $parentClassId
-                    )
-                );
-
                 continue;
             }
 
@@ -137,42 +116,38 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
             }
         }
 
-        // 3 - Get properties fro children
-        $result = $this->executeQuery('classPath', $classUri);
+        return $allProperties;
+    }
+
+    private function getMainClassProperties(string $classUri): array
+    {
+        $result = $this->executeQuery('_id', $classUri);
 
         if ($result->getTotalCount() === 0) {
-            $this->logWarning(
-                sprintf(
-                    'Error at %s. There is no class saved with classPath %s',
-                    __METHOD__,
-                    $classUri
-                )
-            );
+            return [];
         }
 
-        foreach ($result as $resultUnit) {
-            $allProperties[] = $resultUnit;
-        }
+        return current($result);
+    }
 
-        // 4 - Filter out possible duplicated properties:
-        $filteredProperties = [];
-        $processedProperties = [];
+    private function filterDuplicatedProperties(array $allProperties): array
+    {
+        $properties = [];
 
         foreach ($allProperties as $propertyGroup) {
             foreach (($propertyGroup['propertiesTree'] ?? []) as $property) {
-                if (empty($property['propertyUri']) || in_array($property['propertyUri'], $processedProperties)) {
+                if (empty($property['propertyUri']) || array_key_exists($property['propertyUri'], $properties)) {
                     continue;
                 }
 
-                $processedProperties[] = $property['propertyUri'];
-                $filteredProperties[] = $property;
+                $properties[$property['propertyUri']] = $property;
             }
         }
 
-        return $filteredProperties;
+        return $properties;
     }
 
-    private function addProcessedClass(string $classUri, ?string $parentClass, array $properties)
+    private function addProcessedClass(string $classUri, array $properties)
     {
         $metadataCollection = new MetadataCollection();
 
@@ -195,7 +170,6 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
 
         $this->processedClasses[$classUri] = (new ClassMetadata())
             ->setClass($classUri)
-            ->setParentClass($parentClass)
             ->setLabel($classUri)
             ->setMetaData($metadataCollection);
     }
@@ -205,7 +179,13 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
         $query = (new Query('property-list'))
             ->addCondition(sprintf('%s:"%s"', $field, $value));
 
-        return $this->getSearcher()->search($query);
+        $result = $this->getSearcher()->search($query);
+
+        if ($result->getTotalCount() === 0) {
+            $this->logWarning(sprintf('There is no metadata saved for %s:%s at %s', $field, $value, __METHOD__));
+        }
+
+        return $result;
     }
 
     private function getPropertyListUri(string $propertyUri, string $type, ?array $values): ?string
