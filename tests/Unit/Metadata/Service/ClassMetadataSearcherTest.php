@@ -22,9 +22,8 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\model\Metadata\Service;
 
-use core_kernel_classes_Class;
-use oat\generis\model\data\Ontology;
 use oat\generis\test\TestCase;
+use oat\oatbox\log\LoggerService;
 use oat\tao\elasticsearch\ElasticSearch;
 use oat\tao\elasticsearch\SearchResult;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
@@ -50,12 +49,6 @@ class ClassMetadataSearcherTest extends TestCase
     /** @var ElasticSearch|MockObject */
     private $elasticSearch;
 
-    /** @var Ontology|MockObject */
-    private $model;
-
-    /** @var core_kernel_classes_Class|MockObject */
-    private $classMock;
-
     /** @var SearchProxy|MockObject */
     private $search;
 
@@ -65,9 +58,6 @@ class ClassMetadataSearcherTest extends TestCase
         $this->advancedSearchChecker = $this->createMock(AdvancedSearchChecker::class);
         $this->elasticSearch = $this->createMock(ElasticSearch::class);
         $this->search = $this->createMock(SearchProxy::class);
-        $this->model = $this->createMock(Ontology::class);
-        $this->classMock = $this->createMock(core_kernel_classes_Class::class);
-
         $this->search
             ->method('getAdvancedSearch')
             ->willReturn($this->elasticSearch);
@@ -79,10 +69,10 @@ class ClassMetadataSearcherTest extends TestCase
                     ClassMetadataService::SERVICE_ID => $this->classMetadataService,
                     AdvancedSearchChecker::class => $this->advancedSearchChecker,
                     SearchProxy::SERVICE_ID => $this->search,
+                    LoggerService::SERVICE_ID => $this->createMock(LoggerService::class)
                 ]
             )
         );
-        $this->subject->setModel($this->model);
     }
 
     public function testFindAllWhenAdvancedSearchIsDisabledWillFallbackToGeneris(): void
@@ -112,20 +102,6 @@ class ClassMetadataSearcherTest extends TestCase
             ->method('isEnabled')
             ->willReturn(true);
 
-        $this->model
-            ->method('getClass')
-            ->willReturn($this->classMock);
-
-        $this->classMock
-            ->method('getSubClasses')
-            ->willReturn([
-                $this->classMock
-            ]);
-
-        $this->classMock
-            ->method('getUri')
-            ->willReturn('someUri');
-
         $this->elasticSearch
             ->method('search')
             ->willReturnOnConsecutiveCalls(
@@ -133,22 +109,17 @@ class ClassMetadataSearcherTest extends TestCase
                     // Parent classes
                     new SearchResult(
                         [
-                            $this->getMockResult('class1', 'parentClass1'),
+                            $this->getMockResult('class1', 'parentClass1', ['class1', 'parentClass1']),
                         ],
                         1
                     ),
                     new SearchResult(
-                        [
-                            $this->getMockResult('parentClass1', null)
-                        ],
-                        1
+                        [],
+                        0
                     ),
-                    // Sub classes
                     new SearchResult(
-                        [
-                            $this->getMockResult('subClass1', 'doesNotMatter')
-                        ],
-                        1
+                        [],
+                        0
                     ),
                     new SearchResult(
                         [],
@@ -166,20 +137,15 @@ class ClassMetadataSearcherTest extends TestCase
         $rawResult = json_decode(json_encode($result->jsonSerialize()), true);
 
         $this->assertSame(null, $rawResult[0]['parent-class']);
-        $this->assertSame('parentClass1', $rawResult[0]['class']);
-
-        $this->assertSame('parentClass1', $rawResult[1]['parent-class']);
-        $this->assertSame('class1', $rawResult[1]['class']);
-
-        $this->assertSame('class1', $rawResult[2]['parent-class']);
-        $this->assertSame('subClass1', $rawResult[2]['class']);
+        $this->assertSame('class1', $rawResult[0]['class']);
     }
 
-    private function getMockResult(string $classId, ?string $parentClassUri): array
+    private function getMockResult(string $classId, ?string $parentClassUri, array $classPath): array
     {
         return [
             'id' => $classId,
             'parentClass' => $parentClassUri,
+            'classPath' => $classPath,
             'propertiesTree' => [
                 [
                     'propertyUri' => 'propertyUri1',

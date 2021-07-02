@@ -22,7 +22,6 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\Metadata\Service;
 
-use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\service\ConfigurableService;
 use oat\tao\elasticsearch\ElasticSearch;
 use oat\tao\elasticsearch\Query;
@@ -40,8 +39,6 @@ use oat\tao\model\search\SearchProxy;
 
 class ClassMetadataSearcher extends ConfigurableService implements ClassMetadataSearcherInterface
 {
-    use OntologyAwareTrait;
-
     private const BASE_LIST_ITEMS_URI = '/tao/PropertyValues/get?propertyUri=%s';
 
     /** @var array */
