@@ -35,11 +35,11 @@ class ClassPathFactory extends ConfigurableService
     {
         $path = [$class->getUri()];
 
-        foreach ($class->getParentClasses(true) as $parentClass) {
-            if ($this->isRootClass($class)) {
-                break;
-            }
+        if ($this->isRootClass($class)) {
+            return $path;
+        }
 
+        foreach ($class->getParentClasses(true) as $parentClass) {
             if ($this->isRootClass($parentClass)) {
                 $path[] = $parentClass->getUri();
 
