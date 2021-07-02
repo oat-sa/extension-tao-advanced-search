@@ -88,13 +88,49 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
 
         // 1 - Get data for class by id
         $result = $this->executeQuery('_id', $classUri);
+
+        if ($result->getTotalCount() === 0) {
+            $this->logWarning(
+                sprintf(
+                    'Error at %s. There is not metadata saved for class for %s',
+                    __METHOD__,
+                    $classUri
+                )
+            );
+
+            return [];
+        }
+
         $result = current($result);
 
         $allProperties[] = $result;
 
         // 2 - Get properties for all in the classPath (parent classes);
-        foreach ($result['classPath'] as $parentClassId) {
+        $classPath = $result['classPath'] ?? [];
+        if (empty($result['classPath'])) {
+            $this->logWarning(
+                sprintf(
+                    'Error at %s. The value of classPath was not indexed properly for %s',
+                    __METHOD__,
+                    $classUri
+                )
+            );
+        }
+
+        foreach ($classPath as $parentClassId) {
             $result = $this->executeQuery('_id', $parentClassId);
+
+            if ($result->getTotalCount() === 0) {
+                $this->logWarning(
+                    sprintf(
+                        'Error at %s. There is not metadata saved for class for %s',
+                        __METHOD__,
+                        $parentClassId
+                    )
+                );
+
+                continue;
+            }
 
             foreach ($result as $resultUnit) {
                 $allProperties[] = $resultUnit;
@@ -103,6 +139,16 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
 
         // 3 - Get properties fro children
         $result = $this->executeQuery('classPath', $classUri);
+
+        if ($result->getTotalCount() === 0) {
+            $this->logWarning(
+                sprintf(
+                    'Error at %s. There is no class saved with classPath %s',
+                    __METHOD__,
+                    $classUri
+                )
+            );
+        }
 
         foreach ($result as $resultUnit) {
             $allProperties[] = $resultUnit;
@@ -113,8 +159,8 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
         $processedProperties = [];
 
         foreach ($allProperties as $propertyGroup) {
-            foreach ($propertyGroup['propertiesTree'] as $property) {
-                if (in_array($property['propertyUri'], $processedProperties)) {
+            foreach (($propertyGroup['propertiesTree'] ?? []) as $property) {
+                if (empty($property['propertyUri']) || in_array($property['propertyUri'], $processedProperties)) {
                     continue;
                 }
 
