@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\Index\Service;
 
 use oat\oatbox\service\ConfigurableService;
+use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\search\tasks\AddSearchIndexFromArray;
 use oat\tao\model\taskQueue\QueueDispatcherInterface;
 use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
@@ -39,6 +40,10 @@ class ResultIndexer extends ConfigurableService implements IndexerInterface, Nor
 
     public function addIndex($resource): void
     {
+        if (!$this->getServiceLocator()->get(AdvancedSearchChecker::class)->isEnabled()) {
+            return;
+        }
+        
         $normalizedResource = $this->normalizer->normalize($resource);
 
         $this->getQueueDispatcher()->createTask(
