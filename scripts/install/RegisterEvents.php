@@ -25,11 +25,13 @@ namespace oat\taoAdvancedSearch\scripts\install;
 use oat\generis\model\data\event\ClassDeletedEvent;
 use oat\generis\model\data\event\ClassPropertyCreatedEvent;
 use oat\generis\model\data\event\ClassPropertyDeletedEvent;
+use oat\generis\model\data\event\ResourceCreated;
 use oat\oatbox\event\EventManager;
 use oat\oatbox\extension\InstallAction;
 use oat\tao\model\event\ClassPropertiesChangedEvent;
 use oat\taoAdvancedSearch\model\Metadata\Listener\ClassDeletionListener;
 use oat\taoAdvancedSearch\model\Metadata\Listener\MetadataChangedListener;
+use oat\taoAdvancedSearch\model\Metadata\Listener\MetadataInheritanceListener;
 use oat\taoAdvancedSearch\model\Metadata\Listener\MetadataListener;
 
 class RegisterEvents extends InstallAction
@@ -70,6 +72,15 @@ class RegisterEvents extends InstallAction
             ClassDeletedEvent::class,
             [
                 ClassDeletionListener::class,
+                'listen'
+            ]
+        );
+
+
+        $eventManager->attach(
+            ResourceCreated::class,
+            [
+                MetadataInheritanceListener::class,
                 'listen'
             ]
         );

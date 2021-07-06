@@ -30,6 +30,7 @@ use oat\generis\test\TestCase;
 use oat\tao\model\Lists\Business\Domain\Metadata;
 use oat\tao\model\Lists\Business\Domain\MetadataCollection;
 use oat\tao\model\Lists\Business\Service\GetClassMetadataValuesService;
+use oat\taoAdvancedSearch\model\Metadata\Factory\ClassPathFactory;
 use oat\taoAdvancedSearch\model\Metadata\Normalizer\MetadataNormalizer;
 use PHPUnit\Framework\MockObject\MockObject;
 
@@ -53,6 +54,9 @@ class MetadataNormalizerTest extends TestCase
     /** @var Ontology|MockObject */
     private $ontology;
 
+    /** @var ClassPathFactory|MockObject */
+    private $classPathFactory;
+
     public function setUp(): void
     {
         $this->subject = new MetadataNormalizer();
@@ -61,12 +65,18 @@ class MetadataNormalizerTest extends TestCase
         $this->getClassMetadataValuesServiceMock = $this->createMock(GetClassMetadataValuesService::class);
         $this->metadataMock = $this->createMock(Metadata::class);
         $this->ontology = $this->createMock(Ontology::class);
+        $this->classPathFactory = $this->createMock(ClassPathFactory::class);
+
+        $this->classPathFactory
+            ->method('create')
+            ->willReturn([]);
 
         $this->subject->setServiceLocator(
             $this->getServiceLocatorMock(
                 [
                     GetClassMetadataValuesService::class => $this->getClassMetadataValuesServiceMock,
                     Ontology::SERVICE_ID => $this->ontology,
+                    ClassPathFactory::class => $this->classPathFactory,
                 ]
             )
         );
@@ -158,6 +168,7 @@ class MetadataNormalizerTest extends TestCase
             [
                 'type' => 'property-list',
                 'parentClass' => 'exampleParentClassUri',
+                'classPath' => [],
                 'propertiesTree' => [
                     [
                         'propertyUri' => 'PropertyUri Example',
