@@ -30,6 +30,7 @@ use oat\tao\model\Lists\Business\Domain\Metadata;
 use oat\tao\model\Lists\Business\Service\GetClassMetadataValuesService;
 use oat\taoAdvancedSearch\model\Index\IndexResource;
 use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
+use oat\taoAdvancedSearch\model\Metadata\Factory\ClassPathFactory;
 use oat\taoAdvancedSearch\model\Metadata\Service\MetadataResultSearcher;
 
 class MetadataNormalizer extends ConfigurableService implements NormalizerInterface
@@ -52,6 +53,7 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
             [
                 'type' => 'property-list',
                 'parentClass' => $this->getParentClass($class),
+                'classPath' => $this->getClassPathFactory()->create($class),
                 'propertiesTree' => $this->getPropertiesFromClass($class),
             ]
         );
@@ -90,6 +92,11 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
     private function getGetClassMetadataValuesService(): GetClassMetadataValuesService
     {
         return $this->getServiceLocator()->get(GetClassMetadataValuesService::class);
+    }
+
+    private function getClassPathFactory(): ClassPathFactory
+    {
+        return $this->getServiceLocator()->get(ClassPathFactory::class);
     }
 
     private function isRootClass(core_kernel_classes_Class $class)
