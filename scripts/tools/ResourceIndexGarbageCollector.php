@@ -87,12 +87,34 @@ class ResourceIndexGarbageCollector extends ScriptAction implements ServiceLocat
         $limit = (int)$this->getOption('limit');
         $offset = (int)$this->getOption('offset');
         $report = Report::createInfo(sprintf('Cleaning documents for index "%s"', $index));
+        $searcher = $this->getSearch();
         $totalRemoved = 0;
+        $urisToRemove = [];
 
         do {
-            $removed = $this->removeNotExisting($report, $index, $offset, $limit);
+            $removed = $this->incrementUrisToRemove($index, $offset, $limit, $urisToRemove);
             $offset += $limit;
         } while ($removed !== null);
+
+        foreach ($urisToRemove as $uri) {
+            if ($searcher->remove($uri)) {
+                $totalRemoved++;
+
+                continue;
+            }
+
+            $errorMessage = sprintf(
+                'Error removing resource "%s" for index "%s" (offset:%s, limit:%s)',
+                $uri,
+                $index,
+                $offset,
+                $limit
+            );
+
+            $report->add(Report::createError($errorMessage));
+
+            $this->logError($errorMessage);
+        }
 
         $message = sprintf(
             'Total of %s document(s) removed from index %s',
@@ -107,7 +129,7 @@ class ResourceIndexGarbageCollector extends ScriptAction implements ServiceLocat
         return $report;
     }
 
-    private function removeNotExisting(Report $report, string $index, int $offset, int $limit): ?array
+    private function incrementUrisToRemove(string $index, int $offset, int $limit, array &$urisToRemove): ?array
     {
         $results = $this->search($index, $offset, $limit);
 
@@ -115,48 +137,15 @@ class ResourceIndexGarbageCollector extends ScriptAction implements ServiceLocat
             return null;
         }
 
-        $removedUris = [];
-        $searcher = $this->getSearch();
-
         foreach ($results as $result) {
             $resource = $this->getResource($result['id']);
 
-            if ($resource->exists()) {
-                continue;
+            if (!$resource->exists() && !$resource->isClass()) {
+                $urisToRemove[] = $result['id'];
             }
-
-            if ($searcher->remove($result['id'])) {
-                $removedUris[] = $result['id'];
-
-                continue;
-            }
-
-            $errorMessage = sprintf(
-                'Error removing resource "%s" for index "%s" (offset:%s, limit:%s)',
-                $result['id'],
-                $index,
-                $offset,
-                $limit
-            );
-
-            $report->add(Report::createError($errorMessage));
-
-            $this->logError($errorMessage);
         }
 
-        $report->add(
-            Report::createSuccess(
-                sprintf(
-                    '%s document(s) removed for index "%s" (offset:%s, limit:%s)',
-                    count($removedUris),
-                    $index,
-                    $offset,
-                    $limit
-                )
-            )
-        );
-
-        return $removedUris;
+        return $urisToRemove;
     }
 
     private function search(string $index, int $offset, int $limit): SearchResult

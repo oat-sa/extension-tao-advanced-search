@@ -18,8 +18,8 @@ then
 fi
 
 CURRENT_DIR=$(dirname "$0");
-OFFSET=${2:-0} # Default will be 0
-LIMIT=${3:-100} # Default will be 100
+OFFSET=${1:-0} # Default will be 0
+LIMIT=${2:-100} # Default will be 100
 
 php -d memory_limit=512M index.php "\oat\taoAdvancedSearch\scripts\tools\ResourceIndexGarbageCollector" -i 'items' -l $LIMIT -o $OFFSET
 php -d memory_limit=512M index.php "\oat\taoAdvancedSearch\scripts\tools\ResourceIndexGarbageCollector" -i 'assets' -l $LIMIT -o $OFFSET
@@ -27,3 +27,4 @@ php -d memory_limit=512M index.php "\oat\taoAdvancedSearch\scripts\tools\Resourc
 php -d memory_limit=512M index.php "\oat\taoAdvancedSearch\scripts\tools\ResourceIndexGarbageCollector" -i 'groups' -l $LIMIT -o $OFFSET
 php -d memory_limit=512M index.php "\oat\taoAdvancedSearch\scripts\tools\ResourceIndexGarbageCollector" -i 'test-takers' -l $LIMIT -o $OFFSET
 php -d memory_limit=512M index.php "\oat\taoAdvancedSearch\scripts\tools\ResourceIndexGarbageCollector" -i 'tests' -l $LIMIT -o $OFFSET
+php -d memory_limit=512M index.php "\oat\taoAdvancedSearch\scripts\tools\ResourceIndexGarbageCollector" -i 'property-list' -l $LIMIT -o $OFFSET
