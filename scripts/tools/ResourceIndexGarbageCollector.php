@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\scripts\tools;
 
+use core_kernel_classes_Resource;
 use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\extension\script\ScriptAction;
 use oat\oatbox\reporting\Report;
@@ -140,12 +141,40 @@ class ResourceIndexGarbageCollector extends ScriptAction implements ServiceLocat
         foreach ($results as $result) {
             $resource = $this->getResource($result['id']);
 
-            if (!$resource->exists() && !$resource->isClass()) {
+            if ($this->isMissingResource($resource)) {
                 $urisToRemove[] = $result['id'];
             }
         }
 
         return $urisToRemove;
+    }
+
+    private function isMissingResource(core_kernel_classes_Resource $resource): bool
+    {
+        if ($this->isMissingType($resource)) {
+            return true;
+        }
+
+        if ($resource->isClass()) {
+            return false;
+        }
+
+        if ($resource->exists()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function isMissingType(core_kernel_classes_Resource $resource): bool
+    {
+        foreach ($resource->getTypes() as $class) {
+            if (!$class->exists()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function search(string $index, int $offset, int $limit): SearchResult
