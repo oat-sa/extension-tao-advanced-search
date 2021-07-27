@@ -155,11 +155,7 @@ class ResourceIndexGarbageCollector extends ScriptAction implements ServiceLocat
             return true;
         }
 
-        if ($resource->isClass()) {
-            return false;
-        }
-
-        if ($resource->exists()) {
+        if ($resource->isClass() || $resource->exists()) {
             return false;
         }
 
