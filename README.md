@@ -85,6 +85,14 @@ This is necessary to optimize indexation:
 ./taoAdvancedSearch/scripts/tools/IndexDeliveryResults.sh --help
 ```
 
+## Garbage collection
+
+To clean old documents in the indexes:
+
+````shell
+./taoAdvancedSearch/scripts/tools/GarbageCollector.sh --help
+````
+
 ## Getting statistics
 
 Execute following command:
