@@ -42,9 +42,11 @@ class ClassMovedListener extends ConfigurableService implements ListenerInterfac
             throw new UnsupportedEventException(ClassMovedEvent::class);
         }
 
-        $this->getIndexer()->addIndex(
-            $event->getClass()
-        );
+        $subClasses = $event->getClass()->getSubClasses(true);
+
+        foreach (array_merge([$event->getClass()], $subClasses) as $class) {
+            $this->getIndexer()->addIndex($class);
+        }
     }
 
     private function getIndexer(): IndexerInterface
