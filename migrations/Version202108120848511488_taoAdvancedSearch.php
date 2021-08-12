@@ -32,7 +32,7 @@ final class Version202108120848511488_taoAdvancedSearch extends AbstractMigratio
             ]
         );
 
-        $this->getServiceManager()->register(EventManager::SERVICE_ID, $this->getEventManager());
+        $this->registerService(EventManager::SERVICE_ID, $this->getEventManager());
     }
 
     public function down(Schema $schema): void
@@ -45,7 +45,7 @@ final class Version202108120848511488_taoAdvancedSearch extends AbstractMigratio
             ]
         );
 
-        $this->getServiceManager()->register(EventManager::SERVICE_ID, $this->getEventManager());
+        $this->registerService(EventManager::SERVICE_ID, $this->getEventManager());
 
         $this->getServiceManager()->unregister(ClassMovedListener::SERVICE_ID);
     }
