@@ -76,7 +76,7 @@ This is necessary to optimize indexation:
 #### To populate only class metadata indexes, execute:
 
 ```shell script
-./taoAdvancedSearch/scripts/tools/IndexClassMetatada.sh --help
+./taoAdvancedSearch/scripts/tools/IndexClassMetadata.sh --help
 ```
 
 #### To populate only delivery results, execute:
