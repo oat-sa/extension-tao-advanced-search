@@ -32,6 +32,9 @@ class ClassPathFactory extends ConfigurableService
 {
     use OntologyAwareTrait;
 
+    /** @var IndexableClassRepositoryInterface */
+    private $indexableClassRepository;
+
     public function create(core_kernel_classes_Class $class): array
     {
         $path = [$class->getUri()];
@@ -60,6 +63,10 @@ class ClassPathFactory extends ConfigurableService
 
     private function getIndexableClassRepository(): IndexableClassRepositoryInterface
     {
-        return $this->getServiceLocator()->get(IndexableClassCachedRepository::class);
+        if ($this->indexableClassRepository === null) {
+            $this->indexableClassRepository = $this->getServiceLocator()->get(IndexableClassCachedRepository::class);
+        }
+
+        return $this->indexableClassRepository;
     }
 }

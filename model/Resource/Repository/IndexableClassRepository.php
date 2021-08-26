@@ -73,12 +73,14 @@ class IndexableClassRepository extends ConfigurableService implements IndexableC
         return array_values($classes);
     }
 
+    /**
+     * @inheritDoc
+     */
     public function findAllUris(): array
     {
-        $all = $this->findAll();
         $out = [];
 
-        foreach ($all as $class) {
+        foreach ($this->findAll() as $class) {
             $out[] = $class->getUri();
         }
 

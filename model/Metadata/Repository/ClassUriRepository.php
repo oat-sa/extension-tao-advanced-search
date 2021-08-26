@@ -22,15 +22,12 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\Metadata\Repository;
 
-use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\service\ConfigurableService;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassCachedRepository;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepositoryInterface;
 
 class ClassUriRepository extends ConfigurableService implements ClassUriRepositoryInterface
 {
-    use OntologyAwareTrait;
-
     public function findAll(): array
     {
         $classUris = [];
