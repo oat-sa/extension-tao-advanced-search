@@ -25,13 +25,14 @@ namespace oat\taoAdvancedSearch\model\Metadata\Factory;
 use core_kernel_classes_Class;
 use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\service\ConfigurableService;
-use oat\taoAdvancedSearch\model\Metadata\Service\MetadataResultSearcher;
+use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassCachedRepository;
+use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepositoryInterface;
 
 class ClassPathFactory extends ConfigurableService
 {
     use OntologyAwareTrait;
 
-    public function create(core_kernel_classes_Class  $class): array
+    public function create(core_kernel_classes_Class $class): array
     {
         $path = [$class->getUri()];
 
@@ -54,6 +55,11 @@ class ClassPathFactory extends ConfigurableService
 
     private function isRootClass(core_kernel_classes_Class $class)
     {
-        return in_array($class->getUri(), MetadataResultSearcher::ROOT_CLASSES, true);
+        return in_array($class->getUri(), $this->getIndexableClassRepository()->findAllUris(), true);
+    }
+
+    private function getIndexableClassRepository(): IndexableClassRepositoryInterface
+    {
+        return $this->getServiceLocator()->get(IndexableClassCachedRepository::class);
     }
 }

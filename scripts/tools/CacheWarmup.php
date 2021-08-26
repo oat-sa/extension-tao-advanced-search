@@ -26,6 +26,8 @@ use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\extension\script\ScriptAction;
 use oat\oatbox\reporting\Report;
 use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriCachedRepository;
+use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassCachedRepository;
+use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepositoryInterface;
 use Zend\ServiceManager\ServiceLocatorAwareInterface;
 use Zend\ServiceManager\ServiceLocatorAwareTrait;
 
@@ -63,9 +65,18 @@ class CacheWarmup extends ScriptAction implements ServiceLocatorAwareInterface
         $classUriCachedRepository = $this->getClassUriCachedRepository();
         $classUriCachedRepository->cacheWarmup();
 
+        $indexableClassRepository = $this->getIndexableClassRepository();
+        $indexableClassRepository->cacheWarmup();
+
         $report->add(
             Report::createSuccess(
                 sprintf('Cache warmed up! %s classUris in cache', $classUriCachedRepository->getTotal())
+            )
+        );
+
+        $report->add(
+            Report::createSuccess(
+                sprintf('Cache warmed up! ROOT classUris (%s) in cache', implode(', ', $indexableClassRepository->findAllUris()))
             )
         );
 
@@ -75,5 +86,10 @@ class CacheWarmup extends ScriptAction implements ServiceLocatorAwareInterface
     private function getClassUriCachedRepository(): ClassUriCachedRepository
     {
         return $this->getServiceLocator()->get(ClassUriCachedRepository::class);
+    }
+
+    private function getIndexableClassRepository(): IndexableClassRepositoryInterface
+    {
+        return $this->getServiceLocator()->get(IndexableClassCachedRepository::class);
     }
 }

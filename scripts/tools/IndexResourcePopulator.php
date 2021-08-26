@@ -25,7 +25,7 @@ namespace oat\taoAdvancedSearch\scripts\tools;
 use oat\oatbox\extension\script\ScriptAction;
 use oat\oatbox\reporting\Report;
 use oat\tao\scripts\tools\MigrationAction;
-use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepository;
+use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassCachedRepository;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepositoryInterface;
 use oat\taoAdvancedSearch\model\Resource\Task\ResourceMigrationTask;
 use Zend\ServiceManager\ServiceLocatorAwareInterface;
@@ -100,6 +100,6 @@ class IndexResourcePopulator extends ScriptAction implements ServiceLocatorAware
 
     private function getIndexableClassRepository(): IndexableClassRepositoryInterface
     {
-        return $this->getServiceLocator()->get(IndexableClassRepository::class);
+        return $this->getServiceLocator()->get(IndexableClassCachedRepository::class);
     }
 }

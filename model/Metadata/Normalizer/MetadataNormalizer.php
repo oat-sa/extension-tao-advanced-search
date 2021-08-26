@@ -31,7 +31,8 @@ use oat\tao\model\Lists\Business\Service\GetClassMetadataValuesService;
 use oat\taoAdvancedSearch\model\Index\IndexResource;
 use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
 use oat\taoAdvancedSearch\model\Metadata\Factory\ClassPathFactory;
-use oat\taoAdvancedSearch\model\Metadata\Service\MetadataResultSearcher;
+use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassCachedRepository;
+use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepositoryInterface;
 
 class MetadataNormalizer extends ConfigurableService implements NormalizerInterface
 {
@@ -101,6 +102,11 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
 
     private function isRootClass(core_kernel_classes_Class $class)
     {
-        return in_array($class->getUri(), MetadataResultSearcher::ROOT_CLASSES, true);
+        return in_array($class->getUri(), $this->getIndexableClassRepository()->findAllUris(), true);
+    }
+
+    private function getIndexableClassRepository(): IndexableClassRepositoryInterface
+    {
+        return $this->getServiceLocator()->get(IndexableClassCachedRepository::class);
     }
 }

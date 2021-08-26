@@ -72,6 +72,11 @@ class ClassUriRepositoryTest extends TestCase
 
         $this->assertCount(8, $result);
 
+        //FIXME
+        //FIXME
+        //FIXME Fix unit tests
+        //FIXME
+        //FIXME
         $possibleClassUris = array_merge(
             MetadataResultSearcher::ROOT_CLASSES,
             [

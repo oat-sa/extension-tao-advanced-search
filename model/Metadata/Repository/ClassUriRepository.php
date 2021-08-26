@@ -24,7 +24,8 @@ namespace oat\taoAdvancedSearch\model\Metadata\Repository;
 
 use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\service\ConfigurableService;
-use oat\taoAdvancedSearch\model\Metadata\Service\MetadataResultSearcher;
+use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassCachedRepository;
+use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepositoryInterface;
 
 class ClassUriRepository extends ConfigurableService implements ClassUriRepositoryInterface
 {
@@ -34,10 +35,10 @@ class ClassUriRepository extends ConfigurableService implements ClassUriReposito
     {
         $classUris = [];
 
-        foreach (MetadataResultSearcher::ROOT_CLASSES as $rootClassUri) {
-            $classUris[] = $rootClassUri;
+        foreach ($this->getIndexableClassRepository()->findAll() as $rootClass) {
+            $classUris[] = $rootClass->getUri();
 
-            foreach ($this->getClass($rootClassUri)->getSubClasses(true) as $subClass) {
+            foreach ($rootClass->getSubClasses(true) as $subClass) {
                 $classUris[] = $subClass->getUri();
             }
         }
@@ -48,5 +49,10 @@ class ClassUriRepository extends ConfigurableService implements ClassUriReposito
     public function getTotal(): int
     {
         return count($this->findAll());
+    }
+
+    private function getIndexableClassRepository(): IndexableClassRepositoryInterface
+    {
+        return $this->getServiceLocator()->get(IndexableClassCachedRepository::class);
     }
 }
