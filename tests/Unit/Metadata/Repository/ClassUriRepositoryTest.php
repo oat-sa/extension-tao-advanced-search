@@ -23,10 +23,8 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\tests\Unit\model\Metadata\Repository;
 
 use core_kernel_classes_Class;
-use oat\generis\model\data\Ontology;
 use oat\generis\test\TestCase;
 use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriRepository;
-use oat\taoAdvancedSearch\model\Metadata\Service\MetadataResultSearcher;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassCachedRepository;
 use PHPUnit\Framework\MockObject\MockObject;
 
