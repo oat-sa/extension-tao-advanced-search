@@ -28,8 +28,10 @@ use oat\generis\model\data\event\ClassPropertyDeletedEvent;
 use oat\generis\model\data\event\ResourceCreated;
 use oat\oatbox\event\EventManager;
 use oat\oatbox\extension\InstallAction;
+use oat\tao\model\event\ClassMovedEvent;
 use oat\tao\model\event\ClassPropertiesChangedEvent;
 use oat\taoAdvancedSearch\model\Metadata\Listener\ClassDeletionListener;
+use oat\taoAdvancedSearch\model\Metadata\Listener\ClassMovedListener;
 use oat\taoAdvancedSearch\model\Metadata\Listener\MetadataChangedListener;
 use oat\taoAdvancedSearch\model\Metadata\Listener\MetadataInheritanceListener;
 use oat\taoAdvancedSearch\model\Metadata\Listener\MetadataListener;
@@ -43,6 +45,7 @@ class RegisterEvents extends InstallAction
         $this->registerService(MetadataChangedListener::SERVICE_ID, new MetadataChangedListener());
         $this->registerService(MetadataListener::SERVICE_ID, new MetadataListener());
         $this->registerService(ClassDeletionListener::SERVICE_ID, new ClassDeletionListener());
+        $this->registerService(ClassMovedListener::SERVICE_ID, new ClassMovedListener());
 
         $eventManager->attach(
             ClassPropertyDeletedEvent::class,
@@ -81,6 +84,14 @@ class RegisterEvents extends InstallAction
             ResourceCreated::class,
             [
                 MetadataInheritanceListener::class,
+                'listen'
+            ]
+        );
+
+        $eventManager->attach(
+            ClassMovedEvent::class,
+            [
+                ClassMovedListener::class,
                 'listen'
             ]
         );

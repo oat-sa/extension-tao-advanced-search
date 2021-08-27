@@ -76,7 +76,7 @@ This is necessary to optimize indexation:
 #### To populate only class metadata indexes, execute:
 
 ```shell script
-./taoAdvancedSearch/scripts/tools/IndexClassMetatada.sh --help
+./taoAdvancedSearch/scripts/tools/IndexClassMetadata.sh --help
 ```
 
 #### To populate only delivery results, execute:
@@ -84,6 +84,14 @@ This is necessary to optimize indexation:
 ```shell script
 ./taoAdvancedSearch/scripts/tools/IndexDeliveryResults.sh --help
 ```
+
+## Garbage collection
+
+To clean old documents in the indexes:
+
+````shell
+./taoAdvancedSearch/scripts/tools/GarbageCollector.sh --help
+````
 
 ## Getting statistics
 
