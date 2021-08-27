@@ -31,7 +31,7 @@ use oat\taoAdvancedSearch\model\DeliveryResult\Repository\DeliveryResultReposito
 use oat\taoAdvancedSearch\model\DeliveryResult\Repository\DeliveryResultRepositoryInterface;
 use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriCachedRepository;
 use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriRepositoryInterface;
-use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepository;
+use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassCachedRepository;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepositoryInterface;
 
 class IndexSummarizer extends ConfigurableService
@@ -105,7 +105,7 @@ class IndexSummarizer extends ConfigurableService
 
     private function getIndexableClassRepository(): IndexableClassRepositoryInterface
     {
-        return $this->getServiceLocator()->get(IndexableClassRepository::class);
+        return $this->getServiceLocator()->get(IndexableClassCachedRepository::class);
     }
 
     private function getSearchProxy(): SearchProxy

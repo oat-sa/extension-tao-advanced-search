@@ -23,9 +23,10 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\tests\Unit\model\Metadata\Normalizer;
 
 use core_kernel_classes_Class;
-use oat\generis\model\data\Ontology;
 use oat\generis\test\TestCase;
+use oat\tao\model\TaoOntology;
 use oat\taoAdvancedSearch\model\Metadata\Factory\ClassPathFactory;
+use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassCachedRepository;
 use PHPUnit\Framework\MockObject\MockObject;
 
 class ClassPathFactoryTest extends TestCase
@@ -33,21 +34,18 @@ class ClassPathFactoryTest extends TestCase
     /** @var ClassPathFactory */
     private $subject;
 
-    /** @var core_kernel_classes_Class|MockObject */
-    private $classMock;
-
-    /** @var Ontology|MockObject */
-    private $ontology;
+    /** @var IndexableClassCachedRepository|MockObject */
+    private $indexableClassRepository;
 
     public function setUp(): void
     {
         $this->subject = new ClassPathFactory();
-        $this->ontology = $this->createMock(Ontology::class);
+        $this->indexableClassRepository = $this->createMock(IndexableClassCachedRepository::class);
 
         $this->subject->setServiceLocator(
             $this->getServiceLocatorMock(
                 [
-                    Ontology::SERVICE_ID => $this->ontology,
+                    IndexableClassCachedRepository::class => $this->indexableClassRepository,
                 ]
             )
         );
@@ -58,9 +56,13 @@ class ClassPathFactoryTest extends TestCase
         $class = $this->createMock(core_kernel_classes_Class::class);
         $parentClass = $this->createMock(core_kernel_classes_Class::class);
 
-        $this->ontology
-            ->method('getClass')
-            ->willReturn($this->classMock);
+        $this->indexableClassRepository
+            ->method('findAllUris')
+            ->willReturn(
+                [
+                    TaoOntology::CLASS_URI_ITEM,
+                ]
+            );
 
         $class->method('getUri')
             ->willReturn('classUri');

@@ -23,15 +23,16 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\tests\Unit\model\Metadata\Normalizer;
 
 use core_kernel_classes_Class;
-use core_kernel_classes_Property;
 use InvalidArgumentException;
 use oat\generis\model\data\Ontology;
 use oat\generis\test\TestCase;
 use oat\tao\model\Lists\Business\Domain\Metadata;
 use oat\tao\model\Lists\Business\Domain\MetadataCollection;
 use oat\tao\model\Lists\Business\Service\GetClassMetadataValuesService;
+use oat\tao\model\TaoOntology;
 use oat\taoAdvancedSearch\model\Metadata\Factory\ClassPathFactory;
 use oat\taoAdvancedSearch\model\Metadata\Normalizer\MetadataNormalizer;
+use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassCachedRepository;
 use PHPUnit\Framework\MockObject\MockObject;
 
 class MetadataNormalizerTest extends TestCase
@@ -41,9 +42,6 @@ class MetadataNormalizerTest extends TestCase
 
     /** @var core_kernel_classes_Class|MockObject */
     private $classMock;
-
-    /** @var core_kernel_classes_Property|MockObject */
-    private $propertyMock;
 
     /** @var GetClassMetadataValuesService|MockObject */
     private $getClassMetadataValuesServiceMock;
@@ -57,11 +55,14 @@ class MetadataNormalizerTest extends TestCase
     /** @var ClassPathFactory|MockObject */
     private $classPathFactory;
 
+    /** @var IndexableClassCachedRepository|MockObject */
+    private $indexableClassRepository;
+
     public function setUp(): void
     {
         $this->subject = new MetadataNormalizer();
+        $this->indexableClassRepository = $this->createMock(IndexableClassCachedRepository::class);
         $this->classMock = $this->createMock(core_kernel_classes_Class::class);
-        $this->propertyMock = $this->createMock(core_kernel_classes_Property::class);
         $this->getClassMetadataValuesServiceMock = $this->createMock(GetClassMetadataValuesService::class);
         $this->metadataMock = $this->createMock(Metadata::class);
         $this->ontology = $this->createMock(Ontology::class);
@@ -77,6 +78,7 @@ class MetadataNormalizerTest extends TestCase
                     GetClassMetadataValuesService::class => $this->getClassMetadataValuesServiceMock,
                     Ontology::SERVICE_ID => $this->ontology,
                     ClassPathFactory::class => $this->classPathFactory,
+                    IndexableClassCachedRepository::class => $this->indexableClassRepository,
                 ]
             )
         );
@@ -106,6 +108,14 @@ class MetadataNormalizerTest extends TestCase
         ?string $propertyUri,
         ?array $getValuesResult
     ): void {
+        $this->indexableClassRepository
+            ->method('findAllUris')
+            ->willReturn(
+                [
+                    TaoOntology::CLASS_URI_ITEM,
+                ]
+            );
+
         $this->ontology
             ->method('getClass')
             ->willReturn($this->classMock);
@@ -193,7 +203,7 @@ class MetadataNormalizerTest extends TestCase
                 null
             ],
             'rootClass' => [
-                'http://www.tao.lu/Ontologies/TAOItem.rdf#Item',
+                TaoOntology::CLASS_URI_ITEM,
                 0,
                 1,
                 null,

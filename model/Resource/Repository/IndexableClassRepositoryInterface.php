@@ -30,4 +30,9 @@ interface IndexableClassRepositoryInterface
      * @return core_kernel_classes_Class[]
      */
     public function findAll(): array;
+
+    /**
+     * @return string[]
+     */
+    public function findAllUris(): array;
 }

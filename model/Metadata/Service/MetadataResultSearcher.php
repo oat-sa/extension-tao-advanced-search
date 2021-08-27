@@ -33,13 +33,6 @@ use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriRepositoryInterface;
 
 class MetadataResultSearcher extends ConfigurableService implements ResultSearcherInterface
 {
-    public const ROOT_CLASSES = [
-        TaoOntology::CLASS_URI_ITEM,
-        TaoOntology::CLASS_URI_ASSEMBLED_DELIVERY,
-        TaoOntology::CLASS_URI_GROUP,
-        TaoOntology::CLASS_URI_TEST,
-    ];
-
     public function search(ResultFilter $filter): ResultUnitCollection
     {
         $offset = $filter->getParameter('start');

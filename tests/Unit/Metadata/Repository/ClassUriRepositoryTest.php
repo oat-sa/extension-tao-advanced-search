@@ -23,10 +23,9 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\tests\Unit\model\Metadata\Repository;
 
 use core_kernel_classes_Class;
-use oat\generis\model\data\Ontology;
 use oat\generis\test\TestCase;
 use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriRepository;
-use oat\taoAdvancedSearch\model\Metadata\Service\MetadataResultSearcher;
+use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassCachedRepository;
 use PHPUnit\Framework\MockObject\MockObject;
 
 class ClassUriRepositoryTest extends TestCase
@@ -34,18 +33,18 @@ class ClassUriRepositoryTest extends TestCase
     /** @var ClassUriRepository */
     private $subject;
 
-    /** @var Ontology|MockObject */
-    private $ontology;
+    /** @var IndexableClassCachedRepository|MockObject */
+    private $indexableClassRepository;
 
     public function setUp(): void
     {
-        $this->ontology = $this->createMock(Ontology::class);
+        $this->indexableClassRepository = $this->createMock(IndexableClassCachedRepository::class);
         $this->subject = $this->createMock(ClassUriRepository::class);
         $this->subject = new ClassUriRepository();
         $this->subject->setServiceLocator(
             $this->getServiceLocatorMock(
                 [
-                    Ontology::SERVICE_ID => $this->ontology,
+                    IndexableClassCachedRepository::class => $this->indexableClassRepository,
                 ]
             )
         );
@@ -61,30 +60,25 @@ class ClassUriRepositoryTest extends TestCase
         $subClassMock->method('getUri')
             ->willReturn('subClassUri');
 
-        $this->ontology
-            ->method('getClass')
-            ->willReturn($classMock);
+        $this->indexableClassRepository
+            ->method('findAll')
+            ->willReturn([$classMock]);
 
         $classMock->method('getSubClasses')
             ->willReturn([$subClassMock]);
 
         $result = $this->subject->findAll();
 
-        $this->assertCount(8, $result);
-
-        $possibleClassUris = array_merge(
-            MetadataResultSearcher::ROOT_CLASSES,
-            [
-                'classUri',
-                'subClassUri',
-            ]
-        );
+        $this->assertCount(2, $result);
 
         foreach ($result as $classUri) {
             $this->assertTrue(
                 in_array(
                     $classUri,
-                    $possibleClassUris
+                    [
+                        'classUri',
+                        'subClassUri',
+                    ]
                 )
             );
         }
