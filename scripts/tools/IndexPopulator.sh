@@ -21,6 +21,7 @@ CURRENT_DIR=$(dirname "$0");
 OFFSET=${1:-0} # Default will be 0
 LIMIT=${2:-50} # Default will be 50
 
+"${CURRENT_DIR}/CacheWarmup.sh"
 "${CURRENT_DIR}/IndexResources.sh" "$OFFSET" "$LIMIT"
 "${CURRENT_DIR}/IndexClassMetadata.sh" "$OFFSET" "$LIMIT"
 "${CURRENT_DIR}/IndexDeliveryResults.sh" "$OFFSET" "$LIMIT"
