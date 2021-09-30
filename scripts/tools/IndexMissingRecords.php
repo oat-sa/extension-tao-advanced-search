@@ -67,7 +67,7 @@ class IndexMissingRecords extends ScriptAction implements ServiceLocatorAwareInt
             'reindex' => [
                 'prefix' => 'r',
                 'longPrefix' => 'reindex',
-                'flag' => false,
+                'flag' => true,
                 'description' => 'Force reindex missing resources',
                 'defaultValue' => false
             ],
@@ -83,7 +83,7 @@ class IndexMissingRecords extends ScriptAction implements ServiceLocatorAwareInt
                 'longPrefix' => 'limit',
                 'flag' => false,
                 'description' => 'limit of search results',
-                'defaultValue' => 0
+                'defaultValue' => 1000
             ]
         ];
     }
@@ -102,12 +102,18 @@ class IndexMissingRecords extends ScriptAction implements ServiceLocatorAwareInt
         $offset = (int)$this->getOption('offset');
         $limit = (int)$this->getOption('limit');
         $reindex = boolval($this->getOption('reindex'));
-        $mainReport = Report::createInfo(sprintf('Resources not indexed for class %s', $class));
-        $missingIndexReport = Report::createWarning('Missing resources');
-        $mainReport->add($missingIndexReport);
-        $missingResources = [];
-        $missingResourcesIndexed = [];
+        $missingResources = 0;
+        $missingResourcesIndexed = 0;
+
         $advancedSearch = $this->getElasticSearch();
+        $indexer = $this->getSyncResourceResultIndexer();
+
+        $missingIndexReport = Report::createWarning('Missing resources');
+        $reIndexedReport = Report::createSuccess('ReIndexed resources');
+
+        $mainReport = Report::createInfo(sprintf('Resources not indexed for class %s', $class));
+        $mainReport->add($missingIndexReport);
+        $mainReport->add($reIndexedReport);
 
         /** @var core_kernel_classes_Resource $resource */
         foreach ($this->search($class, $offset, $limit) as $resource) {
@@ -115,46 +121,37 @@ class IndexMissingRecords extends ScriptAction implements ServiceLocatorAwareInt
                 continue;
             }
 
-            if (!$this->isIndexed($advancedSearch, $this->getIndexName($class), $resource->getUri())) {
-                $missingResources[$resource->getUri()] = $resource;
-
-                $missingIndexReport->add(
-                    Report::createInfo(
-                        $resource->getUri() . ' (' . $resource->getLabel() . ')'
-                    )
-                );
+            if ($this->isIndexed($advancedSearch, $this->getIndexName($class), $resource->getUri())) {
+                continue;
             }
-        }
 
-        if ($reindex) {
-            $reIndexedReport = Report::createSuccess('ReIndexed resources');
-            $mainReport->add($reIndexedReport);
+            $missingResources++;
 
-            $indexer = $this->getSyncResourceResultIndexer();
+            $reportMessage = sprintf('%s (%s)', $resource->getUri(), $resource->getLabel());
 
-            foreach ($missingResources as $resource) {
-                $reIndexedReport->add(
-                    Report::createInfo(
-                        $resource->getUri() . ' (' . $resource->getLabel() . ')'
-                    )
-                );
+            $missingIndexReport->add(Report::createInfo($reportMessage));
 
-                $indexer->addIndex($resource);
-
-                $missingResourcesIndexed[$resource->getUri()] = $resource->getLabel();
+            if (!$reindex) {
+                continue;
             }
+
+            $reIndexedReport->add(Report::createInfo($reportMessage));
+
+            $indexer->addIndex($resource);
+
+            $missingResourcesIndexed++;
         }
 
         $summaryReport = Report::createSuccess('Summary');
-        $summaryReport->add(Report::createInfo('Missing resources: ' . count($missingResources)));
-        $summaryReport->add(Report::createInfo('Missing resources indexed: ' . count($missingResourcesIndexed)));
+        $summaryReport->add(Report::createInfo('Missing resources: ' . $missingResources));
+        $summaryReport->add(Report::createInfo('Missing resources indexed: ' . $missingResourcesIndexed));
 
         $mainReport->add($summaryReport);
 
         return $mainReport;
     }
 
-    private function isIndexed(ElasticSearch $search, string $index, string $uri)
+    private function isIndexed(ElasticSearch $search, string $index, string $uri): bool
     {
         $query = new Query($index);
         $query->addCondition('_id:"' . $uri . '"');
