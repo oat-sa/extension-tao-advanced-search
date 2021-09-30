@@ -73,6 +73,7 @@ class IndexMissingRecords extends ScriptAction implements ServiceLocatorAwareInt
             ],
             'offset' => [
                 'prefix' => 'o',
+                'cast' => 'int',
                 'longPrefix' => 'offset',
                 'flag' => false,
                 'description' => 'offset of search results',
@@ -80,6 +81,7 @@ class IndexMissingRecords extends ScriptAction implements ServiceLocatorAwareInt
             ],
             'limit' => [
                 'prefix' => 'l',
+                'cast' => 'int',
                 'longPrefix' => 'limit',
                 'flag' => false,
                 'description' => 'limit of search results',
@@ -99,8 +101,8 @@ class IndexMissingRecords extends ScriptAction implements ServiceLocatorAwareInt
     protected function run(): Report
     {
         $class = $this->getOption('class');
-        $offset = (int)$this->getOption('offset');
-        $limit = (int)$this->getOption('limit');
+        $offset = $this->getOption('offset');
+        $limit = $this->getOption('limit');
         $reindex = boolval($this->getOption('reindex'));
         $missingResources = 0;
         $missingResourcesIndexed = 0;
@@ -154,7 +156,7 @@ class IndexMissingRecords extends ScriptAction implements ServiceLocatorAwareInt
     private function isIndexed(ElasticSearch $search, string $index, string $uri): bool
     {
         $query = new Query($index);
-        $query->addCondition('_id:"' . $uri . '"');
+        $query->addCondition(sprintf('_id:"%s"', $uri));
         $query->setLimit(1);
 
         return $search->search($query)->getTotalCount() > 0;
