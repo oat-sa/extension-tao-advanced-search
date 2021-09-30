@@ -71,6 +71,20 @@ class IndexMissingRecords extends ScriptAction implements ServiceLocatorAwareInt
                 'description' => 'Force reindex missing resources',
                 'defaultValue' => false
             ],
+            'offset' => [
+                'prefix' => 'o',
+                'longPrefix' => 'offset',
+                'flag' => false,
+                'description' => 'offset of search results',
+                'defaultValue' => 0
+            ],
+            'limit' => [
+                'prefix' => 'l',
+                'longPrefix' => 'limit',
+                'flag' => false,
+                'description' => 'limit of search results',
+                'defaultValue' => 50
+            ]
         ];
     }
 
@@ -85,20 +99,23 @@ class IndexMissingRecords extends ScriptAction implements ServiceLocatorAwareInt
     protected function run(): Report
     {
         $class = $this->getOption('class');
+        $offset = (int)$this->getOption('offset');
+        $limit = (int)$this->getOption('limit');
         $reindex = boolval($this->getOption('reindex'));
         $mainReport = Report::createInfo(sprintf('Resources not indexed for class %s', $class));
         $missingIndexReport = Report::createWarning('Missing resources');
         $mainReport->add($missingIndexReport);
         $missingResources = [];
         $missingResourcesIndexed = [];
+        $advancedSearch = $this->getElasticSearch();
 
         /** @var core_kernel_classes_Resource $resource */
-        foreach ($this->search($class) as $resource) {
+        foreach ($this->search($class, $offset, $limit) as $resource) {
             if (!$resource->exists()) {
                 continue;
             }
 
-            if (!$this->isIndexed($this->getIndexName($class), $resource->getUri())) {
+            if (!$this->isIndexed($advancedSearch, $this->getIndexName($class), $resource->getUri())) {
                 $missingResources[$resource->getUri()] = $resource;
 
                 $missingIndexReport->add(
@@ -113,10 +130,9 @@ class IndexMissingRecords extends ScriptAction implements ServiceLocatorAwareInt
             $reIndexedReport = Report::createSuccess('ReIndexed resources');
             $mainReport->add($reIndexedReport);
 
-            foreach ($missingResources as $resource) {
-                /** @var SyncResourceResultIndexer $indexer */
-                $indexer = $this->getServiceManager()->get(SyncResourceResultIndexer::class);
+            $indexer = $this->getSyncResourceResultIndexer();
 
+            foreach ($missingResources as $resource) {
                 $reIndexedReport->add(
                     Report::createInfo(
                         $resource->getUri() . ' (' . $resource->getLabel() . ')'
@@ -138,15 +154,13 @@ class IndexMissingRecords extends ScriptAction implements ServiceLocatorAwareInt
         return $mainReport;
     }
 
-    private function isIndexed(string $index, string $uri)
+    private function isIndexed(ElasticSearch $search, string $index, string $uri)
     {
-        $advancedSearch = $this->getElasticSearch();
-
         $query = new Query($index);
         $query->addCondition('_id:"' . $uri . '"');
         $query->setLimit(1);
 
-        return $advancedSearch->search($query)->getTotalCount() > 0;
+        return $search->search($query)->getTotalCount() > 0;
     }
 
     private function getIndexName(string $classUri): ?string
@@ -155,7 +169,7 @@ class IndexMissingRecords extends ScriptAction implements ServiceLocatorAwareInt
         return IndexerInterface::AVAILABLE_INDEXES[$classUri] ?? null;
     }
 
-    private function search(string $classUri): ResultSetInterface
+    private function search(string $classUri, int $offset, int $limit): ResultSetInterface
     {
         $search = $this->getComplexSearchService();
 
@@ -164,6 +178,9 @@ class IndexMissingRecords extends ScriptAction implements ServiceLocatorAwareInt
         $criteria = $search->searchType($queryBuilder, $classUri, true);
 
         $queryBuilder = $queryBuilder->setCriteria($criteria);
+
+        $queryBuilder->setLimit($limit);
+        $queryBuilder->setOffset($offset);
 
         return $search->getGateway()->search($queryBuilder);
     }
@@ -176,5 +193,10 @@ class IndexMissingRecords extends ScriptAction implements ServiceLocatorAwareInt
     private function getComplexSearchService(): ComplexSearchService
     {
         return $this->getServiceLocator()->get(ComplexSearchService::SERVICE_ID);
+    }
+
+    private function getSyncResourceResultIndexer(): SyncResourceResultIndexer
+    {
+        return $this->getServiceManager()->get(SyncResourceResultIndexer::class);
     }
 }
