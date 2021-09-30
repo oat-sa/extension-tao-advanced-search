@@ -139,3 +139,22 @@ Index vs Storage
     Percentage indexed: 8.7%
     Missing items: 21
 ```
+
+### Reindex missing resources
+
+```shell
+php index.php 'oat\taoAdvancedSearch\scripts\tools\IndexMissingRecords' -h
+```
+
+Output example:
+
+```shell
+Resources not indexed for class http://www.tao.lu/Ontologies/TAOItem.rdf#Item
+  Missing resources
+    https://advanced-search-tao.docker.localhost/ontologies/tao.rdf#i60f6d9d5037dc2624b07bbfa0fedd8963 (A_Class_Item_1 bis)
+  ReIndexed resources
+    https://advanced-search-tao.docker.localhost/ontologies/tao.rdf#i60f6d9d5037dc2624b07bbfa0fedd8963 (A_Class_Item_1 bis)
+  Summary
+    Missing resources: 1
+    Missing resources indexed: 1
+```

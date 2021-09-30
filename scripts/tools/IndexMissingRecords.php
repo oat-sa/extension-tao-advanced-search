@@ -37,6 +37,9 @@ use oat\taoAdvancedSearch\model\Resource\Service\SyncResourceResultIndexer;
 use Zend\ServiceManager\ServiceLocatorAwareInterface;
 use Zend\ServiceManager\ServiceLocatorAwareTrait;
 
+/**
+ * php index.php 'oat\taoAdvancedSearch\scripts\tools\IndexMissingRecords' -h
+ */
 class IndexMissingRecords extends ScriptAction implements ServiceLocatorAwareInterface
 {
     use ServiceLocatorAwareTrait;
