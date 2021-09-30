@@ -22,15 +22,12 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\Resource\Service;
 
-use core_kernel_classes_Resource;
 use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\service\ConfigurableService;
 use oat\tao\model\search\index\IndexService;
 use oat\tao\model\search\SearchInterface;
 use oat\tao\model\search\SearchProxy;
-use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
 use oat\taoAdvancedSearch\model\Index\Service\IndexerInterface;
-use oat\taoDelivery\model\execution\DeliveryExecutionInterface;
 use Throwable;
 
 class SyncResourceResultIndexer extends ConfigurableService implements IndexerInterface
@@ -45,11 +42,21 @@ class SyncResourceResultIndexer extends ConfigurableService implements IndexerIn
 
             $document = $documentBuilder->createDocumentFromResource($resource);
 
-            $this->getSearch()->index(
+            $totalIndexed = $this->getSearch()->index(
                 [
                     $document,
                 ]
             );
+
+            if ($totalIndexed < 1) {
+                $this->logWarning(
+                    sprintf(
+                        'Could not index resource %s (%s)',
+                        $resource->getLabel(),
+                        $resource->getUri()
+                    )
+                );
+            }
         } catch (Throwable $exception) {
             $this->logError(
                 sprintf(
