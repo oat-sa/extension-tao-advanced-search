@@ -83,7 +83,7 @@ class IndexMissingRecords extends ScriptAction implements ServiceLocatorAwareInt
                 'longPrefix' => 'limit',
                 'flag' => false,
                 'description' => 'limit of search results',
-                'defaultValue' => 50
+                'defaultValue' => 0
             ]
         ];
     }
@@ -179,8 +179,11 @@ class IndexMissingRecords extends ScriptAction implements ServiceLocatorAwareInt
 
         $queryBuilder = $queryBuilder->setCriteria($criteria);
 
-        $queryBuilder->setLimit($limit);
         $queryBuilder->setOffset($offset);
+
+        if ($limit > 0) {
+            $queryBuilder->setLimit($limit);
+        }
 
         return $search->getGateway()->search($queryBuilder);
     }
