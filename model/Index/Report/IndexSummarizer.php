@@ -25,7 +25,6 @@ namespace oat\taoAdvancedSearch\model\Index\Report;
 use oat\oatbox\service\ConfigurableService;
 use oat\tao\elasticsearch\ElasticSearch;
 use oat\tao\elasticsearch\IndexerInterface;
-use oat\tao\elasticsearch\Query;
 use oat\tao\model\search\SearchProxy;
 use oat\taoAdvancedSearch\model\DeliveryResult\Repository\DeliveryResultRepository;
 use oat\taoAdvancedSearch\model\DeliveryResult\Repository\DeliveryResultRepositoryInterface;
@@ -74,11 +73,7 @@ class IndexSummarizer extends ConfigurableService
         /** @var ElasticSearch $advancedSearch */
         $advancedSearch = $this->getSearchProxy()->getAdvancedSearch(); //@TODO Remove direct call for ElasticSearch
 
-        $query = new Query($index);
-        $query->addCondition('*');
-        $query->setLimit(1);
-
-        return $advancedSearch->search($query)->getTotalCount();
+        return $advancedSearch->countDocuments($index);
     }
 
     private function createReport(
