@@ -74,11 +74,7 @@ class IndexSummarizer extends ConfigurableService
         /** @var ElasticSearch $advancedSearch */
         $advancedSearch = $this->getSearchProxy()->getAdvancedSearch(); //@TODO Remove direct call for ElasticSearch
 
-        $query = new Query($index);
-        $query->addCondition('*');
-        $query->setLimit(1);
-
-        return $advancedSearch->search($query)->getTotalCount();
+        return $advancedSearch->countDocuments($index);
     }
 
     private function createReport(
