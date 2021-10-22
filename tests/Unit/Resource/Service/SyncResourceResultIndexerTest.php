@@ -24,14 +24,12 @@ namespace oat\taoAdvancedSearch\tests\Unit\Resource\Service;
 
 use core_kernel_classes_Resource;
 use oat\generis\test\TestCase;
+use oat\oatbox\log\LoggerService;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\search\index\IndexService;
 use oat\tao\model\search\SearchInterface;
 use oat\tao\model\search\SearchProxy;
-use oat\tao\model\task\migration\ResultUnit;
-use oat\taoAdvancedSearch\model\Index\IndexResource;
-use oat\taoAdvancedSearch\model\Index\Service\ResultIndexer;
 use oat\taoAdvancedSearch\model\Resource\Service\SyncResourceResultIndexer;
 use PHPUnit\Framework\MockObject\MockObject;
 
@@ -62,6 +60,7 @@ class SyncResourceResultIndexerTest extends TestCase
                     IndexService::SERVICE_ID => $this->indexerService,
                     SearchProxy::SERVICE_ID => $this->search,
                     IndexDocumentBuilderInterface::class => $this->indexDocumentBuilder,
+                    LoggerService::SERVICE_ID => $this->createMock(LoggerService::class),
                 ]
             )
         );
