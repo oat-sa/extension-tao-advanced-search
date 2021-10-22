@@ -22,8 +22,6 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\Metadata\Service;
 
-use core_kernel_classes_Class;
-use core_kernel_classes_Resource;
 use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\service\ConfigurableService;
 use oat\tao\elasticsearch\ElasticSearch;
