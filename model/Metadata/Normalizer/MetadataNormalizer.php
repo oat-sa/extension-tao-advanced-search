@@ -82,6 +82,7 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
             $propertyCollection[] = [
                 'propertyUri' => $property->getPropertyUri(),
                 'propertyLabel' => $property->getLabel(),
+                'propertyAlias' => $property->getAlias(),
                 'propertyType' => $property->getType(),
                 'propertyValues' => null,
             ];

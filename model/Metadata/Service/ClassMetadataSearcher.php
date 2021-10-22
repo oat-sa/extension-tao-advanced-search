@@ -22,6 +22,9 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\Metadata\Service;
 
+use core_kernel_classes_Class;
+use core_kernel_classes_Resource;
+use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\service\ConfigurableService;
 use oat\tao\elasticsearch\ElasticSearch;
 use oat\tao\elasticsearch\Query;
@@ -40,6 +43,8 @@ use oat\tao\model\search\SearchProxy;
 class ClassMetadataSearcher extends ConfigurableService implements ClassMetadataSearcherInterface
 {
     private const BASE_LIST_ITEMS_URI = '/tao/PropertyValues/get?propertyUri=%s';
+
+    use OntologyAwareTrait;
 
     /** @var array */
     private $processedClasses = [];
@@ -149,10 +154,16 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
         $metadataCollection = new MetadataCollection();
 
         foreach ($properties as $property) {
+            $relatedClass = $this->getProperty($property['propertyUri'])->getRelatedClass();
+
             $metadataCollection->addMetadata(
                 (new Metadata())
                     ->setLabel($property['propertyLabel'])
+                    ->setAlias($property['propertyAlias'])
+                    ->setClassLabel($relatedClass ? $relatedClass->getLabel() : null)
                     ->setPropertyUri($property['propertyUri'])
+                    ->setType($property['propertyType'])
+                    ->setValues($property['propertyValues'])
                     ->setUri(
                         $this->getPropertyListUri(
                             $property['propertyUri'],
@@ -160,14 +171,14 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
                             $property['propertyValues']
                         )
                     )
-                    ->setType($property['propertyType'])
-                    ->setValues($property['propertyValues'])
             );
         }
 
+        $class = $this->getClass($classUri);
+
         $this->processedClasses[$classUri] = (new ClassMetadata())
             ->setClass($classUri)
-            ->setLabel($classUri)
+            ->setLabel($class->getLabel())
             ->setMetaData($metadataCollection);
     }
 
