@@ -44,17 +44,12 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
 
     use OntologyAwareTrait;
 
-    /** @var array */
-    private $processedClasses = [];
-
     public function findAll(ClassMetadataSearchInput $input): ClassCollection
     {
         if ($this->getAdvancedSearchChecker()->isEnabled()) {
             $currentClassUri = $input->getSearchRequest()->getClassUri();
 
-            $this->addProcessedClass($currentClassUri, $this->getProperties($currentClassUri));
-
-            return new ClassCollection(...array_values($this->processedClasses));
+            return $this->createClassCollection($currentClassUri, $this->getProperties($currentClassUri));
         }
 
         return $this->getClassMetadataSearcher()->findAll($input);
@@ -147,37 +142,68 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
         return $properties;
     }
 
-    private function addProcessedClass(string $classUri, array $properties)
+    private function createClassCollection(string $classUri, array $properties): ClassCollection
     {
         $metadataCollection = new MetadataCollection();
+
+        $duplicatedUris = $this->getDuplicatedPropertyUris($properties);
 
         foreach ($properties as $property) {
             $relatedClass = $this->getProperty($property['propertyUri'])->getRelatedClass();
 
-            $metadataCollection->addMetadata(
-                (new Metadata())
-                    ->setLabel($property['propertyLabel'])
-                    ->setAlias($property['propertyAlias'])
-                    ->setClassLabel($relatedClass ? $relatedClass->getLabel() : null)
-                    ->setPropertyUri($property['propertyUri'])
-                    ->setType($property['propertyType'])
-                    ->setValues($property['propertyValues'])
-                    ->setUri(
-                        $this->getPropertyListUri(
-                            $property['propertyUri'],
-                            $property['propertyType'],
-                            $property['propertyValues']
-                        )
+            $metadata = (new Metadata())
+                ->setLabel($property['propertyLabel'])
+                ->setAlias($property['propertyAlias'])
+                ->setClassLabel($relatedClass ? $relatedClass->getLabel() : null)
+                ->setPropertyUri($property['propertyUri'])
+                ->setType($property['propertyType'])
+                ->setValues($property['propertyValues'])
+                ->setUri(
+                    $this->getPropertyListUri(
+                        $property['propertyUri'],
+                        $property['propertyType'],
+                        $property['propertyValues']
                     )
-            );
+                );
+
+            if (in_array($property['propertyUri'], $duplicatedUris, true)) {
+                $metadata->markAsDuplicated();
+            }
+
+            $metadataCollection->addMetadata($metadata);
         }
 
-        $class = $this->getClass($classUri);
-
-        $this->processedClasses[$classUri] = (new ClassMetadata())
+        return new ClassCollection(
+            (new ClassMetadata())
             ->setClass($classUri)
-            ->setLabel($class->getLabel())
-            ->setMetaData($metadataCollection);
+            ->setLabel($this->getClass($classUri)->getLabel())
+            ->setMetaData($metadataCollection)
+        );
+    }
+
+    private function getDuplicatedPropertyUris(array $properties): array
+    {
+        $count = [];
+
+        foreach ($properties as $property) {
+            $unifiedLabel = trim(strtolower($property['propertyLabel']));
+
+            if (!array_key_exists($unifiedLabel, $count)) {
+                $count[$unifiedLabel] = [];
+            }
+
+            $count[$unifiedLabel][] = $property['propertyUri'];
+        }
+
+        $duplicated = [];
+
+        foreach ($count as $counted) {
+            if (count($counted) > 1) {
+                $duplicated = array_merge($duplicated, $counted);
+            }
+        }
+
+        return $duplicated;
     }
 
     private function executeQuery(string $field, string $value): ResultSet
