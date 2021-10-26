@@ -175,31 +175,31 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
 
         return new ClassCollection(
             (new ClassMetadata())
-            ->setClass($classUri)
-            ->setLabel($this->getClass($classUri)->getLabel())
-            ->setMetaData($metadataCollection)
+                ->setClass($classUri)
+                ->setLabel($this->getClass($classUri)->getLabel())
+                ->setMetaData($metadataCollection)
         );
     }
 
     private function getDuplicatedPropertyUris(array $properties): array
     {
-        $count = [];
+        $duplicatedGroups = [];
 
         foreach ($properties as $property) {
             $unifiedLabel = trim(strtolower($property['propertyLabel']));
 
-            if (!array_key_exists($unifiedLabel, $count)) {
-                $count[$unifiedLabel] = [];
+            if (!array_key_exists($unifiedLabel, $duplicatedGroups)) {
+                $duplicatedGroups[$unifiedLabel] = [];
             }
 
-            $count[$unifiedLabel][] = $property['propertyUri'];
+            $duplicatedGroups[$unifiedLabel][] = $property['propertyUri'];
         }
 
         $duplicated = [];
 
-        foreach ($count as $counted) {
-            if (count($counted) > 1) {
-                $duplicated = array_merge($duplicated, $counted);
+        foreach ($duplicatedGroups as $group) {
+            if (count($group) > 1) {
+                $duplicated = array_merge($duplicated, $group);
             }
         }
 
