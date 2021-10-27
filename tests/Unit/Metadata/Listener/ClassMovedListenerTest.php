@@ -38,25 +38,25 @@ class ClassMovedListenerTest extends TestCase
     private $subject;
 
     /** @var ResultIndexer|MockObject */
-    private $resultIndexerMock;
+    private $resultIndexer;
 
     /** @var MetadataNormalizer|MockObject */
-    private $metadataNormalizerMock;
+    private $metadataNormalizer;
 
     /** @var ClassMovedEvent|MockObject */
-    private $eventMock;
+    private $event;
 
     public function setUp(): void
     {
         $this->subject = new ClassMovedListener();
-        $this->resultIndexerMock = $this->createMock(ResultIndexer::class);
-        $this->metadataNormalizerMock = $this->createMock(MetadataNormalizer::class);
-        $this->eventMock = $this->createMock(ClassMovedEvent::class);
+        $this->resultIndexer = $this->createMock(ResultIndexer::class);
+        $this->metadataNormalizer = $this->createMock(MetadataNormalizer::class);
+        $this->event = $this->createMock(ClassMovedEvent::class);
         $this->subject->setServiceLocator(
             $this->getServiceLocatorMock(
                 [
-                    ResultIndexer::class => $this->resultIndexerMock,
-                    MetadataNormalizer::class => $this->metadataNormalizerMock
+                    ResultIndexer::class => $this->resultIndexer,
+                    MetadataNormalizer::class => $this->metadataNormalizer
                 ]
             )
         );
@@ -65,24 +65,30 @@ class ClassMovedListenerTest extends TestCase
     public function testListenThrowExceptionOnWrongEvent(): void
     {
         $this->expectException(UnsupportedEventException::class);
+
         $this->subject->listen($this->createMock(Event::class));
     }
 
     public function testListen()
     {
-        $classMock = $this->createMock(core_kernel_classes_Class::class);
+        $class = $this->createMock(core_kernel_classes_Class::class);
+        $subClass = $this->createMock(core_kernel_classes_Class::class);
 
-        $this->eventMock
-            ->expects($this->once())
+        $class->method('getSubClasses')
+            ->willReturn([$subClass]);
+
+        $this->event
             ->method('getClass')
-            ->willReturn( $classMock);
+            ->willReturn( $class);
 
-        $this->resultIndexerMock
+        $this->resultIndexer
             ->expects($this->once())
             ->method('setNormalizer');
 
-        $this->subject->listen(
-            $this->eventMock
-        );
+        $this->resultIndexer
+            ->expects($this->exactly(2))
+            ->method('addIndex');
+
+        $this->subject->listen($this->event);
     }
 }

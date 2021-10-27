@@ -153,6 +153,10 @@ class MetadataNormalizerTest extends TestCase
             ->willReturn('Label Example');
 
         $this->metadataMock
+            ->method('getAlias')
+            ->willReturn('Alias Example');
+
+        $this->metadataMock
             ->method('getType')
             ->willReturn('Type Example');
 
@@ -183,6 +187,7 @@ class MetadataNormalizerTest extends TestCase
                     [
                         'propertyUri' => 'PropertyUri Example',
                         'propertyLabel' => 'Label Example',
+                        'propertyAlias' => 'Alias Example',
                         'propertyType' => 'Type Example',
                         'propertyValues' => $getValuesResult
                     ]
