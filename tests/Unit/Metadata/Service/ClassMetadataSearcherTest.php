@@ -22,6 +22,8 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\model\Metadata\Service;
 
+use core_kernel_classes_Property;
+use oat\generis\model\data\Ontology;
 use oat\generis\test\TestCase;
 use oat\oatbox\log\LoggerService;
 use oat\tao\elasticsearch\ElasticSearch;
@@ -52,11 +54,15 @@ class ClassMetadataSearcherTest extends TestCase
     /** @var SearchProxy|MockObject */
     private $search;
 
+    /** @var Ontology|MockObject */
+    private $ontology;
+
     public function setUp(): void
     {
         $this->classMetadataService = $this->createMock(ClassMetadataService::class);
         $this->advancedSearchChecker = $this->createMock(AdvancedSearchChecker::class);
         $this->elasticSearch = $this->createMock(ElasticSearch::class);
+        $this->ontology = $this->createMock(Ontology::class);
         $this->search = $this->createMock(SearchProxy::class);
         $this->search
             ->method('getAdvancedSearch')
@@ -69,7 +75,8 @@ class ClassMetadataSearcherTest extends TestCase
                     ClassMetadataService::SERVICE_ID => $this->classMetadataService,
                     AdvancedSearchChecker::class => $this->advancedSearchChecker,
                     SearchProxy::SERVICE_ID => $this->search,
-                    LoggerService::SERVICE_ID => $this->createMock(LoggerService::class)
+                    LoggerService::SERVICE_ID => $this->createMock(LoggerService::class),
+                    Ontology::SERVICE_ID => $this->ontology
                 ]
             )
         );
@@ -98,6 +105,22 @@ class ClassMetadataSearcherTest extends TestCase
 
     public function testFindAllUsingElasticSearch(): void
     {
+        $property = $this->createMock(core_kernel_classes_Property::class);
+        $property->method('getRelatedClass')
+            ->willReturn(null);
+
+        $class = $this->createMock(core_kernel_classes_Property::class);
+        $class->method('getLabel')
+            ->willReturn('Class label');
+
+        $this->ontology
+            ->method('getProperty')
+            ->willReturn($property);
+
+        $this->ontology
+            ->method('getClass')
+            ->willReturn($class);
+
         $this->advancedSearchChecker
             ->method('isEnabled')
             ->willReturn(true);

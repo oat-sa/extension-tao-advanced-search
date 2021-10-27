@@ -25,7 +25,7 @@ namespace oat\taoAdvancedSearch\model\Metadata\Listener;
 use oat\oatbox\service\ConfigurableService;
 use oat\tao\model\event\ClassMovedEvent;
 use oat\taoAdvancedSearch\model\Index\Listener\ListenerInterface;
-use oat\taoAdvancedSearch\model\Index\Service\IndexerInterface;
+use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
 use oat\taoAdvancedSearch\model\Index\Service\ResultIndexer;
 use oat\taoAdvancedSearch\model\Metadata\Normalizer\MetadataNormalizer;
 
@@ -44,18 +44,22 @@ class ClassMovedListener extends ConfigurableService implements ListenerInterfac
 
         $subClasses = $event->getClass()->getSubClasses(true);
 
+        $indexer = $this->getIndexer();
+        $indexer->setNormalizer($this->getNormalizer());
+
+
         foreach (array_merge([$event->getClass()], $subClasses) as $class) {
-            $this->getIndexer()->addIndex($class);
+            $indexer->addIndex($class);
         }
     }
 
-    private function getIndexer(): IndexerInterface
+    private function getIndexer(): ResultIndexer
     {
-        /** @var ResultIndexer $indexer */
-        $indexer = $this->getServiceLocator()->get(ResultIndexer::class);
-        $indexer->setNormalizer(
-            $this->getServiceLocator()->get(MetadataNormalizer::class)
-        );
-        return $indexer;
+        return $this->getServiceLocator()->get(ResultIndexer::class);
+    }
+
+    private function getNormalizer(): NormalizerInterface
+    {
+        return $this->getServiceLocator()->get(MetadataNormalizer::class);
     }
 }
