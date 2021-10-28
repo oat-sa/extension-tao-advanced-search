@@ -38,6 +38,16 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
 {
     use OntologyAwareTrait;
 
+    private const SYSTEM_PROPERTIES = [
+        'http://www.tao.lu/Ontologies/TAOItem.rdf#ItemModel',
+        'http://www.w3.org/2000/01/rdf-schema#comment',
+        'http://www.w3.org/2000/01/rdf-schema#isDefinedBy',
+        'http://www.w3.org/2000/01/rdf-schema#seeAlso',
+        'http://www.w3.org/1999/02/22-rdf-syntax-ns#value',
+        'http://www.tao.lu/Ontologies/TAOTest.rdf#TestModel',
+        'http://www.tao.lu/Ontologies/generis.rdf#userDefLg',
+    ];
+
     public function normalize($resource): IndexResource
     {
         $class = $this->getClass($resource);
@@ -79,13 +89,15 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
 
         /** @var Metadata $property */
         foreach ($properties as $property) {
-            $propertyCollection[] = [
-                'propertyUri' => $property->getPropertyUri(),
-                'propertyLabel' => $property->getLabel(),
-                'propertyAlias' => $property->getAlias(),
-                'propertyType' => $property->getType(),
-                'propertyValues' => null,
-            ];
+            if (!in_array($property->getPropertyUri(), self::SYSTEM_PROPERTIES)) {
+                $propertyCollection[] = [
+                    'propertyUri' => $property->getPropertyUri(),
+                    'propertyLabel' => $property->getLabel(),
+                    'propertyAlias' => $property->getAlias(),
+                    'propertyType' => $property->getType(),
+                    'propertyValues' => null,
+                ];
+            }
         }
 
         return $propertyCollection;
