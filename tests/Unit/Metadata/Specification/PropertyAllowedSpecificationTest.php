@@ -52,15 +52,15 @@ class PropertyAllowedSpecificationTest extends TestCase
     public function getDataProvider(): array
     {
         return [
-            'allowed' => [
+            'with allowed properties' => [
                 true,
-                'uri'
+                'anyUriHere'
             ],
-            'additional not allowed' => [
+            'with not allowed properties' => [
                 false,
                 self::PROPERTY_FORBIDDEN
             ],
-            'system allowed' => [
+            'with not allowed system properties' => [
                 false,
                 'http://www.tao.lu/Ontologies/TAOItem.rdf#ItemModel'
             ],
