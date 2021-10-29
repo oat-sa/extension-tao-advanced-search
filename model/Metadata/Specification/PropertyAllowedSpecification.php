@@ -40,7 +40,7 @@ class PropertyAllowedSpecification
     /** @var array */
     private $blackListUris;
 
-    public function __construct(?array $blackListUris = [])
+    public function __construct(array $blackListUris = [])
     {
         $this->blackListUris = array_merge($blackListUris, self::SYSTEM_PROPERTIES);
     }

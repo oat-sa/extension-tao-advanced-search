@@ -48,7 +48,12 @@ class MetadataServiceProvider implements ContainerServiceProviderInterface
         $parameters = $configurator->parameters();
         $parameters->set(
             PropertyAllowedSpecification::CONFIG_BLACK_LIST,
-            explode(',', (string)getenv(PropertyAllowedSpecification::CONFIG_BLACK_LIST))
+            array_filter(
+                explode(
+                    ',',
+                    (string)getenv(PropertyAllowedSpecification::CONFIG_BLACK_LIST)
+                )
+            )
         );
     }
 }
