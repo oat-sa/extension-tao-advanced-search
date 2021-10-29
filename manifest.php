@@ -18,6 +18,7 @@
  * Copyright (c) 2021 (original work) Open Assessment Technologies SA;
  */
 
+use oat\taoAdvancedSearch\model\Metadata\ServiceProvider\MetadataServiceProvider;
 use oat\taoAdvancedSearch\scripts\install\RegisterEvents;
 use oat\taoAdvancedSearch\scripts\install\RegisterServices;
 use oat\taoAdvancedSearch\scripts\install\RegisterTaskQueueServices;
@@ -52,5 +53,8 @@ return [
     ],
     'constants' => [
         'BASE_URL' => ROOT_URL . 'taoAdvancedSearch/',
+    ],
+    'containerServiceProviders' => [
+        MetadataServiceProvider::class,
     ]
 ];

@@ -31,22 +31,13 @@ use oat\tao\model\Lists\Business\Service\GetClassMetadataValuesService;
 use oat\taoAdvancedSearch\model\Index\IndexResource;
 use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
 use oat\taoAdvancedSearch\model\Metadata\Factory\ClassPathFactory;
+use oat\taoAdvancedSearch\model\Metadata\Specification\PropertyAllowedSpecification;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassCachedRepository;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepositoryInterface;
 
 class MetadataNormalizer extends ConfigurableService implements NormalizerInterface
 {
     use OntologyAwareTrait;
-
-    private const SYSTEM_PROPERTIES = [
-        'http://www.tao.lu/Ontologies/TAOItem.rdf#ItemModel',
-        'http://www.w3.org/2000/01/rdf-schema#comment',
-        'http://www.w3.org/2000/01/rdf-schema#isDefinedBy',
-        'http://www.w3.org/2000/01/rdf-schema#seeAlso',
-        'http://www.w3.org/1999/02/22-rdf-syntax-ns#value',
-        'http://www.tao.lu/Ontologies/TAOTest.rdf#TestModel',
-        'http://www.tao.lu/Ontologies/generis.rdf#userDefLg',
-    ];
 
     public function normalize($resource): IndexResource
     {
@@ -87,9 +78,11 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
             ? $this->getGetClassMetadataValuesService()->getByClassRecursive($class, 0)
             : $this->getGetClassMetadataValuesService()->getByClassExplicitly($class, 0);
 
+        $specification = $this->getPropertyAllowedSpecification();
+
         /** @var Metadata $property */
         foreach ($properties as $property) {
-            if (!in_array($property->getPropertyUri(), self::SYSTEM_PROPERTIES)) {
+            if ($specification->isSatisfiedBy($property->getPropertyUri())) {
                 $propertyCollection[] = [
                     'propertyUri' => $property->getPropertyUri(),
                     'propertyLabel' => $property->getLabel(),
@@ -105,12 +98,12 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
 
     private function getGetClassMetadataValuesService(): GetClassMetadataValuesService
     {
-        return $this->getServiceLocator()->get(GetClassMetadataValuesService::class);
+        return $this->getServiceManager()->getContainer()->get(GetClassMetadataValuesService::class);
     }
 
     private function getClassPathFactory(): ClassPathFactory
     {
-        return $this->getServiceLocator()->get(ClassPathFactory::class);
+        return $this->getServiceManager()->getContainer()->get(ClassPathFactory::class);
     }
 
     private function isRootClass(core_kernel_classes_Class $class)
@@ -120,6 +113,11 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
 
     private function getIndexableClassRepository(): IndexableClassRepositoryInterface
     {
-        return $this->getServiceLocator()->get(IndexableClassCachedRepository::class);
+        return $this->getServiceManager()->getContainer()->get(IndexableClassCachedRepository::class);
+    }
+
+    private function getPropertyAllowedSpecification(): PropertyAllowedSpecification
+    {
+        return $this->getServiceManager()->getContainer()->get(PropertyAllowedSpecification::class);
     }
 }

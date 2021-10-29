@@ -158,3 +158,13 @@ Resources not indexed for class http://www.tao.lu/Ontologies/TAOItem.rdf#Item
     Missing resources: 1
     Missing resources indexed: 1
 ```
+
+## Env variables
+
+### Avoid indexing metadata
+
+To avoid indexing metadata that is used in the criteria filter: 
+
+```shell
+ADVANCED_SEARCH_METADATA_BLACK_LIST=URI1,URI2,URI3
+```
