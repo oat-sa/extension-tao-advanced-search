@@ -31,6 +31,7 @@ use oat\tao\model\Lists\Business\Service\GetClassMetadataValuesService;
 use oat\taoAdvancedSearch\model\Index\IndexResource;
 use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
 use oat\taoAdvancedSearch\model\Metadata\Factory\ClassPathFactory;
+use oat\taoAdvancedSearch\model\Metadata\Specification\PropertyAllowedSpecification;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassCachedRepository;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepositoryInterface;
 
@@ -77,15 +78,19 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
             ? $this->getGetClassMetadataValuesService()->getByClassRecursive($class, 0)
             : $this->getGetClassMetadataValuesService()->getByClassExplicitly($class, 0);
 
+        $specification = $this->getPropertyAllowedSpecification();
+
         /** @var Metadata $property */
         foreach ($properties as $property) {
-            $propertyCollection[] = [
-                'propertyUri' => $property->getPropertyUri(),
-                'propertyLabel' => $property->getLabel(),
-                'propertyAlias' => $property->getAlias(),
-                'propertyType' => $property->getType(),
-                'propertyValues' => null,
-            ];
+            if ($specification->isSatisfiedBy($property->getPropertyUri())) {
+                $propertyCollection[] = [
+                    'propertyUri' => $property->getPropertyUri(),
+                    'propertyLabel' => $property->getLabel(),
+                    'propertyAlias' => $property->getAlias(),
+                    'propertyType' => $property->getType(),
+                    'propertyValues' => null,
+                ];
+            }
         }
 
         return $propertyCollection;
@@ -93,12 +98,12 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
 
     private function getGetClassMetadataValuesService(): GetClassMetadataValuesService
     {
-        return $this->getServiceLocator()->get(GetClassMetadataValuesService::class);
+        return $this->getServiceManager()->getContainer()->get(GetClassMetadataValuesService::class);
     }
 
     private function getClassPathFactory(): ClassPathFactory
     {
-        return $this->getServiceLocator()->get(ClassPathFactory::class);
+        return $this->getServiceManager()->getContainer()->get(ClassPathFactory::class);
     }
 
     private function isRootClass(core_kernel_classes_Class $class)
@@ -108,6 +113,11 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
 
     private function getIndexableClassRepository(): IndexableClassRepositoryInterface
     {
-        return $this->getServiceLocator()->get(IndexableClassCachedRepository::class);
+        return $this->getServiceManager()->getContainer()->get(IndexableClassCachedRepository::class);
+    }
+
+    private function getPropertyAllowedSpecification(): PropertyAllowedSpecification
+    {
+        return $this->getServiceManager()->getContainer()->get(PropertyAllowedSpecification::class);
     }
 }
