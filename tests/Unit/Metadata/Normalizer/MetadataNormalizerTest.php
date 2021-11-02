@@ -32,6 +32,7 @@ use oat\tao\model\Lists\Business\Service\GetClassMetadataValuesService;
 use oat\tao\model\TaoOntology;
 use oat\taoAdvancedSearch\model\Metadata\Factory\ClassPathFactory;
 use oat\taoAdvancedSearch\model\Metadata\Normalizer\MetadataNormalizer;
+use oat\taoAdvancedSearch\model\Metadata\Specification\PropertyAllowedSpecification;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassCachedRepository;
 use PHPUnit\Framework\MockObject\MockObject;
 
@@ -58,6 +59,9 @@ class MetadataNormalizerTest extends TestCase
     /** @var IndexableClassCachedRepository|MockObject */
     private $indexableClassRepository;
 
+    /** @var PropertyAllowedSpecification|MockObject */
+    private $propertyAllowedSpecification;
+
     public function setUp(): void
     {
         $this->subject = new MetadataNormalizer();
@@ -67,6 +71,7 @@ class MetadataNormalizerTest extends TestCase
         $this->metadataMock = $this->createMock(Metadata::class);
         $this->ontology = $this->createMock(Ontology::class);
         $this->classPathFactory = $this->createMock(ClassPathFactory::class);
+        $this->propertyAllowedSpecification = $this->createMock(PropertyAllowedSpecification::class);
 
         $this->classPathFactory
             ->method('create')
@@ -79,6 +84,7 @@ class MetadataNormalizerTest extends TestCase
                     Ontology::SERVICE_ID => $this->ontology,
                     ClassPathFactory::class => $this->classPathFactory,
                     IndexableClassCachedRepository::class => $this->indexableClassRepository,
+                    PropertyAllowedSpecification::class => $this->propertyAllowedSpecification,
                 ]
             )
         );
@@ -89,6 +95,10 @@ class MetadataNormalizerTest extends TestCase
         $this->ontology
             ->method('getClass')
             ->willReturn($this->classMock);
+
+        $this->propertyAllowedSpecification
+            ->method('isSatisfiedBy')
+            ->willReturn(true);
 
         $this->classMock
             ->method('isClass')
@@ -115,6 +125,10 @@ class MetadataNormalizerTest extends TestCase
                     TaoOntology::CLASS_URI_ITEM,
                 ]
             );
+
+        $this->propertyAllowedSpecification
+            ->method('isSatisfiedBy')
+            ->willReturn(true);
 
         $this->ontology
             ->method('getClass')
