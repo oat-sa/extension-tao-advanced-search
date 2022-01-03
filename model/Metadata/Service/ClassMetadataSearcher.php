@@ -116,22 +116,9 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
 
     private function getMainClassProperties(string $classUri): array
     {
-        $resultSet = $this->executeQuery('_id', $classUri);
+        $results = (array) $this->executeQuery('_id', $classUri);
 
-        // ResultSets extend from ArrayIterator, and we should not call current()
-        // on that ("Calling current() on an object is deprecated" errors).
-        //
-        // Moreover, hits.total (used to provide the value for getTotalCount()) may
-        // not be accurate at all on Elasticsearch 7.0+.
-        //
-        // To be extra safe, we iterate the result set but just return
-        // the first result immediately
-        //
-        foreach ($resultSet as $result) {
-            return $result; // Return always the first one
-        }
-
-        return [];
+        return !empty($results) ? current($results) : [];
     }
 
     private function filterDuplicatedProperties(array $allProperties): array
