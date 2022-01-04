@@ -191,7 +191,8 @@ class ClassMetadataSearcherTest extends TestCase
         $this->elasticSearch
             ->method('search')
             ->with($this->callback(function (Query $query) {
-                return ($query->getQueryString() == '_id:"class1"');
+                return (($query->getQueryString() == '_id:"class1"')
+                    && ($query->getIndex() == 'property-list'));
             }))
             ->willReturn(new SearchResult([], 0));
 
