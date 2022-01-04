@@ -31,11 +31,13 @@ use oat\tao\elasticsearch\SearchResult;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\Lists\Business\Domain\ClassCollection;
 use oat\tao\model\Lists\Business\Domain\ClassMetadataSearchRequest;
+use oat\tao\model\Lists\Business\Domain\MetadataCollection;
 use oat\tao\model\Lists\Business\Input\ClassMetadataSearchInput;
 use oat\tao\model\Lists\Business\Service\ClassMetadataService;
 use oat\tao\model\search\SearchProxy;
 use oat\taoAdvancedSearch\model\Metadata\Service\ClassMetadataSearcher;
 use PHPUnit\Framework\MockObject\MockObject;
+use Traversable;
 
 class ClassMetadataSearcherTest extends TestCase
 {
@@ -195,11 +197,18 @@ class ClassMetadataSearcherTest extends TestCase
             )
         );
 
-        $rawResult = json_decode(json_encode($result->jsonSerialize()), true);
+        $generator = $result->getIterator();
+        $this->assertInstanceOf(Traversable::class, $generator);
 
-        $this->assertSame(null, $rawResult[0]['parent-class']);
-        $this->assertSame('class1', $rawResult[0]['class']);
-        $this->assertSame([], $rawResult[0]['metadata']);
+        $items = iterator_to_array($generator);
+        $this->assertCount(1, $items);
+        $this->assertNull($items[0]->getParentClass());
+        $this->assertEquals('class1', $items[0]->getClass());
+
+        $metadata = $items[0]->getMetaData();
+        $this->assertInstanceOf(MetadataCollection::class, $metadata);
+        $this->assertEquals(0, $metadata->count());
+        $this->assertEmpty(iterator_to_array($metadata));
     }
 
     private function getMockResult(string $classId, ?string $parentClassUri, array $classPath): array
