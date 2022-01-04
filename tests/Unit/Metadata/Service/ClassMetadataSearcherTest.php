@@ -163,6 +163,45 @@ class ClassMetadataSearcherTest extends TestCase
         $this->assertSame('class1', $rawResult[0]['class']);
     }
 
+    public function testFindAllUsingElasticSearchWithEmptyClassProperties(): void
+    {
+        $property = $this->createMock(core_kernel_classes_Property::class);
+        $property->method('getRelatedClass')
+            ->willReturn(null);
+
+        $class = $this->createMock(core_kernel_classes_Property::class);
+        $class->method('getLabel')
+            ->willReturn('Class label');
+
+        $this->ontology
+            ->method('getProperty')
+            ->willReturn($property);
+
+        $this->ontology
+            ->method('getClass')
+            ->willReturn($class);
+
+        $this->advancedSearchChecker
+            ->method('isEnabled')
+            ->willReturn(true);
+
+        $this->elasticSearch
+            ->method('search')
+            ->willReturn(new SearchResult([], 0));
+
+        $result = $this->subject->findAll(
+            new ClassMetadataSearchInput(
+                (new ClassMetadataSearchRequest())->setClassUri('class1')
+            )
+        );
+
+        $rawResult = json_decode(json_encode($result->jsonSerialize()), true);
+
+        $this->assertSame(null, $rawResult[0]['parent-class']);
+        $this->assertSame('class1', $rawResult[0]['class']);
+        $this->assertSame([], $rawResult[0]['metadata']);
+    }
+
     private function getMockResult(string $classId, ?string $parentClassUri, array $classPath): array
     {
         return [
@@ -174,12 +213,14 @@ class ClassMetadataSearcherTest extends TestCase
                     'propertyUri' => 'propertyUri1',
                     'propertyLabel' => 'propertyLabel1',
                     'propertyType' => 'list',
+                    'propertyAlias' => null,
                     'propertyValues' => [],
                 ],
                 [
                     'propertyUri' => 'propertyUri2',
                     'propertyLabel' => 'propertyLabel2',
                     'propertyType' => 'text',
+                    'propertyAlias' => null,
                     'propertyValues' => [],
                 ]
             ],
