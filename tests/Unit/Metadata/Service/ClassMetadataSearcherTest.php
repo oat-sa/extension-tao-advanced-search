@@ -27,6 +27,7 @@ use oat\generis\model\data\Ontology;
 use oat\generis\test\TestCase;
 use oat\oatbox\log\LoggerService;
 use oat\tao\elasticsearch\ElasticSearch;
+use oat\tao\elasticsearch\Query;
 use oat\tao\elasticsearch\SearchResult;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\Lists\Business\Domain\ClassCollection;
@@ -189,6 +190,9 @@ class ClassMetadataSearcherTest extends TestCase
 
         $this->elasticSearch
             ->method('search')
+            ->with($this->callback(function (Query $query) {
+                return ($query->getQueryString() == '_id:"class1"');
+            }))
             ->willReturn(new SearchResult([], 0));
 
         $result = $this->subject->findAll(
