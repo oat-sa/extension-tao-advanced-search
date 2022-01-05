@@ -116,13 +116,9 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
 
     private function getMainClassProperties(string $classUri): array
     {
-        $result = $this->executeQuery('_id', $classUri);
+        $results = (array) $this->executeQuery('_id', $classUri);
 
-        if ($result->getTotalCount() === 0) {
-            return [];
-        }
-
-        return current($result);
+        return !empty($results) ? current($results) : [];
     }
 
     private function filterDuplicatedProperties(array $allProperties): array
