@@ -23,8 +23,6 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\Index\Report;
 
 use oat\oatbox\service\ConfigurableService;
-use oat\tao\elasticsearch\ElasticSearch;
-use oat\tao\elasticsearch\IndexerInterface;
 use oat\tao\model\search\SearchProxy;
 use oat\taoAdvancedSearch\model\DeliveryResult\Repository\DeliveryResultRepository;
 use oat\taoAdvancedSearch\model\DeliveryResult\Repository\DeliveryResultRepositoryInterface;
@@ -32,6 +30,8 @@ use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriCachedRepository;
 use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriRepositoryInterface;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassCachedRepository;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepositoryInterface;
+use oat\taoAdvancedSearch\model\Search\IndexerInterface;
+use oat\taoAdvancedSearch\model\Search\SearchInterface;
 
 class IndexSummarizer extends ConfigurableService
 {
@@ -49,13 +49,13 @@ class IndexSummarizer extends ConfigurableService
 
         $output[] = $this->createReport(
             'Metadata',
-            IndexerInterface::PROPERTY_LIST, //@TODO Remove direct call for ElasticSearch
+            IndexerInterface::PROPERTY_LIST,
             $this->getClassUriRepository()->getTotal()
         );
 
         $output[] = $this->createReport(
             'Delivery Results',
-            IndexerInterface::DELIVERY_RESULTS_INDEX, //@TODO Remove direct call for ElasticSearch
+            IndexerInterface::DELIVERY_RESULTS_INDEX,
             $this->getDeliveryResultRepository()->getTotal()
         );
 
@@ -64,14 +64,13 @@ class IndexSummarizer extends ConfigurableService
 
     private function getIndexName(string $classUri): ?string
     {
-        //@TODO Remove direct call for ElasticSearch
         return IndexerInterface::AVAILABLE_INDEXES[$classUri] ?? null;
     }
 
     private function getTotalResults(string $index): int
     {
-        /** @var ElasticSearch $advancedSearch */
-        $advancedSearch = $this->getSearchProxy()->getAdvancedSearch(); //@TODO Remove direct call for ElasticSearch
+        /** @var SearchInterface $advancedSearch */
+        $advancedSearch = $this->getSearchProxy()->getAdvancedSearch();
 
         return $advancedSearch->countDocuments($index);
     }
