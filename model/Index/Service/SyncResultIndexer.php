@@ -57,10 +57,12 @@ class SyncResultIndexer extends ConfigurableService implements IndexerInterface,
         } catch (Throwable $e) {
             $this->logWarning(
                 sprintf(
-                    '%s: Caught %s on call to createDocumentFromArray: %s',
+                    '%s: Caught %s on call to createDocumentFromArray: %s (resourceId: %s, label: %s)',
                     self::class,
                     get_class($e),
-                    $e->getMessage()
+                    $e->getMessage(),
+                    $normalizedResource->getId(),
+                    $normalizedResource->getLabel()
                 )
             );
 
