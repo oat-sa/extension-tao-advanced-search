@@ -27,6 +27,7 @@ use oat\tao\model\search\index\IndexService;
 use oat\tao\model\search\SearchInterface;
 use oat\tao\model\search\SearchProxy;
 use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
+use Throwable;
 
 class SyncResultIndexer extends ConfigurableService implements IndexerInterface, NormalizerAwareInterface
 {
@@ -38,16 +39,33 @@ class SyncResultIndexer extends ConfigurableService implements IndexerInterface,
         $this->normalizer = $normalizer;
     }
 
+    /**
+     * @throws Throwable
+     * @throws \common_Exception
+     */
     public function addIndex($resource): void
     {
         $normalizedResource = $this->normalizer->normalize($resource);
 
-        $document = $this->getIndexerService()->getDocumentBuilder()->createDocumentFromArray(
-            [
-                'id' => $normalizedResource->getId(),
-                'body' => $normalizedResource->getData()
-            ]
-        );
+        try {
+            $document = $this->getIndexerService()->getDocumentBuilder()->createDocumentFromArray(
+                [
+                    'id' => $normalizedResource->getId(),
+                    'body' => $normalizedResource->getData()
+                ]
+            );
+        } catch (Throwable $e) {
+            $this->logWarning(
+                sprintf(
+                    '%s: Caught %s on call to createDocumentFromArray: %s',
+                    self::class,
+                    get_class($e),
+                    $e->getMessage()
+                )
+            );
+
+            throw $e;
+        }
 
         $this->getSearch()->index(
             [
