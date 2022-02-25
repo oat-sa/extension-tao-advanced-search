@@ -60,7 +60,7 @@ class ResultIndexerTest extends TestCase
                 [
                     QueueDispatcherInterface::SERVICE_ID => $this->queueDispatcher,
                     AdvancedSearchChecker::class => $this->advancedSearchChecker,
-                    'generis/log' => $this->createMock(LoggerService::class)
+                    LoggerService::SERVICE_ID => $this->createMock(LoggerService::class)
                 ]
             )
         );
