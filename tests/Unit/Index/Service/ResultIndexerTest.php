@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\tests\Unit\Index\Service;
 
 use oat\generis\test\TestCase;
+use oat\oatbox\log\LoggerService;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\search\tasks\AddSearchIndexFromArray;
 use oat\tao\model\task\migration\ResultUnit;
@@ -59,6 +60,7 @@ class ResultIndexerTest extends TestCase
                 [
                     QueueDispatcherInterface::SERVICE_ID => $this->queueDispatcher,
                     AdvancedSearchChecker::class => $this->advancedSearchChecker,
+                    'generis/log' => $this->createMock(LoggerService::class)
                 ]
             )
         );
