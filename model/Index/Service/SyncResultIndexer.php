@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\Index\Service;
 
+use common_Exception;
 use oat\oatbox\service\ConfigurableService;
 use oat\tao\model\search\index\IndexService;
 use oat\tao\model\search\SearchInterface;
@@ -41,7 +42,7 @@ class SyncResultIndexer extends ConfigurableService implements IndexerInterface,
 
     /**
      * @throws Throwable
-     * @throws \common_Exception
+     * @throws common_Exception
      */
     public function addIndex($resource): void
     {
