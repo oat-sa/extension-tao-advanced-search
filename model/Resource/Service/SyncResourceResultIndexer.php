@@ -51,9 +51,10 @@ class SyncResourceResultIndexer extends ConfigurableService implements IndexerIn
             if ($totalIndexed < 1) {
                 $this->logWarning(
                     sprintf(
-                        'Could not index resource %s (%s)',
+                        'Could not index resource %s (%s): totalIndexed=%d',
                         $resource->getLabel(),
-                        $resource->getUri()
+                        $resource->getUri(),
+                        $totalIndexed
                     )
                 );
             }
