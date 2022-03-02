@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2021 (original work) Open Assessment Technologies SA;
+ * Copyright (c) 2021-2022 (original work) Open Assessment Technologies SA;
  */
 
 declare(strict_types=1);
@@ -41,6 +41,14 @@ class ResultIndexer extends ConfigurableService implements IndexerInterface, Nor
     public function addIndex($resource): void
     {
         if (!$this->getServiceLocator()->get(AdvancedSearchChecker::class)->isEnabled()) {
+            $this->logDebug(
+                sprintf(
+                    '%s: Advanced Search not enabled, skipping index update for %s',
+                    self::class,
+                    is_scalar($resource) ? $resource : get_class($resource)
+                )
+            );
+
             return;
         }
         
