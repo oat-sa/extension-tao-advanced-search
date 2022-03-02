@@ -26,10 +26,10 @@ use core_kernel_classes_Resource;
 use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\extension\script\ScriptAction;
 use oat\oatbox\reporting\Report;
-use oat\tao\elasticsearch\ElasticSearch;
-use oat\tao\elasticsearch\Query;
-use oat\tao\elasticsearch\SearchResult;
+use oat\tao\model\search\ResultSet;
 use oat\tao\model\search\SearchProxy;
+use oat\taoAdvancedSearch\model\Search\Query;
+use oat\taoAdvancedSearch\model\Search\SearchInterface;
 use Zend\ServiceManager\ServiceLocatorAwareInterface;
 use Zend\ServiceManager\ServiceLocatorAwareTrait;
 
@@ -173,7 +173,7 @@ class ResourceIndexGarbageCollector extends ScriptAction implements ServiceLocat
         return false;
     }
 
-    private function search(string $index, int $offset, int $limit): SearchResult
+    private function search(string $index, int $offset, int $limit): ResultSet
     {
         return $this->getSearch()->search(
             (new Query($index))
@@ -183,7 +183,7 @@ class ResourceIndexGarbageCollector extends ScriptAction implements ServiceLocat
         );
     }
 
-    private function getSearch(): ElasticSearch
+    private function getSearch(): SearchInterface
     {
         return $this->getSearchProxy()->getAdvancedSearch();
     }

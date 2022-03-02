@@ -26,17 +26,17 @@ use core_kernel_classes_Property;
 use oat\generis\model\data\Ontology;
 use oat\generis\test\TestCase;
 use oat\oatbox\log\LoggerService;
-use oat\tao\elasticsearch\ElasticSearch;
-use oat\tao\elasticsearch\Query;
-use oat\tao\elasticsearch\SearchResult;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\Lists\Business\Domain\ClassCollection;
 use oat\tao\model\Lists\Business\Domain\ClassMetadataSearchRequest;
 use oat\tao\model\Lists\Business\Domain\MetadataCollection;
 use oat\tao\model\Lists\Business\Input\ClassMetadataSearchInput;
 use oat\tao\model\Lists\Business\Service\ClassMetadataService;
+use oat\tao\model\search\ResultSet;
 use oat\tao\model\search\SearchProxy;
 use oat\taoAdvancedSearch\model\Metadata\Service\ClassMetadataSearcher;
+use oat\taoAdvancedSearch\model\Search\Query;
+use oat\taoAdvancedSearch\model\Search\SearchInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use Traversable;
 
@@ -51,8 +51,8 @@ class ClassMetadataSearcherTest extends TestCase
     /** @var AdvancedSearchChecker|MockObject */
     private $advancedSearchChecker;
 
-    /** @var ElasticSearch|MockObject */
-    private $elasticSearch;
+    /** @var SearchInterface|MockObject */
+    private $advancedSearch;
 
     /** @var SearchProxy|MockObject */
     private $search;
@@ -64,12 +64,12 @@ class ClassMetadataSearcherTest extends TestCase
     {
         $this->classMetadataService = $this->createMock(ClassMetadataService::class);
         $this->advancedSearchChecker = $this->createMock(AdvancedSearchChecker::class);
-        $this->elasticSearch = $this->createMock(ElasticSearch::class);
+        $this->advancedSearch = $this->createMock(SearchInterface::class);
         $this->ontology = $this->createMock(Ontology::class);
         $this->search = $this->createMock(SearchProxy::class);
         $this->search
             ->method('getAdvancedSearch')
-            ->willReturn($this->elasticSearch);
+            ->willReturn($this->advancedSearch);
 
         $this->subject = new ClassMetadataSearcher();
         $this->subject->setServiceLocator(
@@ -106,7 +106,7 @@ class ClassMetadataSearcherTest extends TestCase
         $this->assertSame($expectedCollection, $result);
     }
 
-    public function testFindAllUsingElasticSearch(): void
+    public function testFindAllUsingAdvancedSearch(): void
     {
         $property = $this->createMock(core_kernel_classes_Property::class);
         $property->method('getRelatedClass')
@@ -128,26 +128,26 @@ class ClassMetadataSearcherTest extends TestCase
             ->method('isEnabled')
             ->willReturn(true);
 
-        $this->elasticSearch
+        $this->advancedSearch
             ->method('search')
             ->willReturnOnConsecutiveCalls(
                 ...[
                     // Parent classes
-                    new SearchResult(
+                    new ResultSet(
                         [
                             $this->getMockResult('class1', 'parentClass1', ['class1', 'parentClass1']),
                         ],
                         1
                     ),
-                    new SearchResult(
+                    new ResultSet(
                         [],
                         0
                     ),
-                    new SearchResult(
+                    new ResultSet(
                         [],
                         0
                     ),
-                    new SearchResult(
+                    new ResultSet(
                         [],
                         0
                     )
@@ -166,7 +166,7 @@ class ClassMetadataSearcherTest extends TestCase
         $this->assertSame('class1', $rawResult[0]['class']);
     }
 
-    public function testFindAllUsingElasticSearchWithEmptyClassProperties(): void
+    public function testFindAllUsingAdvancedSearchWithEmptyClassProperties(): void
     {
         $property = $this->createMock(core_kernel_classes_Property::class);
         $property->method('getRelatedClass')
@@ -188,13 +188,13 @@ class ClassMetadataSearcherTest extends TestCase
             ->method('isEnabled')
             ->willReturn(true);
 
-        $this->elasticSearch
+        $this->advancedSearch
             ->method('search')
             ->with($this->callback(function (Query $query) {
                 return (($query->getQueryString() == '_id:"class1"')
                     && ($query->getIndex() == 'property-list'));
             }))
-            ->willReturn(new SearchResult([], 0));
+            ->willReturn(new ResultSet([], 0));
 
         $result = $this->subject->findAll(
             new ClassMetadataSearchInput(
