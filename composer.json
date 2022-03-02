@@ -27,10 +27,10 @@
     "oat-sa/oatbox-extension-installer": "~1.1||dev-master",
     "ext-json": "*",
     "oat-sa/generis": ">=14.2.0",
-    "oat-sa/tao-core": ">=v48.52.0",
+    "oat-sa/tao-core": ">=v50.5.0",
     "oat-sa/extension-tao-delivery": ">=14.10.1",
     "oat-sa/extension-tao-outcomeui": ">=10.4.0",
-    "oat-sa/lib-tao-elasticsearch": ">=2.4.0"
+    "oat-sa/lib-tao-elasticsearch": ">=2.5.0"
   },
   "autoload": {
     "psr-4": {
