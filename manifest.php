@@ -15,14 +15,20 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2021 (original work) Open Assessment Technologies SA;
+ * Copyright (c) 2021-2022 (original work) Open Assessment Technologies SA.
  */
 
-use oat\taoAdvancedSearch\model\Metadata\ServiceProvider\MetadataServiceProvider;
+declare(strict_types=1);
+
+use oat\tao\model\accessControl\func\AccessRule;
 use oat\taoAdvancedSearch\scripts\install\RegisterEvents;
+use oat\taoAdvancedSearch\scripts\install\ActivateSearch;
 use oat\taoAdvancedSearch\scripts\install\RegisterServices;
+use oat\taoAdvancedSearch\scripts\install\Checks\EndpointCheck;
+use oat\taoAdvancedSearch\scripts\install\CreateIndexStructure;
 use oat\taoAdvancedSearch\scripts\install\RegisterTaskQueueServices;
 use oat\taoAdvancedSearch\scripts\uninstall\UnRegisterTaskQueueServices;
+use oat\taoAdvancedSearch\model\Metadata\ServiceProvider\MetadataServiceProvider;
 
 $managerRole = 'http://www.tao.lu/Ontologies/generis.rdf#advancedSearchManager';
 
@@ -34,20 +40,37 @@ return [
     'author' => 'Open Assessment Technologies SA',
     'managementRole' => $managerRole,
     'acl' => [
-        ['grant', $managerRole, ['ext' => 'taoAdvancedSearch']],
+        [
+            AccessRule::GRANT,
+            $managerRole,
+            [
+                'ext' => 'taoAdvancedSearch',
+            ],
+        ],
     ],
     'install' => [
+        'checks' => [
+            [
+                'type' => 'CheckCustom',
+                'value' => [
+                    'name' => EndpointCheck::class,
+                    'extension' => 'taoAdvancedSearch',
+                ],
+            ],
+        ],
         'php' => [
             RegisterServices::class,
             RegisterEvents::class,
             RegisterTaskQueueServices::class,
+            ActivateSearch::class,
+            CreateIndexStructure::class,
         ],
-        'rdf' => []
+        'rdf' => [],
     ],
     'uninstall' => [
         'php' => [
             UnRegisterTaskQueueServices::class,
-        ]
+        ],
     ],
     'routes' => [
     ],
@@ -56,5 +79,5 @@ return [
     ],
     'containerServiceProviders' => [
         MetadataServiceProvider::class,
-    ]
+    ],
 ];
