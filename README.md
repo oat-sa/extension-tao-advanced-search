@@ -24,10 +24,10 @@ php vendor/oat-sa/lib-tao-elasticsearch/bin/activateElasticSearch.php <pathToTao
 ### Create indexes
 
 ```shell
-php index.php 'oat\tao\elasticsearch\Action\IndexCreator' --indexFiles vendor/oat-sa/lib-tao-elasticsearch/config/index.conf.php
+php index.php 'oat\taoAdvancedSearch\scripts\tools\IndexCreator'
 ```
 
-*ATTENTION*: In case the indexes already exist and the command above is returning error, 
+**ATTENTION**: In case the indexes already exist and the command above is returning error, 
 you can delete the indexes by running the command bellow:
 
 ```shell

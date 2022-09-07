@@ -24,8 +24,8 @@ namespace oat\taoAdvancedSearch\model\Resource\Repository;
 
 use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\service\ConfigurableService;
-use oat\tao\elasticsearch\IndexerInterface;
 use oat\tao\model\menu\MenuService;
+use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 
 class IndexableClassRepository extends ConfigurableService implements IndexableClassRepositoryInterface
 {

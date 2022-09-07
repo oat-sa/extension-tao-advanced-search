@@ -23,8 +23,6 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\Index\Report;
 
 use oat\oatbox\service\ConfigurableService;
-use oat\tao\elasticsearch\ElasticSearch;
-use oat\tao\elasticsearch\IndexerInterface;
 use oat\tao\model\search\SearchProxy;
 use oat\taoAdvancedSearch\model\DeliveryResult\Repository\DeliveryResultRepository;
 use oat\taoAdvancedSearch\model\DeliveryResult\Repository\DeliveryResultRepositoryInterface;
@@ -32,6 +30,8 @@ use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriCachedRepository;
 use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriRepositoryInterface;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassCachedRepository;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepositoryInterface;
+use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
+use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 
 class IndexSummarizer extends ConfigurableService
 {
