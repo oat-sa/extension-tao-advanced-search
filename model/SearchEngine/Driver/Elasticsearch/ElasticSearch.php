@@ -26,7 +26,7 @@ use ArrayIterator;
 use Elasticsearch\Client;
 use Exception;
 use Iterator;
-use \oat\tao\model\search\SearchInterface as TaoSearchInterface;
+use oat\tao\model\search\SearchInterface as TaoSearchInterface;
 use oat\tao\model\search\SyntaxException;
 use oat\tao\model\search\ResultSet;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
@@ -222,6 +222,8 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
     private function getIndexFile(): string
     {
         return $this->indexFile ?? __DIR__ .
+            DIRECTORY_SEPARATOR .
+            '..' .
             DIRECTORY_SEPARATOR .
             '..' .
             DIRECTORY_SEPARATOR .

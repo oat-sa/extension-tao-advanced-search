@@ -336,11 +336,12 @@ return [
     ],
     'property-list' => [
         'index' => 'property-list',
-        'body' => [],
-        'settings' => [
-            'index' => [
-                'number_of_shards' => '1',
-                'number_of_replicas' => '1',
+        'body' => [
+            'settings' => [
+                'index' => [
+                    'number_of_shards' => '1',
+                    'number_of_replicas' => '1',
+                ],
             ],
         ],
     ],

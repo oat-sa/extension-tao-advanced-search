@@ -73,37 +73,7 @@ class ElasticSearchTest extends TestCase
             $this->queryBuilder,
             $this->indexer,
             $this->prefixer,
-            $this->logger,
-//            [
-//                ElasticSearch::OPTION_INDEX_FILE => ,
-//                GenerisSearch::class => $this->generisSearch,
-//                'indexes' => [
-//                    [
-//                        'index' => 'items',
-//                        'body' => [
-//                            'mappings' => [
-//                                'properties' => [
-//                                    'class' => [
-//                                        'type' => 'text',
-//                                    ],
-//                                ]
-//                            ]
-//                        ]
-//                    ],
-//                    [
-//                        'index' => 'tests',
-//                        'body' => [
-//                            'mappings' => [
-//                                'properties' => [
-//                                    'use' => [
-//                                        'type' => 'keyword',
-//                                    ],
-//                                ]
-//                            ]
-//                        ]
-//                    ],
-//                ]
-//            ]
+            $this->logger
         );
 
         $this->sut->setIndexFile(__DIR__ . '/../../../../sample/testIndexes.conf.php');

@@ -32,8 +32,6 @@ use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 
 class IndexCreator extends ScriptAction
 {
-    private const INDEX_FILES = 'indexFiles';
-
     protected function provideOptions()
     {
         return [];
@@ -46,28 +44,17 @@ class IndexCreator extends ScriptAction
 
     protected function run()
     {
-        /** @var SearchProxy $searchProxy */
-        $searchProxy = $this->getServiceManager()->get(SearchProxy::SERVICE_ID);
+        try {
+            /** @var SearchProxy $searchProxy */
+            $searchProxy = $this->getServiceManager()->get(SearchProxy::SERVICE_ID);
 
-        /** @var ElasticSearch|null $elasticService */
-        $elasticService = $searchProxy->getAdvancedSearch();
+            /** @var ElasticSearch|null $elasticService */
+            $elasticService = $searchProxy->getAdvancedSearch();
+            $elasticService->createIndexes();
 
-        if ($elasticService instanceof ElasticSearch) {
-            try {
-                $elasticService->createIndexes();
-            } catch (Exception $exception) {
-                return new Report(
-                    Report::TYPE_ERROR,
-                    sprintf(
-                        'Error while indices creation: %s',
-                        $exception->getMessage()
-                    )
-                );
-            }
-
-            return new Report(Report::TYPE_SUCCESS, 'Elastic indexes created successfully');
+            return Report::createSuccess('Elastic indices created successfully');
+        } catch (Exception $exception) {
+            return Report::createError(sprintf('Error while indices creation: %s', $exception->getMessage()));
         }
-
-        return new Report(Report::TYPE_ERROR, 'No proper service found');
     }
 }
