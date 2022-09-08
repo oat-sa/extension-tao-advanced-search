@@ -27,6 +27,7 @@ namespace oat\taoAdvancedSearch\model\SearchEngine\ServiceProvider;
 use Elasticsearch\Client;
 use oat\generis\model\data\permission\PermissionInterface;
 use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
+use oat\generis\model\DependencyInjection\ServiceOptions;
 use oat\oatbox\log\LoggerService;
 use oat\oatbox\session\SessionService;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
@@ -63,10 +64,15 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
             )->public();
 
         $services->set(ElasticSearchClientFactory::class, ElasticSearchClientFactory::class)
+            ->args(
+                [
+                    service(ServiceOptions::SERVICE_ID),
+                ]
+            )
             ->public();
 
         $services->set(Client::class, Client::class)
-            ->factory(service(ElasticSearchClientFactory::class), 'create')
+            ->factory([service(ElasticSearchClientFactory::class), 'create'])
             ->public();
 
         $services->set(ElasticSearch::class, ElasticSearch::class)
