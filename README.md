@@ -109,7 +109,6 @@ php index.php '\oat\taoAdvancedSearch\scripts\tools\IndexSummary'
 |---------------------------------------|--------------------------------------------------------------------------------------------|----------------|
 | FEATURE_FLAG_ADVANCED_SEARCH_DISABLED | In case you do not want to have AdvancedSearch enabled even if this extension is installed | true           |
 | ADVANCED_SEARCH_METADATA_BLACK_LIST   | To avoid indexing metadata that is used in the criteria filter                             | URI1,URI2,URI3 |
-| ADVANCED_SEARCH_INDEX_PREFIX          | For multi tenancy purposes, having multiple customers in the same cluster                  | customer_name  |
 
 
 ## How to create custom indexers?
