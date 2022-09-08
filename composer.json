@@ -37,9 +37,6 @@
       "oat\\taoAdvancedSearch\\": ""
     }
   },
-  "require-dev": {
-    "phpunit/phpunit": "^8.5"
-  },
   "autoload-dev": {
     "psr-4": {
       "oat\\taoAdvancedSearch\\tests\\": "test"
