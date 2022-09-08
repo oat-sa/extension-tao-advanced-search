@@ -43,7 +43,7 @@ class ElasticSearchConfigTest extends TestCase
         $this->sut = new ElasticSearchConfig($this->options);
     }
 
-    public function testPrefixAll(): void
+    public function testGetters(): void
     {
         $this->options
             ->method('get')
