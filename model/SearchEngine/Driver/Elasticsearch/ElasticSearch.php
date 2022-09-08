@@ -26,7 +26,6 @@ use ArrayIterator;
 use Elasticsearch\Client;
 use Exception;
 use Iterator;
-use oat\tao\model\search\index\IndexIterator;
 use \oat\tao\model\search\SearchInterface as TaoSearchInterface;
 use oat\tao\model\search\SyntaxException;
 use oat\tao\model\search\ResultSet;
@@ -39,7 +38,8 @@ use Psr\Log\LoggerInterface;
 
 class ElasticSearch implements SearchInterface, TaoSearchInterface
 {
-    public const OPTION_INDEX_FILE = 'indexFile';
+    /** @var string */
+    private $indexFile;
 
     /** @var Client */
     private $client;
@@ -56,24 +56,23 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
     /** @var LoggerInterface */
     private $logger;
 
-    /** @var array */
-    private $config;
-
     public function __construct(
         Client $client,
         QueryBuilder $queryBuilder,
         IndexerInterface $indexer,
         IndexPrefixer $prefixer,
-        LoggerInterface $logger,
-        array $config
-    )
-    {
+        LoggerInterface $logger
+    ) {
         $this->client = $client;
         $this->queryBuilder = $queryBuilder;
         $this->indexer = $indexer;
         $this->prefixer = $prefixer;
         $this->logger = $logger;
-        $this->config = $config;
+    }
+
+    public function setIndexFile(string $indexFile): void
+    {
+        $this->indexFile = $indexFile;
     }
 
     public function countDocuments(string $index): int
@@ -108,15 +107,9 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
 
         $results = $this->buildResultSet($this->client->search($query));
 
-        return new SearchResult(
-            $results->getArrayCopy(),
-            $results->getTotalCount()
-        );
+        return new SearchResult($results->getArrayCopy(), $results->getTotalCount());
     }
 
-    /**
-     * @inheritDoc
-     */
     public function query($queryString, $type, $start = 0, $count = 10, $order = '_id', $dir = 'DESC'): ResultSet
     {
         if ($order == 'id') {
@@ -146,10 +139,6 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
         }
     }
 
-    /**
-     * (Re)Generate the index for a given resource
-     * @param IndexIterator|array $documents
-     */
     public function index($documents = []): int
     {
         $documents = $documents instanceof Iterator
@@ -171,22 +160,12 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
 
     public function createIndexes(): void
     {
-        $indexFiles = $this->config[self::OPTION_INDEX_FILE] ?? __DIR__ .
-            DIRECTORY_SEPARATOR .
-            '..' .
-            DIRECTORY_SEPARATOR .
-            '..' .
-            DIRECTORY_SEPARATOR .
-            '..' .
-            DIRECTORY_SEPARATOR .
-            'config' .
-            DIRECTORY_SEPARATOR .
-            'index.conf.php';
+        $indexFile = $this->getIndexFile();
 
         $indexes = [];
 
-        if ($indexFiles && is_readable($indexFiles)) {
-            $indexes = require $indexFiles;
+        if ($indexFile && is_readable($indexFile)) {
+            $indexes = require $indexFile;
         }
 
         foreach ($indexes as $index) {
@@ -216,7 +195,7 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
         return $this->client->ping();
     }
 
-    protected function buildResultSet(array $elasticResult = []): ResultSet
+    private function buildResultSet(array $elasticResult = []): ResultSet
     {
         $uris = [];
         $total = 0;
@@ -238,5 +217,20 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
     public function __toPhpCode()
     {
         return __CLASS__;
+    }
+
+    private function getIndexFile(): string
+    {
+        return $this->indexFile ?? __DIR__ .
+            DIRECTORY_SEPARATOR .
+            '..' .
+            DIRECTORY_SEPARATOR .
+            '..' .
+            DIRECTORY_SEPARATOR .
+            '..' .
+            DIRECTORY_SEPARATOR .
+            'config' .
+            DIRECTORY_SEPARATOR .
+            'index.conf.php';
     }
 }

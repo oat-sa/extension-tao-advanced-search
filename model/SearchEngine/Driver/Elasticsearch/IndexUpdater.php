@@ -23,7 +23,6 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch;
 
 use Elasticsearch\Client;
-use Elasticsearch\ClientBuilder;
 use oat\oatbox\service\ConfigurableService;
 use oat\tao\model\search\index\IndexUpdaterInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
@@ -35,20 +34,6 @@ use Throwable;
 class IndexUpdater extends ConfigurableService implements IndexUpdaterInterface
 {
     use LogIndexOperationsTrait;
-
-    /** @var Client */
-    private $client;
-
-    protected function getClient(): Client
-    {
-        if (is_null($this->client)) {
-            $this->client = ClientBuilder::create()
-                ->setHosts($this->getOptions())
-                ->build();
-        }
-
-        return $this->client;
-    }
 
     /**
      * @inheritDoc
@@ -257,8 +242,13 @@ class IndexUpdater extends ConfigurableService implements IndexUpdaterInterface
         ];
     }
 
-    public function getPrefixer(): IndexPrefixer
+    private function getPrefixer(): IndexPrefixer
     {
         return $this->getServiceManager()->get(IndexPrefixer::class);
+    }
+
+    private function getClient(): Client
+    {
+        return $this->getServiceManager()->get(Client::class);
     }
 }

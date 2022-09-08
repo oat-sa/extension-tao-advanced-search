@@ -74,37 +74,39 @@ class ElasticSearchTest extends TestCase
             $this->indexer,
             $this->prefixer,
             $this->logger,
-            [
-                ElasticSearch::OPTION_INDEX_FILE => __DIR__ . '/../../../../sample/testIndexes.conf.php',
-                GenerisSearch::class => $this->generisSearch,
-                'indexes' => [
-                    [
-                        'index' => 'items',
-                        'body' => [
-                            'mappings' => [
-                                'properties' => [
-                                    'class' => [
-                                        'type' => 'text',
-                                    ],
-                                ]
-                            ]
-                        ]
-                    ],
-                    [
-                        'index' => 'tests',
-                        'body' => [
-                            'mappings' => [
-                                'properties' => [
-                                    'use' => [
-                                        'type' => 'keyword',
-                                    ],
-                                ]
-                            ]
-                        ]
-                    ],
-                ]
-            ]
+//            [
+//                ElasticSearch::OPTION_INDEX_FILE => ,
+//                GenerisSearch::class => $this->generisSearch,
+//                'indexes' => [
+//                    [
+//                        'index' => 'items',
+//                        'body' => [
+//                            'mappings' => [
+//                                'properties' => [
+//                                    'class' => [
+//                                        'type' => 'text',
+//                                    ],
+//                                ]
+//                            ]
+//                        ]
+//                    ],
+//                    [
+//                        'index' => 'tests',
+//                        'body' => [
+//                            'mappings' => [
+//                                'properties' => [
+//                                    'use' => [
+//                                        'type' => 'keyword',
+//                                    ],
+//                                ]
+//                            ]
+//                        ]
+//                    ],
+//                ]
+//            ]
         );
+
+        $this->sut->setIndexFile(__DIR__ . '/../../../../sample/testIndexes.conf.php');
 
         $this->prefixer
             ->expects($this->any())

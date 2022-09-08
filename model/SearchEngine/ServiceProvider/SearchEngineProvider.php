@@ -25,12 +25,12 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\SearchEngine\ServiceProvider;
 
 use Elasticsearch\Client;
-use Elasticsearch\ClientBuilder;
 use oat\generis\model\data\permission\PermissionInterface;
 use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
 use oat\oatbox\log\LoggerService;
 use oat\oatbox\session\SessionService;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
+use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchClientFactory;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchIndexer;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\QueryBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
@@ -62,43 +62,11 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
                 ]
             )->public();
 
+        $services->set(ElasticSearchClientFactory::class, ElasticSearchClientFactory::class)
+            ->public();
+
         $services->set(Client::class, Client::class)
-            ->factory(ClientBuilder::class . '::fromConfig')
-            ->args(
-                [
-                    [
-                        //@TODO Get config from configuration
-                        'hosts' => array(
-                            array(
-                                'scheme' => 'http',
-                                'host' => 'advanced-search-tao-elasticsearch',
-                                'port' => '9200'
-                            )
-                        ),
-//                        'settings' => array(
-//                            'analysis' => array(
-//                                'filter' => array(
-//                                    'autocomplete_filter' => array(
-//                                        'type' => 'edge_ngram',
-//                                        'min_gram' => 1,
-//                                        'max_gram' => 100
-//                                    )
-//                                ),
-//                                'analyzer' => array(
-//                                    'autocomplete' => array(
-//                                        'type' => 'custom',
-//                                        'tokenizer' => 'standard',
-//                                        'filter' => array(
-//                                            'lowercase',
-//                                            'autocomplete_filter'
-//                                        )
-//                                    )
-//                                )
-//                            )
-//                        ),
-                    ],
-                ]
-            )
+            ->factory(service(ElasticSearchClientFactory::class), 'create')
             ->public();
 
         $services->set(ElasticSearch::class, ElasticSearch::class)
@@ -109,7 +77,6 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
                     service(ElasticSearchIndexer::class),
                     service(IndexPrefixer::class),
                     service(LoggerService::SERVICE_ID),
-                    [],
                 ]
             )->public();
 
@@ -119,7 +86,6 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
                     service(Client::class),
                     service(LoggerService::SERVICE_ID),
                     service(IndexPrefixer::class),
-                    [],
                 ]
             )->public();
     }

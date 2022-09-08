@@ -31,16 +31,11 @@ use oat\taoAdvancedSearch\model\SearchEngine\Exception\FailToRemovePropertyExcep
 use oat\taoAdvancedSearch\model\SearchEngine\Exception\FailToUpdatePropertiesException;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use PHPUnit\Framework\MockObject\MockObject;
-use ReflectionObject;
-use ReflectionProperty;
 
 class IndexUpdaterTest extends TestCase
 {
     /** @var IndexUpdater */
     private $sut;
-
-    /** @var ReflectionProperty */
-    private $clientProperty;
 
     /** @var Client */
     private $client;
@@ -59,6 +54,7 @@ class IndexUpdaterTest extends TestCase
                 [
                     LoggerService::SERVICE_ID => $this->createMock(LoggerService::class),
                     IndexPrefixer::class => $this->prefixer,
+                    Client::class => $this->client,
                 ]
             )
         );
@@ -67,11 +63,6 @@ class IndexUpdaterTest extends TestCase
             ->expects($this->any())
             ->method('prefix')
             ->willReturnArgument(0);
-
-        $reflection = new ReflectionObject($this->sut);
-        $this->clientProperty = $reflection->getProperty('client');
-        $this->clientProperty->setAccessible(true);
-        $this->clientProperty->setValue($this->sut, $this->client);
     }
 
     /**
