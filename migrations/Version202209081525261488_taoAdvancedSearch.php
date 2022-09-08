@@ -13,7 +13,7 @@ use oat\tao\model\search\index\IndexUpdaterInterface;
 use oat\tao\model\search\SearchProxy;
 use oat\tao\scripts\tools\migrations\AbstractMigration;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
-use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchClientFactory;
+use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\IndexUpdater;
 
 final class Version202209081525261488_taoAdvancedSearch extends AbstractMigration
@@ -35,7 +35,7 @@ final class Version202209081525261488_taoAdvancedSearch extends AbstractMigratio
 
         /** @var ServiceOptions $serviceOptions */
         $serviceOptions = $this->getServiceManager()->get(ServiceOptions::SERVICE_ID);
-        $serviceOptions->save(ElasticSearchClientFactory::class, 'hosts', $oldElasticSearch->getOption('hosts'));
+        $serviceOptions->save(ElasticSearchConfig::class, 'hosts', $oldElasticSearch->getOption('hosts'));
 
         $searchProxy->setOption(SearchProxy::OPTION_ADVANCED_SEARCH_CLASS, ElasticSearch::class);
 

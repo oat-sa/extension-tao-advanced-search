@@ -32,6 +32,7 @@ use oat\oatbox\log\LoggerService;
 use oat\oatbox\session\SessionService;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchClientFactory;
+use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchIndexer;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\QueryBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
@@ -47,6 +48,11 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
         $services = $configurator->services();
 
         $services->set(IndexPrefixer::class, IndexPrefixer::class)
+            ->args(
+                [
+                    service(ElasticSearchConfig::class),
+                ]
+            )
             ->public();
 
         $services->set(UseAclSpecification::class, UseAclSpecification::class)
@@ -63,10 +69,17 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
                 ]
             )->public();
 
-        $services->set(ElasticSearchClientFactory::class, ElasticSearchClientFactory::class)
+        $services->set(ElasticSearchConfig::class, ElasticSearchConfig::class)
             ->args(
                 [
                     service(ServiceOptions::SERVICE_ID),
+                ]
+            )->public();
+
+        $services->set(ElasticSearchClientFactory::class, ElasticSearchClientFactory::class)
+            ->args(
+                [
+                    service(ElasticSearchConfig::class),
                 ]
             )
             ->public();

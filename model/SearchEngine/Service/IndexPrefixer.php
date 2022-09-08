@@ -24,12 +24,22 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\SearchEngine\Service;
 
+use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
+
 class IndexPrefixer
 {
+    /** @var ElasticSearchConfig */
+    private $config;
+
+    public function __construct(ElasticSearchConfig $config)
+    {
+        $this->config = $config;
+    }
+
     public function prefix(string $indexName): string
     {
-        if (isset($_ENV['ADVANCED_SEARCH_INDEX_PREFIX'])) {
-            return $_ENV['ADVANCED_SEARCH_INDEX_PREFIX'] . '_' . $indexName;
+        if ($this->config->getIndexPrefix()) {
+            return $this->config->getIndexPrefix() . '_' . $indexName;
         }
 
         return $indexName;

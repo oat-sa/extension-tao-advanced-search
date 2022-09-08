@@ -31,7 +31,7 @@ use oat\oatbox\reporting\Report;
 use oat\tao\model\search\index\IndexUpdaterInterface;
 use oat\tao\model\search\SearchProxy;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
-use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchClientFactory;
+use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\IndexUpdater;
 use Zend\ServiceManager\ServiceLocatorAwareInterface;
 use Zend\ServiceManager\ServiceLocatorAwareTrait;
@@ -84,6 +84,12 @@ class Activate extends ScriptAction implements ServiceLocatorAwareInterface
                 'required' => false,
                 'description' => 'ElasticSearch pass',
             ],
+            'indexPrefix' => [
+                'prefix' => 'i',
+                'longPrefix' => 'indexPrefix',
+                'required' => false,
+                'description' => 'ElasticSearch indices indexPrefix',
+            ],
         ];
     }
 
@@ -98,8 +104,8 @@ class Activate extends ScriptAction implements ServiceLocatorAwareInterface
             $searchProxy = $this->getSearchProxy();
             $serviceOptions = $this->getServiceOptions();
             $serviceOptions->save(
-                ElasticSearchClientFactory::class,
-                ElasticSearchClientFactory::OPTION_HOSTS,
+                ElasticSearchConfig::class,
+                ElasticSearchConfig::OPTION_HOSTS,
                 [
                     array_filter(
                         [
@@ -111,6 +117,11 @@ class Activate extends ScriptAction implements ServiceLocatorAwareInterface
                         ]
                     )
                 ]
+            );
+            $serviceOptions->save(
+                ElasticSearchConfig::class,
+                ElasticSearchConfig::OPTION_INDEX_PREFIX,
+                $this->getOption('indexPrefix')
             );
 
             $searchProxy->setOption(SearchProxy::OPTION_ADVANCED_SEARCH_CLASS, ElasticSearch::class);

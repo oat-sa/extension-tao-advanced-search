@@ -24,23 +24,28 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch;
 
-use Elasticsearch\Client;
-use Elasticsearch\ClientBuilder;
+use oat\generis\model\DependencyInjection\ServiceOptionsInterface;
 
-class ElasticSearchClientFactory
+class ElasticSearchConfig
 {
-    /** @var ElasticSearchConfig */
-    private $config;
+    public const OPTION_INDEX_PREFIX = 'index_prefix';
+    public const OPTION_HOSTS = 'hosts';
 
-    public function __construct(ElasticSearchConfig $config)
+    /** @var ServiceOptionsInterface */
+    private $serviceOptions;
+
+    public function __construct(ServiceOptionsInterface $serviceOptions)
     {
-        $this->config = $config;
+        $this->serviceOptions = $serviceOptions;
     }
 
-    public function create(): Client
+    public function getHosts(): array
     {
-        return ClientBuilder::create()
-                ->setHosts($this->config->getHosts())
-                ->build();
+        return $this->serviceOptions->get(self::class, self::OPTION_HOSTS);
+    }
+
+    public function getIndexPrefix(): ?string
+    {
+        return $this->serviceOptions->get(self::class, self::OPTION_INDEX_PREFIX);
     }
 }
