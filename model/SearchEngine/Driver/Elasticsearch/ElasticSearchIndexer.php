@@ -194,7 +194,7 @@ class ElasticSearchIndexer implements IndexerInterface
         $hits = $response['hits'] ?? [];
 
         $document = [];
-        if ($hits && isset($hits['hits']) && isset($hits['total']) && $hits['total']) {
+        if ($hits && isset($hits['hits'], $hits['total'], $hits['total'])) {
             $document = current($hits['hits']);
         }
 

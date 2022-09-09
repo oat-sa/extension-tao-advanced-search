@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -152,6 +153,7 @@ class IndexUpdaterTest extends TestCase
                     ]
                 ]
             );
+
         $this->sut->deleteProperty($property);
     }
 
@@ -201,7 +203,10 @@ class IndexUpdaterTest extends TestCase
                         'query' => [
                             'multi_match' => [
                                 'query' => $documentUri,
-                                'fields' => ['type', '_id'],
+                                'fields' => [
+                                    'type',
+                                    '_id'
+                                ],
                             ],
                         ],
                         'script' => [
@@ -217,7 +222,9 @@ class IndexUpdaterTest extends TestCase
                 $validType
             ],
             'RadioBox_isTest',
-            ['123456']
+            [
+                '123456'
+            ]
         );
     }
 

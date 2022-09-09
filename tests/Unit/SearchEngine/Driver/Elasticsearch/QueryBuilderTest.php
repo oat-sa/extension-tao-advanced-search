@@ -117,12 +117,10 @@ class QueryBuilderTest extends TestCase
             'Query specific field' => [
                 'label:test',
                 '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND (read_access:(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":{"order":"DESC"}}}'
-
             ],
             'Query specific field (variating case)' => [
                 'LaBeL:test',
                 '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND (read_access:(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":{"order":"DESC"}}}'
-
             ],
             'Query custom field (using underscore)' => [
                 'custom_field:test',
@@ -194,12 +192,10 @@ class QueryBuilderTest extends TestCase
             'Query specific field' => [
                 'label:test',
                 '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\")"}},"sort":{"_id":{"order":"DESC"}}}'
-
             ],
             'Query specific field (variating case)' => [
                 'LaBeL:test',
                 '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\")"}},"sort":{"_id":{"order":"DESC"}}}'
-
             ],
             'Query custom field (using underscore)' => [
                 'custom_field:test',
