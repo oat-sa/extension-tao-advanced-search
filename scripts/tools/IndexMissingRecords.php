@@ -164,7 +164,6 @@ class IndexMissingRecords extends ScriptAction implements ServiceLocatorAwareInt
 
     private function getIndexName(string $classUri): ?string
     {
-        //@TODO Remove direct call for ElasticSearch
         return IndexerInterface::AVAILABLE_INDEXES[$classUri] ?? null;
     }
 

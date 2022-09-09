@@ -58,7 +58,6 @@ class IndexableClassRepository extends ConfigurableService implements IndexableC
                         continue;
                     }
 
-                    //@TODO Remove direct Elastic search dependency from here [tech.debt]
                     $indexName = IndexerInterface::AVAILABLE_INDEXES[$rootNode] ?? null;
 
                     if ($indexName === null) {

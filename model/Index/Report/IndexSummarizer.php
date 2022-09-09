@@ -49,13 +49,13 @@ class IndexSummarizer extends ConfigurableService
 
         $output[] = $this->createReport(
             'Metadata',
-            IndexerInterface::PROPERTY_LIST, //@TODO Remove direct call for ElasticSearch
+            IndexerInterface::PROPERTY_LIST,
             $this->getClassUriRepository()->getTotal()
         );
 
         $output[] = $this->createReport(
             'Delivery Results',
-            IndexerInterface::DELIVERY_RESULTS_INDEX, //@TODO Remove direct call for ElasticSearch
+            IndexerInterface::DELIVERY_RESULTS_INDEX,
             $this->getDeliveryResultRepository()->getTotal()
         );
 
@@ -64,14 +64,13 @@ class IndexSummarizer extends ConfigurableService
 
     private function getIndexName(string $classUri): ?string
     {
-        //@TODO Remove direct call for ElasticSearch
         return IndexerInterface::AVAILABLE_INDEXES[$classUri] ?? null;
     }
 
     private function getTotalResults(string $index): int
     {
         /** @var ElasticSearch $advancedSearch */
-        $advancedSearch = $this->getSearchProxy()->getAdvancedSearch(); //@TODO Remove direct call for ElasticSearch
+        $advancedSearch = $this->getSearchProxy()->getAdvancedSearch();
 
         return $advancedSearch->countDocuments($index);
     }
