@@ -57,11 +57,26 @@ class ElasticSearchConfigTest extends TestCase
                         return ['hosts'];
                     }
 
+                    if ($option === ElasticSearchConfig::OPTION_ELASTIC_CLOUD_API_KEY_ID) {
+                        return 'elasticCloudApiKeyId';
+                    }
+
+                    if ($option === ElasticSearchConfig::OPTION_ELASTIC_CLOUD_API_KEY) {
+                        return 'elasticCloudApiKey';
+                    }
+
+                    if ($option === ElasticSearchConfig::OPTION_ELASTIC_CLOUD_ID) {
+                        return 'elasticCloudId';
+                    }
+
                     return null;
                 }
             );
 
         $this->assertSame('p', $this->sut->getIndexPrefix());
         $this->assertSame(['hosts'], $this->sut->getHosts());
+        $this->assertSame('elasticCloudApiKeyId', $this->sut->getElasticCloudApiKeyId());
+        $this->assertSame('elasticCloudApiKey', $this->sut->getElasticCloudApiKey());
+        $this->assertSame('elasticCloudId', $this->sut->getElasticCloudId());
     }
 }
