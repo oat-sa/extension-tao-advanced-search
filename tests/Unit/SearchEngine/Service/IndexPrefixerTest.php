@@ -52,9 +52,9 @@ class IndexPrefixerTest extends TestCase
 
         $this->assertEquals(
             [
-                'p_a',
-                'p_b',
-                'p_c'
+                'p-a',
+                'p-b',
+                'p-c'
             ],
             $this->sut->prefixAll(
                 [

@@ -29,6 +29,9 @@ use oat\generis\model\DependencyInjection\ServiceOptionsInterface;
 class ElasticSearchConfig
 {
     public const OPTION_INDEX_PREFIX = 'index_prefix';
+    public const OPTION_ELASTIC_CLOUD_ID = 'elastic_cloud_id';
+    public const OPTION_ELASTIC_CLOUD_API_KEY_ID = 'elastic_cloud_api_key_id';
+    public const OPTION_ELASTIC_CLOUD_API_KEY = 'elastic_cloud_api_key';
     public const OPTION_HOSTS = 'hosts';
 
     /** @var ServiceOptionsInterface */
@@ -47,5 +50,20 @@ class ElasticSearchConfig
     public function getIndexPrefix(): ?string
     {
         return $this->serviceOptions->get(self::class, self::OPTION_INDEX_PREFIX);
+    }
+
+    public function getElasticCloudId(): ?string
+    {
+        return $this->serviceOptions->get(self::class, self::OPTION_ELASTIC_CLOUD_ID);
+    }
+
+    public function getElasticCloudApiKey(): ?string
+    {
+        return $this->serviceOptions->get(self::class, self::OPTION_ELASTIC_CLOUD_API_KEY);
+    }
+
+    public function getElasticCloudApiKeyId(): ?string
+    {
+        return $this->serviceOptions->get(self::class, self::OPTION_ELASTIC_CLOUD_API_KEY_ID);
     }
 }

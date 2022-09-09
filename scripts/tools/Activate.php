@@ -37,7 +37,7 @@ use Zend\ServiceManager\ServiceLocatorAwareInterface;
 use Zend\ServiceManager\ServiceLocatorAwareTrait;
 
 /**
- * php index.php 'oat\taoAdvancedSearch\scripts\tools\Activate' --host http://advanced-search-tao-elasticsearch --port 9200 --createIndices
+ * php index.php 'oat\taoAdvancedSearch\scripts\tools\Activate' --help
  */
 class Activate extends ScriptAction implements ServiceLocatorAwareInterface
 {
@@ -63,13 +63,13 @@ class Activate extends ScriptAction implements ServiceLocatorAwareInterface
             'host' => [
                 'prefix' => 'h',
                 'longPrefix' => 'host',
-                'required' => true,
+                'required' => false,
                 'description' => 'ElasticSearch host',
             ],
             'port' => [
                 'prefix' => 'p',
                 'longPrefix' => 'port',
-                'required' => true,
+                'required' => false,
                 'description' => 'ElasticSearch post',
             ],
             'user' => [
@@ -90,6 +90,24 @@ class Activate extends ScriptAction implements ServiceLocatorAwareInterface
                 'required' => false,
                 'description' => 'ElasticSearch indices indexPrefix',
             ],
+            'elasticCloudId' => [
+                'prefix' => 'ecid',
+                'longPrefix' => 'elasticCloudId',
+                'required' => false,
+                'description' => 'ElasticCloud ID',
+            ],
+            'elasticCloudApiKeyId' => [
+                'prefix' => 'eckid',
+                'longPrefix' => 'elasticCloudApiKeyId',
+                'required' => false,
+                'description' => 'ElasticCloud API Key ID',
+            ],
+            'elasticCloudApiKey' => [
+                'prefix' => 'eck',
+                'longPrefix' => 'elasticCloudApiKey',
+                'required' => false,
+                'description' => 'ElasticCloud API Key',
+            ],
         ];
     }
 
@@ -98,31 +116,61 @@ class Activate extends ScriptAction implements ServiceLocatorAwareInterface
         $report = new Report(Report::TYPE_INFO, 'Started switch to elastic search');
 
         try {
-            $url = parse_url($this->getOption('host'));
-
             $serviceManager = $this->getServiceManager();
             $searchProxy = $this->getSearchProxy();
             $serviceOptions = $this->getServiceOptions();
-            $serviceOptions->save(
-                ElasticSearchConfig::class,
-                ElasticSearchConfig::OPTION_HOSTS,
-                [
-                    array_filter(
-                        [
-                            'scheme' => $url['scheme'] ?? 'https',
-                            'host' => $url['host'],
-                            'port' => (int)$this->getOption('port'),
-                            'user' => $this->getOption('user'),
-                            'pass' => $this->getOption('pass'),
-                        ]
-                    )
-                ]
-            );
-            $serviceOptions->save(
-                ElasticSearchConfig::class,
-                ElasticSearchConfig::OPTION_INDEX_PREFIX,
-                $this->getOption('indexPrefix')
-            );
+
+            if ($this->hasOption('host')) {
+                $url = parse_url($this->getOption('host'));
+
+                $serviceOptions->save(
+                    ElasticSearchConfig::class,
+                    ElasticSearchConfig::OPTION_HOSTS,
+                    [
+                        array_filter(
+                            [
+                                'scheme' => $url['scheme'] ?? 'https',
+                                'host' => $url['host'],
+                                'port' => (int)$this->getOption('port'),
+                                'user' => $this->getOption('user'),
+                                'pass' => $this->getOption('pass'),
+                            ]
+                        )
+                    ]
+                );
+            }
+
+            if ($this->hasOption('elasticCloudId')) {
+                $serviceOptions->save(
+                    ElasticSearchConfig::class,
+                    ElasticSearchConfig::OPTION_ELASTIC_CLOUD_ID,
+                    $this->getOption('elasticCloudId')
+                );
+            }
+
+            if ($this->hasOption('elasticCloudApiKeyId')) {
+                $serviceOptions->save(
+                    ElasticSearchConfig::class,
+                    ElasticSearchConfig::OPTION_ELASTIC_CLOUD_API_KEY_ID,
+                    $this->getOption('elasticCloudApiKeyId')
+                );
+            }
+
+            if ($this->hasOption('elasticCloudApiKey')) {
+                $serviceOptions->save(
+                    ElasticSearchConfig::class,
+                    ElasticSearchConfig::OPTION_ELASTIC_CLOUD_API_KEY,
+                    $this->getOption('elasticCloudApiKey')
+                );
+            }
+
+            if ($this->hasOption('indexPrefix')) {
+                $serviceOptions->save(
+                    ElasticSearchConfig::class,
+                    ElasticSearchConfig::OPTION_INDEX_PREFIX,
+                    $this->getOption('indexPrefix')
+                );
+            }
 
             $searchProxy->setOption(SearchProxy::OPTION_ADVANCED_SEARCH_CLASS, ElasticSearch::class);
 

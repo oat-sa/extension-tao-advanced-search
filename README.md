@@ -24,8 +24,22 @@ Please, do not use this classes anymore! Use only classes from this very extensi
 
 ### Activate advanced search 
 
+#### Activate without credentials needed 
+
 ```shell
-php index.php 'oat\taoAdvancedSearch\scripts\tools\Activate' --host <host url> --port <host port> [--user <optional> --pass <optional>]
+php index.php 'oat\taoAdvancedSearch\scripts\tools\Activate' --host <host url> --port <host port> [--indexPrefix <optional>]
+```
+
+#### Activate with credentials needed 
+
+```shell
+php index.php 'oat\taoAdvancedSearch\scripts\tools\Activate' --host <host url> --port <host port> --user <host user> --pass <host pass> [--indexPrefix <optional>]
+```
+
+#### Activate for ElasticCloud 
+
+```shell
+php index.php 'oat\taoAdvancedSearch\scripts\tools\Activate' --elasticCloudId <cloud id> --elasticCloudApiKeyId <key id> --elasticCloudApiKey <key> [--indexPrefix <optional>]
 ```
 
 ### Create indexes

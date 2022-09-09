@@ -39,6 +39,13 @@ class ElasticSearchClientFactory
 
     public function create(): Client
     {
+        if ($this->config->getElasticCloudId()) {
+            return ClientBuilder::create()
+                ->setElasticCloudId($this->config->getElasticCloudId())
+                ->setApiKey($this->config->getElasticCloudApiKeyId(), $this->config->getElasticCloudApiKey())
+                ->build();
+        }
+
         return ClientBuilder::create()
                 ->setHosts($this->config->getHosts())
                 ->build();
