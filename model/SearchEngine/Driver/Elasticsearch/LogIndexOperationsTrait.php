@@ -23,12 +23,10 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch;
 
 use oat\tao\model\search\index\IndexDocument;
+use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
-/**
- * @internal To be used only by lib-tao-elasticsearch
- */
 trait LogIndexOperationsTrait
 {
     private function logCompletion(
@@ -52,8 +50,7 @@ trait LogIndexOperationsTrait
             $logger->debug(
                 sprintf(
                     "Processed %d items (no exceptions, no skipped items)",
-                    $count,
-                    $skipped
+                    $count
                 )
             );
         }

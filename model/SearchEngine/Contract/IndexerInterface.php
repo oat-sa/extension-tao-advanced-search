@@ -63,7 +63,7 @@ interface IndexerInterface
 
     public function buildIndex(Iterator $documents): int;
 
-    public function deleteDocument($id): bool;
+    public function deleteDocument(string $id): bool;
 
-    public function searchResourceByIds($ids = []): array;
+    public function searchResourceByIds(array $ids): array;
 }

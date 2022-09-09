@@ -150,7 +150,7 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
 
     public function remove($resourceId): bool
     {
-        return $this->indexer->deleteDocument($resourceId);
+        return $this->indexer->deleteDocument((string)$resourceId);
     }
 
     public function supportCustomIndex(): bool

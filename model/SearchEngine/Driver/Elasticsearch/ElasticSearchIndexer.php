@@ -145,7 +145,7 @@ class ElasticSearchIndexer implements IndexerInterface
         return $count;
     }
 
-    public function deleteDocument($id): bool
+    public function deleteDocument(string $id): bool
     {
         $document = $this->searchResourceByIds([$id]);
 
@@ -179,7 +179,7 @@ class ElasticSearchIndexer implements IndexerInterface
         return false;
     }
 
-    public function searchResourceByIds($ids = []): array
+    public function searchResourceByIds(array $ids): array
     {
         //@FIXME @TODO Check why the index is used not here
         $searchParams = [
