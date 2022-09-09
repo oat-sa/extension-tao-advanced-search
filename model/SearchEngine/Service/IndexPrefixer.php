@@ -39,7 +39,7 @@ class IndexPrefixer
     public function prefix(string $indexName): string
     {
         if ($this->config->getIndexPrefix()) {
-            return $this->config->getIndexPrefix() . '-' . preg_replace('/[^a-z\-]/', '', $indexName);
+            return preg_replace('/[^a-z\-]/', '', $this->config->getIndexPrefix()) . '-' . $indexName;
         }
 
         return $indexName;
