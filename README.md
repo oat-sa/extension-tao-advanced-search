@@ -6,6 +6,8 @@
 ![GitHub release](https://img.shields.io/github/release/oat-sa/extension-tao-advanced-search.svg)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/y/oat-sa/extension-tao-advanced-search.svg)
 
+[![codecov](https://codecov.io/gh/oat-sa/extension-tao-advanced-search/branch/master/graph/badge.svg?token=uPVdj0JrEn)](https://codecov.io/gh/oat-sa/extension-tao-advanced-search)
+
 > Extension required to advanced search integration with TAO platform `oat-sa/extension-tao-advanced-search`
 
 # !DEPRECATION NOTICE!

@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ develop ]
 
+env:
+  COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ secrets.CI_GITHUB_TOKEN }}"}}'
+
 jobs:
   ci:
     runs-on: ${{ matrix.operating-system }}
@@ -21,7 +24,7 @@ jobs:
 
     steps:
       - name: CI
-        uses: oat-sa/tao-extension-ci-action@v1
+        uses: oat-sa/tao-extension-ci-action@v1.0.2
         with:
           php: ${{ matrix.php-version }}
           coverage: ${{ matrix.coverage }}
