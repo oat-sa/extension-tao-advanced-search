@@ -181,7 +181,6 @@ class ElasticSearchIndexer implements IndexerInterface
 
     public function searchResourceByIds(array $ids): array
     {
-        //@FIXME @TODO Check why the index is used not here
         $searchParams = [
             'body' => [
                 'query' => [
