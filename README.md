@@ -6,23 +6,134 @@
 ![GitHub release](https://img.shields.io/github/release/oat-sa/extension-tao-advanced-search.svg)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/y/oat-sa/extension-tao-advanced-search.svg)
 
+[![codecov](https://codecov.io/gh/oat-sa/extension-tao-advanced-search/branch/master/graph/badge.svg?token=uPVdj0JrEn)](https://codecov.io/gh/oat-sa/extension-tao-advanced-search)
+
 > Extension required to advanced search integration with TAO platform `oat-sa/extension-tao-advanced-search`
+
+# !DEPRECATION NOTICE!
+
+The library `oat-sa/lib-tao-elasticsearch` is deprecated and this presence in the [composer.json](composer.json)
+is maintained only for backward compatibility purposes with already installed applications. 
+
+Please, do not use this classes anymore! Use only classes from this very extension.
+
+## Requirements
+
+- ElasticSearch 7.10+ installed.
+- Have this extension installed in TAO.
 
 ## Installation instructions
 
-### Worker configuration
-Event processing related to the indexing isolated within separate taskQueue named `indexation_queue`. 
-It must be configured to work though RDS broker according to [this instruction](https://github.com/oat-sa/extension-tao-task-queue/blob/master/README.md)
+### Activate advanced search 
 
-## Create an Indexer
+#### Activate without credentials needed 
 
-### 1) Create a new Migration Indexing Task
+```shell
+php index.php 'oat\taoAdvancedSearch\scripts\tools\Activate' --host <host url> --port <host port> [--indexPrefix <optional>]
+```
+
+#### Activate with credentials needed 
+
+```shell
+php index.php 'oat\taoAdvancedSearch\scripts\tools\Activate' --host <host url> --port <host port> --user <host user> --pass <host pass> [--indexPrefix <optional>]
+```
+
+#### Activate for ElasticCloud 
+
+```shell
+php index.php 'oat\taoAdvancedSearch\scripts\tools\Activate' --elasticCloudId <cloud id> --elasticCloudApiKeyId <key id> --elasticCloudApiKey <key> [--indexPrefix <optional>]
+```
+
+### Create indexes
+
+```shell
+php index.php 'oat\taoAdvancedSearch\scripts\tools\IndexCreator'
+```
+
+**ATTENTION**: In case the indexes already exist and the command above is returning error, 
+you can delete the indexes by running the command bellow:
+
+```shell
+php index.php 'oat\taoAdvancedSearch\scripts\tools\IndexDeleter'
+```
+
+## Indexation
+
+### Warmup cache
+
+This is necessary to optimize indexation:
+
+```shell
+./taoAdvancedSearch/scripts/tools/CacheWarmup.sh --help
+```
+
+### To populate ALL indexes, execute:
+
+```shell script
+./taoAdvancedSearch/scripts/tools/IndexPopulator.sh --help
+```
+
+### To populate only resources indexes (Items, tests, etc), execute:
+
+```shell script
+./taoAdvancedSearch/scripts/tools/IndexResources.sh --help
+```
+
+### To populate only resources from one class, execute:
+
+```shell script
+./taoAdvancedSearch/scripts/tools/IndexClassResources.sh --help
+```
+
+### To populate only class metadata indexes, execute:
+
+```shell script
+./taoAdvancedSearch/scripts/tools/IndexClassMetadata.sh --help
+```
+
+### To populate only delivery results, execute:
+
+```shell script
+./taoAdvancedSearch/scripts/tools/IndexDeliveryResults.sh --help
+```
+
+## Garbage collection
+
+To clean old documents in the indexes:
+
+````shell
+./taoAdvancedSearch/scripts/tools/GarbageCollector.sh --help
+````
+
+And to index missing records
+
+```shell
+php index.php 'oat\taoAdvancedSearch\scripts\tools\IndexMissingRecords' -h
+```
+
+## Statistics
+
+To retrieve information about indexed vs expected data and others, execute:
+
+```shell
+php index.php '\oat\taoAdvancedSearch\scripts\tools\IndexSummary'
+```
+
+## Environment variables
+
+| Variable                              | Description                                                                                | Example        |
+|---------------------------------------|--------------------------------------------------------------------------------------------|----------------|
+| FEATURE_FLAG_ADVANCED_SEARCH_DISABLED | In case you do not want to have AdvancedSearch enabled even if this extension is installed | true           |
+| ADVANCED_SEARCH_METADATA_BLACK_LIST   | To avoid indexing metadata that is used in the criteria filter                             | URI1,URI2,URI3 |
+
+
+## How to create custom indexers?
 
 Here we need to specify 3 required classes and create them:
 
 - **Normalizer**: Convert search result support format of AdvancedSearch.
 - **Result Searcher**: Execute the search for a paginated index execution.
-- **Result Filter Factory**: The filter used to segregate the index within many workers. 
+- **Result Filter Factory**: The filter used to segregate the index within many workers.
 
 ```php
 <?php
@@ -44,127 +155,3 @@ class DeliveryResultMigrationTask extends AbstractIndexMigrationTask
     }
 }
 ``` 
-
-### 2) Populate the indexes
-
-#### To warmup cache
-
-This is necessary to optimize indexation:
-
-```shell
-./taoAdvancedSearch/scripts/tools/CacheWarmup.sh --help
-```
-
-#### To populate ALL indexes, execute:
-
-```shell script
-./taoAdvancedSearch/scripts/tools/IndexPopulator.sh --help
-```
-
-#### To populate only resources indexes (Items, tests, etc), execute:
-
-```shell script
-./taoAdvancedSearch/scripts/tools/IndexResources.sh --help
-```
-
-#### To populate only resources from one class, execute:
-
-```shell script
-./taoAdvancedSearch/scripts/tools/IndexClassResources.sh --help
-```
-
-#### To populate only class metadata indexes, execute:
-
-```shell script
-./taoAdvancedSearch/scripts/tools/IndexClassMetadata.sh --help
-```
-
-#### To populate only delivery results, execute:
-
-```shell script
-./taoAdvancedSearch/scripts/tools/IndexDeliveryResults.sh --help
-```
-
-## Garbage collection
-
-To clean old documents in the indexes:
-
-````shell
-./taoAdvancedSearch/scripts/tools/GarbageCollector.sh --help
-````
-
-## Getting statistics
-
-Execute following command:
-```shell
-php index.php '\oat\taoAdvancedSearch\scripts\tools\IndexSummary'
-```
-
-Output example:
-```shell
-Index vs Storage
-  Item (http://www.tao.lu/Ontologies/TAOItem.rdf#Item)
-    Total in DB: 14
-    Total indexed "items": 14
-    Percentage indexed: 100%
-    Missing items: 0
-  Test (http://www.tao.lu/Ontologies/TAOTest.rdf#Test)
-    Total in DB: 10
-    Total indexed "tests": 10
-    Percentage indexed: 100%
-    Missing items: 0
-  Test-taker (http://www.tao.lu/Ontologies/TAOSubject.rdf#Subject)
-    Total in DB: 6
-    Total indexed "test-takers": 6
-    Percentage indexed: 100%
-    Missing items: 0
-  Group (http://www.tao.lu/Ontologies/TAOGroup.rdf#Group)
-    Total in DB: 5
-    Total indexed "groups": 5
-    Percentage indexed: 100%
-    Missing items: 0
-  Assembled Delivery (http://www.tao.lu/Ontologies/TAODelivery.rdf#AssembledDelivery)
-    Total in DB: 0
-    Total indexed "deliveries": 0
-    Percentage indexed: 0%
-    Missing items: 0
-  Assets (http://www.tao.lu/Ontologies/TAOMedia.rdf#Media)
-    Total in DB: 4
-    Total indexed "assets": 4
-    Percentage indexed: 100%
-    Missing items: 0
-  Metadata
-    Total in DB: 23
-    Total indexed "property-list": 2
-    Percentage indexed: 8.7%
-    Missing items: 21
-```
-
-### Reindex missing resources
-
-```shell
-php index.php 'oat\taoAdvancedSearch\scripts\tools\IndexMissingRecords' -h
-```
-
-Output example:
-
-```shell
-Resources not indexed for class http://www.tao.lu/Ontologies/TAOItem.rdf#Item
-  Missing resources
-    https://advanced-search-tao.docker.localhost/ontologies/tao.rdf#i60f6d9d5037dc2624b07bbfa0fedd8963 (A_Class_Item_1 bis)
-  ReIndexed resources
-    https://advanced-search-tao.docker.localhost/ontologies/tao.rdf#i60f6d9d5037dc2624b07bbfa0fedd8963 (A_Class_Item_1 bis)
-  Summary
-    Missing resources: 1
-    Missing resources indexed: 1
-```
-
-## Env variables
-
-### Avoid indexing metadata
-
-To avoid indexing metadata that is used in the criteria filter: 
-
-```shell
-ADVANCED_SEARCH_METADATA_BLACK_LIST=URI1,URI2,URI3
-```

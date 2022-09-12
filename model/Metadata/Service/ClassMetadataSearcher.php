@@ -24,8 +24,6 @@ namespace oat\taoAdvancedSearch\model\Metadata\Service;
 
 use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\service\ConfigurableService;
-use oat\tao\elasticsearch\ElasticSearch;
-use oat\tao\elasticsearch\Query;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\Lists\Business\Contract\ClassMetadataSearcherInterface;
 use oat\tao\model\Lists\Business\Domain\ClassCollection;
@@ -37,6 +35,8 @@ use oat\tao\model\Lists\Business\Service\ClassMetadataService;
 use oat\tao\model\Lists\Business\Service\GetClassMetadataValuesService;
 use oat\tao\model\search\ResultSet;
 use oat\tao\model\search\SearchProxy;
+use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
+use oat\taoAdvancedSearch\model\SearchEngine\Query;
 
 class ClassMetadataSearcher extends ConfigurableService implements ClassMetadataSearcherInterface
 {
