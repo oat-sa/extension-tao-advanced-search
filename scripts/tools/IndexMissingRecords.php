@@ -28,12 +28,12 @@ use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\extension\script\ScriptAction;
 use oat\oatbox\reporting\Report;
 use oat\search\base\ResultSetInterface;
-use oat\tao\elasticsearch\ElasticSearch;
-use oat\tao\elasticsearch\IndexerInterface;
-use oat\tao\elasticsearch\Query;
 use oat\tao\model\search\SearchProxy;
 use oat\tao\model\TaoOntology;
 use oat\taoAdvancedSearch\model\Resource\Service\SyncResourceResultIndexer;
+use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
+use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
+use oat\taoAdvancedSearch\model\SearchEngine\Query;
 use Zend\ServiceManager\ServiceLocatorAwareInterface;
 use Zend\ServiceManager\ServiceLocatorAwareTrait;
 
@@ -164,7 +164,6 @@ class IndexMissingRecords extends ScriptAction implements ServiceLocatorAwareInt
 
     private function getIndexName(string $classUri): ?string
     {
-        //@TODO Remove direct call for ElasticSearch
         return IndexerInterface::AVAILABLE_INDEXES[$classUri] ?? null;
     }
 

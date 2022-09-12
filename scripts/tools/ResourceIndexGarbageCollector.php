@@ -26,10 +26,10 @@ use core_kernel_classes_Resource;
 use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\extension\script\ScriptAction;
 use oat\oatbox\reporting\Report;
-use oat\tao\elasticsearch\ElasticSearch;
-use oat\tao\elasticsearch\Query;
-use oat\tao\elasticsearch\SearchResult;
 use oat\tao\model\search\SearchProxy;
+use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
+use oat\taoAdvancedSearch\model\SearchEngine\Query;
+use oat\taoAdvancedSearch\model\SearchEngine\SearchResult;
 use Zend\ServiceManager\ServiceLocatorAwareInterface;
 use Zend\ServiceManager\ServiceLocatorAwareTrait;
 
