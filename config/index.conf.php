@@ -22,11 +22,20 @@ declare(strict_types=1);
 
 $dynamicTemplates = [
     [
+        "Calendar" => [
+            "match" => "Calendar_*",
+            "match_mapping_type" => "string",
+            "mapping" => [
+                "type" => "keyword"
+            ]
+        ]
+    ],
+    [
         "HTMLArea" => [
             "match" => "HTMLArea_*",
             "match_mapping_type" => "string",
             "mapping" => [
-                "type" => "text"
+                "type" => "keyword"
             ]
         ]
     ],
@@ -35,7 +44,7 @@ $dynamicTemplates = [
             "match" => "TextArea_*",
             "match_mapping_type" => "string",
             "mapping" => [
-                "type" => "text"
+                "type" => "keyword"
             ]
         ]
     ],
@@ -44,7 +53,7 @@ $dynamicTemplates = [
             "match" => "TextBox_*",
             "match_mapping_type" => "string",
             "mapping" => [
-                "type" => "text"
+                "type" => "keyword"
             ]
         ]
     ],
@@ -53,7 +62,7 @@ $dynamicTemplates = [
             "match" => "SearchTextBox_*",
             "match_mapping_type" => "string",
             "mapping" => [
-                "type" => "text"
+                "type" => "keyword"
             ]
         ]
     ],
@@ -102,19 +111,23 @@ return [
             'mappings' => [
                 'properties' => [
                     'class' => [
-                        'type' => 'text',
+                        'type' => 'keyword',
                     ],
                     'content' => [
-                        'type' => 'text',
+                        'type' => 'keyword',
                     ],
                     'label' => [
-                        'type' => 'text'
+                        'type' => 'keyword'
                     ],
                     'model' => [
                         'type' => 'keyword',
                         'ignore_above' => 256,
                     ],
                     'type' => [
+                        'type' => 'keyword',
+                        'ignore_above' => 256,
+                    ],
+                    'updated_at' => [
                         'type' => 'keyword',
                         'ignore_above' => 256,
                     ],
@@ -139,10 +152,10 @@ return [
             'mappings' => [
                 'properties' => [
                     'class' => [
-                        'type' => 'text',
+                        'type' => 'keyword',
                     ],
                     'label' => [
-                        'type' => 'text'
+                        'type' => 'keyword'
                     ],
                     'type' => [
                         'type' => 'keyword',
