@@ -31,6 +31,7 @@ use oat\oatbox\extension\script\ScriptAction;
 use oat\oatbox\reporting\Report;
 use oat\tao\model\search\index\IndexUpdaterInterface;
 use oat\tao\model\search\SearchProxy;
+use oat\taoAdvancedSearch\model\Metadata\Service\AdvancedSearchSearchSettingsService;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\IndexUpdater;
@@ -173,6 +174,7 @@ class Activate extends ScriptAction implements ServiceLocatorAwareInterface
                 );
             }
 
+            $searchProxy->setOption(SearchProxy::OPTION_SEARCH_SETTINGS_SERVICE, AdvancedSearchSearchSettingsService::class);
             $searchProxy->setOption(SearchProxy::OPTION_ADVANCED_SEARCH_CLASS, ElasticSearch::class);
 
             $serviceManager->register(ServiceOptions::SERVICE_ID, $serviceOptions);

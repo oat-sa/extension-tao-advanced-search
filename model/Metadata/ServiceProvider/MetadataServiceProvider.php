@@ -23,9 +23,12 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\Metadata\ServiceProvider;
 
 use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
+use oat\tao\model\Lists\Business\Service\ClassMetadataSearcherProxy;
+use oat\taoAdvancedSearch\model\Metadata\Service\AdvancedSearchSearchSettingsService;
 use oat\taoAdvancedSearch\model\Metadata\Specification\PropertyAllowedSpecification;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 class MetadataServiceProvider implements ContainerServiceProviderInterface
 {
@@ -39,6 +42,13 @@ class MetadataServiceProvider implements ContainerServiceProviderInterface
             ->args(
                 [
                     param(PropertyAllowedSpecification::CONFIG_BLACK_LIST)
+                ]
+            )->public();
+
+        $services->set(AdvancedSearchSearchSettingsService::class, AdvancedSearchSearchSettingsService::class)
+            ->args(
+                [
+                    service(ClassMetadataSearcherProxy::SERVICE_ID)
                 ]
             )->public();
     }
