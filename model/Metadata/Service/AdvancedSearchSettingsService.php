@@ -49,7 +49,7 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
             new ResultColumn(
                 'location',
                 __('Location'),
-                'text',
+                'text'
             )
         ];
 
