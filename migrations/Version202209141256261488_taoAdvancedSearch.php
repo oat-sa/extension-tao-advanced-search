@@ -8,7 +8,7 @@ use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\Exception\IrreversibleMigration;
 use oat\tao\model\search\SearchProxy;
 use oat\tao\scripts\tools\migrations\AbstractMigration;
-use oat\taoAdvancedSearch\model\Metadata\Service\AdvancedSearchSearchSettingsService;
+use oat\taoAdvancedSearch\model\Metadata\Service\AdvancedSearchSettingsService;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 
 final class Version202209141256261488_taoAdvancedSearch extends AbstractMigration
@@ -22,7 +22,7 @@ final class Version202209141256261488_taoAdvancedSearch extends AbstractMigratio
     {
         /** @var SearchProxy $searchProxy */
         $searchProxy = $this->getServiceManager()->get(SearchProxy::SERVICE_ID);
-        $searchProxy->setOption(SearchProxy::OPTION_SEARCH_SETTINGS_SERVICE, AdvancedSearchSearchSettingsService::class);
+        $searchProxy->setOption(SearchProxy::OPTION_SEARCH_SETTINGS_SERVICE, AdvancedSearchSettingsService::class);
 
         $this->registerService(SearchProxy::SERVICE_ID, $searchProxy);
     }

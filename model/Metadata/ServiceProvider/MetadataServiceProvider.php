@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2021 (original work) Open Assessment Technologies SA;
+ * Copyright (c) 2021-2022 (original work) Open Assessment Technologies SA;
  */
 
 declare(strict_types=1);
@@ -24,12 +24,15 @@ namespace oat\taoAdvancedSearch\model\Metadata\ServiceProvider;
 
 use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
 use oat\tao\model\Lists\Business\Service\ClassMetadataSearcherProxy;
-use oat\taoAdvancedSearch\model\Metadata\Service\AdvancedSearchSearchSettingsService;
+use oat\taoAdvancedSearch\model\Metadata\Service\AdvancedSearchSettingsService;
 use oat\taoAdvancedSearch\model\Metadata\Specification\PropertyAllowedSpecification;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
+/**
+ * @codeCoverageIgnore
+ */
 class MetadataServiceProvider implements ContainerServiceProviderInterface
 {
     public function __invoke(ContainerConfigurator $configurator): void
@@ -45,7 +48,7 @@ class MetadataServiceProvider implements ContainerServiceProviderInterface
                 ]
             )->public();
 
-        $services->set(AdvancedSearchSearchSettingsService::class, AdvancedSearchSearchSettingsService::class)
+        $services->set(AdvancedSearchSettingsService::class, AdvancedSearchSettingsService::class)
             ->args(
                 [
                     service(ClassMetadataSearcherProxy::SERVICE_ID)

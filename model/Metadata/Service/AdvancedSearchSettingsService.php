@@ -31,7 +31,7 @@ use oat\tao\model\search\Contract\SearchSettingsServiceInterface;
 use oat\tao\model\search\ResultColumn;
 use oat\tao\model\search\SearchSettings;
 
-class AdvancedSearchSearchSettingsService implements SearchSettingsServiceInterface
+class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
 {
     /** @var ClassMetadataSearcherInterface */
     private $classMetadataSearcher;
@@ -46,7 +46,7 @@ class AdvancedSearchSearchSettingsService implements SearchSettingsServiceInterf
         $classCollection = $this->classMetadataSearcher->findAll(new ClassMetadataSearchInput($classMetadataSearchRequest));
 
         $out = [
-            'location' => new ResultColumn(
+            new ResultColumn(
                 'location',
                 __('Location'),
                 'text',
@@ -55,15 +55,16 @@ class AdvancedSearchSearchSettingsService implements SearchSettingsServiceInterf
 
         foreach ($classCollection->getIterator() as $class) {
             foreach ($class->getMetaData()->getIterator() as $metadata) {
-                $out[$metadata->getLabel()] =  new ResultColumn(
+                $out[] =  new ResultColumn(
                     (string)$metadata->getPropertyUri(),
                     $metadata->getLabel(),
-                    $metadata->getType()
+                    $metadata->getType(),
+                    $metadata->getAlias(),
+                    $metadata->getClassLabel(),
+                    $metadata->isDuplicated()
                 );
             }
         }
-
-        krsort($out);
 
         return new SearchSettings($out);
     }
