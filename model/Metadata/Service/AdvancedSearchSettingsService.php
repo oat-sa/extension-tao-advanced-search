@@ -41,9 +41,12 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
         $this->classMetadataSearcher = $classMetadataSearcher;
     }
 
-    public function getSettingsByClassMetadataSearchRequest(ClassMetadataSearchRequest $classMetadataSearchRequest): SearchSettings
-    {
+    public function getSettingsByClassMetadataSearchRequest(
+        ClassMetadataSearchRequest $classMetadataSearchRequest
+    ): SearchSettings {
         $classCollection = $this->classMetadataSearcher->findAll(new ClassMetadataSearchInput($classMetadataSearchRequest));
+
+        //@TODO FIXME For "results", we need to add other default columns here
 
         $out = [
             new ResultColumn(
