@@ -47,9 +47,24 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
 
         $out = [
             new ResultColumn(
+                'label',
+                __('Label'),
+                'text',
+                null,
+                null,
+                false,
+                true,
+                true
+            ),
+            new ResultColumn(
                 'location',
                 __('Location'),
-                'text'
+                'text',
+                null,
+                null,
+                false,
+                true,
+                false
             )
         ];
 

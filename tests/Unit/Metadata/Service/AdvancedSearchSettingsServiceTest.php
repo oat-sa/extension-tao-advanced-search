@@ -79,12 +79,24 @@ class AdvancedSearchSettingsServiceTest extends TestCase
             [
                 'availableColumns' => [
                     [
+                        'id' => 'label',
+                        'label' => 'Label',
+                        'type' => 'text',
+                        'alias' => null,
+                        'classLabel' => null,
+                        'isDuplicated' => false,
+                        'default' => true,
+                        'sortable' => true,
+                    ],
+                    [
                         'id' => 'location',
                         'label' => 'Location',
                         'type' => 'text',
                         'alias' => null,
                         'classLabel' => null,
                         'isDuplicated' => false,
+                        'default' => true,
+                        'sortable' => false,
                     ],
                     [
                         'id' => 'metadataUri1',
@@ -93,6 +105,8 @@ class AdvancedSearchSettingsServiceTest extends TestCase
                         'alias' => 'metadataAlias1',
                         'classLabel' => 'metadataClassLabel1',
                         'isDuplicated' => false,
+                        'default' => false,
+                        'sortable' => false,
                     ],
                 ]
             ],
