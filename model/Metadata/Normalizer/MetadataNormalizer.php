@@ -26,18 +26,41 @@ use core_kernel_classes_Class;
 use InvalidArgumentException;
 use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\service\ConfigurableService;
+use oat\tao\helpers\form\elements\xhtml\SearchDropdown;
+use oat\tao\helpers\form\elements\xhtml\SearchTextBox;
 use oat\tao\model\Lists\Business\Domain\Metadata;
 use oat\tao\model\Lists\Business\Service\GetClassMetadataValuesService;
+use oat\tao\model\search\index\DocumentBuilder\PropertyIndexReferenceFactory;
 use oat\taoAdvancedSearch\model\Index\IndexResource;
 use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
 use oat\taoAdvancedSearch\model\Metadata\Factory\ClassPathFactory;
 use oat\taoAdvancedSearch\model\Metadata\Specification\PropertyAllowedSpecification;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassCachedRepository;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepositoryInterface;
+use tao_helpers_form_elements_Calendar;
+use tao_helpers_form_elements_Checkbox;
+use tao_helpers_form_elements_Combobox;
+use tao_helpers_form_elements_Htmlarea;
+use tao_helpers_form_elements_Radiobox;
+use tao_helpers_form_elements_Textarea;
+use tao_helpers_form_elements_Textbox;
+use tao_helpers_Uri;
 
 class MetadataNormalizer extends ConfigurableService implements NormalizerInterface
 {
     use OntologyAwareTrait;
+
+    private const ALLOWED_DYNAMIC_TYPES = [
+        tao_helpers_form_elements_Textbox::WIDGET_ID,
+        tao_helpers_form_elements_Textarea::WIDGET_ID,
+        tao_helpers_form_elements_Htmlarea::WIDGET_ID,
+        tao_helpers_form_elements_Checkbox::WIDGET_ID,
+        tao_helpers_form_elements_Combobox::WIDGET_ID,
+        tao_helpers_form_elements_Radiobox::WIDGET_ID,
+        tao_helpers_form_elements_Calendar::WIDGET_ID,
+        SearchTextBox::WIDGET_ID,
+        SearchDropdown::WIDGET_ID,
+    ];
 
     public function normalize($resource): IndexResource
     {
@@ -79,11 +102,14 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
             : $this->getGetClassMetadataValuesService()->getByClassExplicitly($class, 0);
 
         $specification = $this->getPropertyAllowedSpecification();
+        $propertyIndexReferenceFactory = $this->getPropertyIndexReferenceFactory();
 
         /** @var Metadata $property */
         foreach ($properties as $property) {
             if ($specification->isSatisfiedBy($property->getPropertyUri())) {
                 $propertyCollection[] = [
+                    'propertyReference' => $propertyIndexReferenceFactory->create($this->getProperty($property->getPropertyUri())),
+                    'propertyRawReference' => $propertyIndexReferenceFactory->createRaw($this->getProperty($property->getPropertyUri())),
                     'propertyUri' => $property->getPropertyUri(),
                     'propertyLabel' => $property->getLabel(),
                     'propertyAlias' => $property->getAlias(),
@@ -119,5 +145,10 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
     private function getPropertyAllowedSpecification(): PropertyAllowedSpecification
     {
         return $this->getServiceManager()->getContainer()->get(PropertyAllowedSpecification::class);
+    }
+
+    private function getPropertyIndexReferenceFactory(): PropertyIndexReferenceFactory
+    {
+        return $this->getServiceManager()->getContainer()->get(PropertyIndexReferenceFactory::class);
     }
 }

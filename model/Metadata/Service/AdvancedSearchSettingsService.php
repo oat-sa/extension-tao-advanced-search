@@ -67,7 +67,17 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
                 null,
                 false,
                 true,
-                false
+                true
+            ),
+            new ResultColumn(
+                'updated_at',
+                __('Last modified on'),
+                'text',
+                null,
+                null,
+                false,
+                true,
+                true
             )
         ];
 
@@ -79,7 +89,9 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
                     $metadata->getType(),
                     $metadata->getAlias(),
                     $metadata->getClassLabel(),
-                    $metadata->isDuplicated()
+                    $metadata->isDuplicated(),
+                    false,
+                    $metadata->isSortable()
                 );
             }
         }
