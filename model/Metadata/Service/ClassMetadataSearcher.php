@@ -148,7 +148,7 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
             $relatedClass = $this->getProperty($property['propertyUri'])->getRelatedClass();
 
             $metadata = (new Metadata())
-                ->setIndexReference($property['propertyRawReference'] ?? $property['propertyReference'] ?? null)
+                ->setSortId($property['propertyReference'] ?? $property['propertyUri'])
                 ->setIsSortable($this->isPropertySortable($property))
                 ->setLabel($property['propertyLabel'])
                 ->setAlias($property['propertyAlias'])
@@ -181,12 +181,11 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
 
     private function isPropertySortable(array $property): bool
     {
-        //@TODO FIXME Move to an specification?
-        return strpos($property['propertyReference'], 'RadioBox') === 0 ||
-            strpos($property['propertyReference'], 'ComboBox') === 0 ||
-            strpos($property['propertyReference'], 'Checkbox') === 0 ||
-            strpos($property['propertyReference'], 'TextBox') === 0 ||
-            strpos($property['propertyReference'], 'HTMLArea') === 0;
+        return strpos($property['propertyUri'], 'RadioBox') === 0 ||
+            strpos($property['propertyUri'], 'ComboBox') === 0 ||
+            strpos($property['propertyUri'], 'Checkbox') === 0 ||
+            strpos($property['propertyUri'], 'TextBox') === 0 ||
+            strpos($property['propertyUri'], 'HTMLArea') === 0;
     }
 
     private function getDuplicatedPropertyUris(array $properties): array

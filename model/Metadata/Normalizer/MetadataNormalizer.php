@@ -44,7 +44,6 @@ use tao_helpers_form_elements_Htmlarea;
 use tao_helpers_form_elements_Radiobox;
 use tao_helpers_form_elements_Textarea;
 use tao_helpers_form_elements_Textbox;
-use tao_helpers_Uri;
 
 class MetadataNormalizer extends ConfigurableService implements NormalizerInterface
 {
@@ -107,9 +106,10 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
         /** @var Metadata $property */
         foreach ($properties as $property) {
             if ($specification->isSatisfiedBy($property->getPropertyUri())) {
+                $rdfProperty = $this->getProperty($property->getPropertyUri());
                 $propertyCollection[] = [
-                    'propertyReference' => $propertyIndexReferenceFactory->create($this->getProperty($property->getPropertyUri())),
-                    'propertyRawReference' => $propertyIndexReferenceFactory->createRaw($this->getProperty($property->getPropertyUri())),
+                    'propertyReference' => $propertyIndexReferenceFactory->create($rdfProperty),
+                    'propertyRawReference' => $propertyIndexReferenceFactory->createRaw($rdfProperty),
                     'propertyUri' => $property->getPropertyUri(),
                     'propertyLabel' => $property->getLabel(),
                     'propertyAlias' => $property->getAlias(),

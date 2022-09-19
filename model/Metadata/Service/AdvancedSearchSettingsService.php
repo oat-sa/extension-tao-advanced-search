@@ -51,6 +51,7 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
         $out = [
             new ResultColumn(
                 'label',
+                'label',
                 __('Label'),
                 'text',
                 null,
@@ -61,6 +62,7 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
             ),
             new ResultColumn(
                 'location',
+                'location',
                 __('Location'),
                 'text',
                 null,
@@ -70,6 +72,7 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
                 true
             ),
             new ResultColumn(
+                'updated_at',
                 'updated_at',
                 __('Last modified on'),
                 'text',
@@ -85,6 +88,7 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
             foreach ($class->getMetaData()->getIterator() as $metadata) {
                 $out[] =  new ResultColumn(
                     (string)$metadata->getPropertyUri(),
+                    (string)$metadata->getSortId(),
                     $metadata->getLabel(),
                     $metadata->getType(),
                     $metadata->getAlias(),

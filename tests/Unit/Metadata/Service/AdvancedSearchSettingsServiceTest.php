@@ -63,6 +63,7 @@ class AdvancedSearchSettingsServiceTest extends TestCase
                                         ->setLabel('metadataLabel1')
                                         ->setType('list')
                                         ->setPropertyUri('metadataUri1')
+                                        ->setSortId('metadataUri1')
                                         ->setClassLabel('metadataClassLabel1')
                                         ->setAlias('metadataAlias1')
                                 )
@@ -80,6 +81,7 @@ class AdvancedSearchSettingsServiceTest extends TestCase
                 'availableColumns' => [
                     [
                         'id' => 'label',
+                        'sortId' => 'label',
                         'label' => 'Label',
                         'type' => 'text',
                         'alias' => null,
@@ -90,16 +92,29 @@ class AdvancedSearchSettingsServiceTest extends TestCase
                     ],
                     [
                         'id' => 'location',
+                        'sortId' => 'location',
                         'label' => 'Location',
                         'type' => 'text',
                         'alias' => null,
                         'classLabel' => null,
                         'isDuplicated' => false,
                         'default' => true,
-                        'sortable' => false,
+                        'sortable' => true,
+                    ],
+                    [
+                        'id' => 'updated_at',
+                        'sortId' => 'updated_at',
+                        'label' => 'Last modified on',
+                        'type' => 'text',
+                        'alias' => null,
+                        'classLabel' => null,
+                        'isDuplicated' => false,
+                        'default' => true,
+                        'sortable' => true,
                     ],
                     [
                         'id' => 'metadataUri1',
+                        'sortId' => 'metadataUri1',
                         'label' => 'metadataLabel1',
                         'type' => 'list',
                         'alias' => 'metadataAlias1',
