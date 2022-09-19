@@ -26,10 +26,16 @@ return [
         'mappings' => [
             'properties' => [
                 'class' => [
-                    'type' => 'text',
+                    'type' => 'keyword',
                 ],
                 'label' => [
-                    'type' => 'text'
+                    'type' => 'keyword'
+                ],
+                'updated_at' => [
+                    'type' => 'keyword',
+                ],
+                'location' => [
+                    'type' => 'keyword'
                 ],
                 'type' => [
                     'type' => 'keyword',

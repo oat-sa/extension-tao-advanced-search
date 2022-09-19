@@ -26,29 +26,35 @@ return [
         'mappings' => [
             'properties' => [
                 'label' => [
-                    'type' => 'text'
+                    'type' => 'keyword'
+                ],
+                'updated_at' => [
+                    'type' => 'keyword',
+                ],
+                'location' => [
+                    'type' => 'keyword'
                 ],
                 'delivery' => [
-                    'type' => 'text'
+                    'type' => 'keyword'
                 ],
                 'type' => [
                     'type' => 'keyword',
                     'ignore_above' => 256,
                 ],
                 'test_taker' => [
-                    'type' => 'text'
+                    'type' => 'keyword'
                 ],
                 'test_taker_name' => [
-                    'type' => 'text'
+                    'type' => 'keyword'
                 ],
                 'delivery_execution' => [
-                    'type' => 'text'
+                    'type' => 'keyword'
                 ],
                 'custom_tag' => [
-                    'type' => 'text'
+                    'type' => 'keyword'
                 ],
                 'context_label' => [
-                    'type' => 'text'
+                    'type' => 'keyword'
                 ],
                 'context_id' => [
                     'type' => 'keyword',

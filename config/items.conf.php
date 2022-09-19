@@ -34,15 +34,17 @@ return [
                 'label' => [
                     'type' => 'keyword'
                 ],
+                'updated_at' => [
+                    'type' => 'keyword',
+                ],
+                'location' => [
+                    'type' => 'keyword'
+                ],
                 'model' => [
                     'type' => 'keyword',
                     'ignore_above' => 256,
                 ],
                 'type' => [
-                    'type' => 'keyword',
-                    'ignore_above' => 256,
-                ],
-                'updated_at' => [
                     'type' => 'keyword',
                     'ignore_above' => 256,
                 ],

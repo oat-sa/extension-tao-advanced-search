@@ -26,14 +26,20 @@ return [
         'mappings' => [
             'properties' => [
                 'class' => [
-                    'type' => 'text',
+                    'type' => 'keyword',
                 ],
                 'label' => [
-                    'type' => 'text'
+                    'type' => 'keyword'
                 ],
                 'type' => [
                     'type' => 'keyword',
                     'ignore_above' => 256,
+                ],
+                'updated_at' => [
+                    'type' => 'keyword',
+                ],
+                'location' => [
+                    'type' => 'keyword'
                 ],
             ],
             'dynamic_templates' => require __DIR__ . '/dynamic-templates.conf.php',
