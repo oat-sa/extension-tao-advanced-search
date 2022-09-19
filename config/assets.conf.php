@@ -21,12 +21,32 @@
 declare(strict_types=1);
 
 return [
-    'items' => require __DIR__ . '/items.conf.php',
-    'tests' => require __DIR__ . '/tests.conf.php',
-    'groups' => require __DIR__ . '/groups.conf.php',
-    'deliveries' => require __DIR__ . '/deliveries.conf.php',
-    'delivery-results' => require __DIR__ . '/delivery-results.conf.php',
-    'test-takers' => require __DIR__ . '/test-takers.conf.php',
-    'assets' => require __DIR__ . '/assets.conf.php',
-    'property-list' => require __DIR__ . '/property-list.conf.php',
+    'index' => 'assets',
+    'body' => [
+        'mappings' => [
+            'properties' => [
+                'class' => [
+                    'type' => 'text',
+                ],
+                'label' => [
+                    'type' => 'text'
+                ],
+                'type' => [
+                    'type' => 'keyword',
+                    'ignore_above' => 256,
+                ],
+                'read_access' => [
+                    'type' => 'keyword',
+                    'ignore_above' => 256,
+                ],
+            ],
+            'dynamic_templates' => require __DIR__ . '/dynamic-templates.conf.php',
+        ],
+        'settings' => [
+            'index' => [
+                'number_of_shards' => '1',
+                'number_of_replicas' => '1',
+            ],
+        ],
+    ],
 ];
