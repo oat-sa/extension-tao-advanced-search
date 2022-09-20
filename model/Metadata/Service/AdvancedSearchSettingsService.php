@@ -63,7 +63,67 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
 
         $classCollection = $this->classMetadataSearcher->findAll(new ClassMetadataSearchInput($classMetadataSearchRequest));
 
-        //@TODO FIXME For "results", we need to add other default columns here
+        if ($classMetadataSearchRequest->getStructure() === 'results') {
+            return new SearchSettings(
+                [
+                    new ResultColumn(
+                        'label',
+                        'label',
+                        __('Label'),
+                        'text',
+                        null,
+                        null,
+                        false,
+                        true,
+                        true
+                    ),
+                    new ResultColumn(
+                        'test_taker',
+                        'test_taker',
+                        __('Test Taker ID'),
+                        'text',
+                        null,
+                        null,
+                        false,
+                        true,
+                        false
+                    ),
+                    new ResultColumn(
+                        'test_taker_name',
+                        'test_taker_name',
+                        __('Test Taker Name'),
+                        'text',
+                        null,
+                        null,
+                        false,
+                        true,
+                        true
+                    ),
+                    new ResultColumn(
+                        'delivery_execution_start_time',
+                        'delivery_execution_start_time',
+                        __('Start Time'),
+                        'text',
+                        null,
+                        null,
+                        false,
+                        true,
+                        true
+                    ),
+                    new ResultColumn(
+                        'delivery',
+                        'delivery',
+                        __('Delivery Uri'),
+                        'text',
+                        null,
+                        null,
+                        false,
+                        true,
+                        true
+                    ),
+                ]
+            );
+        }
 
         $out = [
             new ResultColumn(
