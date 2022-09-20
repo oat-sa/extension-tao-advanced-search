@@ -35,10 +35,7 @@ final class Version202209081525261488_taoAdvancedSearch extends AbstractMigratio
 
         /** @var ServiceOptions $serviceOptions */
         $serviceOptions = $this->getServiceManager()->get(ServiceOptions::SERVICE_ID);
-
-        if ($oldElasticSearch) {
-            $serviceOptions->save(ElasticSearchConfig::class, 'hosts', $oldElasticSearch->getOption('hosts'));
-        }
+        $serviceOptions->save(ElasticSearchConfig::class, 'hosts', $oldElasticSearch->getOption('hosts'));
 
         $searchProxy->setOption(SearchProxy::OPTION_ADVANCED_SEARCH_CLASS, ElasticSearch::class);
 
