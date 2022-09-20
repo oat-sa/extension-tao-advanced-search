@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\Metadata\Service;
 
+use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\Lists\Business\Contract\ClassMetadataSearcherInterface;
 use oat\tao\model\Lists\Business\Domain\ClassMetadataSearchRequest;
 use oat\tao\model\Lists\Business\Input\ClassMetadataSearchInput;
@@ -36,14 +37,30 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
     /** @var ClassMetadataSearcherInterface */
     private $classMetadataSearcher;
 
-    public function __construct(ClassMetadataSearcherInterface $classMetadataSearcher)
-    {
+    /** @var AdvancedSearchChecker */
+    private $advancedSearchChecker;
+
+    /** @var SearchSettingsServiceInterface */
+    private $defaultSearchSettingsService;
+
+    public function __construct(
+        ClassMetadataSearcherInterface $classMetadataSearcher,
+        SearchSettingsServiceInterface $defaultSearchSettingsService,
+        AdvancedSearchChecker $advancedSearchChecker
+    ) {
         $this->classMetadataSearcher = $classMetadataSearcher;
+        $this->advancedSearchChecker = $advancedSearchChecker;
+        $this->defaultSearchSettingsService = $defaultSearchSettingsService;
     }
 
     public function getSettingsByClassMetadataSearchRequest(
         ClassMetadataSearchRequest $classMetadataSearchRequest
     ): SearchSettings {
+        if (!$this->advancedSearchChecker->isEnabled()) {
+            return $this->defaultSearchSettingsService
+                ->getSettingsByClassMetadataSearchRequest($classMetadataSearchRequest);
+        }
+
         $classCollection = $this->classMetadataSearcher->findAll(new ClassMetadataSearchInput($classMetadataSearchRequest));
 
         //@TODO FIXME For "results", we need to add other default columns here
@@ -86,7 +103,7 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
 
         foreach ($classCollection->getIterator() as $class) {
             foreach ($class->getMetaData()->getIterator() as $metadata) {
-                $out[] =  new ResultColumn(
+                $out[] = new ResultColumn(
                     (string)$metadata->getPropertyUri(),
                     (string)$metadata->getSortId(),
                     $metadata->getLabel(),

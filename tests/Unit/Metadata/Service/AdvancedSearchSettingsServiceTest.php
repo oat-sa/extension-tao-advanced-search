@@ -24,12 +24,15 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\model\Metadata\Service;
 
+use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\Lists\Business\Contract\ClassMetadataSearcherInterface;
 use oat\tao\model\Lists\Business\Domain\ClassCollection;
 use oat\tao\model\Lists\Business\Domain\ClassMetadata;
 use oat\tao\model\Lists\Business\Domain\ClassMetadataSearchRequest;
 use oat\tao\model\Lists\Business\Domain\Metadata;
 use oat\tao\model\Lists\Business\Domain\MetadataCollection;
+use oat\tao\model\search\Contract\SearchSettingsServiceInterface;
+use oat\tao\model\search\SearchSettings;
 use oat\taoAdvancedSearch\model\Metadata\Service\AdvancedSearchSettingsService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -42,15 +45,31 @@ class AdvancedSearchSettingsServiceTest extends TestCase
     /** @var ClassMetadataSearcherInterface|MockObject */
     private $classMetadataSearcher;
 
+    /** @var SearchSettingsServiceInterface|MockObject */
+    private $defaultSearchSettingsService;
+
+    /** @var AdvancedSearchChecker|MockObject */
+    private $advancedSearchChecker;
+
     public function setUp(): void
     {
         $this->classMetadataSearcher = $this->createMock(ClassMetadataSearcherInterface::class);
-
-        $this->subject = new AdvancedSearchSettingsService($this->classMetadataSearcher);
+        $this->defaultSearchSettingsService =  $this->createMock(SearchSettingsServiceInterface::class);
+        $this->advancedSearchChecker = $this->createMock(AdvancedSearchChecker::class);
+        $this->subject = new AdvancedSearchSettingsService(
+            $this->classMetadataSearcher,
+            $this->defaultSearchSettingsService,
+            $this->advancedSearchChecker
+        );
     }
 
     public function testSearch(): void
     {
+        $this->advancedSearchChecker
+            ->expects($this->once())
+            ->method('isEnabled')
+            ->willReturn(true);
+
         $this->classMetadataSearcher
             ->method('findAll')
             ->willReturn(
@@ -126,6 +145,25 @@ class AdvancedSearchSettingsServiceTest extends TestCase
                 ]
             ],
             json_decode(json_encode($result->jsonSerialize()), true)
+        );
+    }
+
+    public function testSearchWhenAdvancedSearchIsDisabled(): void
+    {
+        $this->advancedSearchChecker
+            ->expects($this->once())
+            ->method('isEnabled')
+            ->willReturn(false);
+
+        $searchSettings = new SearchSettings([]);
+
+        $this->defaultSearchSettingsService
+            ->method('getSettingsByClassMetadataSearchRequest')
+            ->willReturn($searchSettings);
+
+        $this->assertSame(
+            $searchSettings,
+            $this->subject->getSettingsByClassMetadataSearchRequest(new ClassMetadataSearchRequest())
         );
     }
 }
