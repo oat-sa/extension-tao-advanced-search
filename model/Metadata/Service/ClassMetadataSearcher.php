@@ -148,7 +148,7 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
             $relatedClass = $this->getProperty($property['propertyUri'])->getRelatedClass();
 
             $metadata = (new Metadata())
-                ->setSortId($property['propertyReference'] ?? $property['propertyUri'])
+                ->setSortId($property['propertyRawReference'] ?? $property['propertyUri'])
                 ->setIsSortable($this->isPropertySortable($property))
                 ->setLabel($property['propertyLabel'])
                 ->setAlias($property['propertyAlias'])

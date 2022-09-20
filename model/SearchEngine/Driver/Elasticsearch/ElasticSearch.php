@@ -31,6 +31,7 @@ use oat\tao\model\search\SyntaxException;
 use oat\tao\model\search\ResultSet;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\SearchInterface;
+use oat\taoAdvancedSearch\model\SearchEngine\Normalizer\SearchResultNormalizer;
 use oat\taoAdvancedSearch\model\SearchEngine\Query;
 use oat\taoAdvancedSearch\model\SearchEngine\SearchResult;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
@@ -56,18 +57,23 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
     /** @var LoggerInterface */
     private $logger;
 
+    /** @var SearchResultNormalizer */
+    private $searchResultNormalizer;
+
     public function __construct(
         Client $client,
         QueryBuilder $queryBuilder,
         IndexerInterface $indexer,
         IndexPrefixer $prefixer,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        SearchResultNormalizer $searchResultNormalizer
     ) {
         $this->client = $client;
         $this->queryBuilder = $queryBuilder;
         $this->indexer = $indexer;
         $this->prefixer = $prefixer;
         $this->logger = $logger;
+        $this->searchResultNormalizer = $searchResultNormalizer;
     }
 
     public function setIndexFile(string $indexFile): void
@@ -105,9 +111,7 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
             )
         ];
 
-        $results = $this->buildResultSet($this->client->search($query));
-
-        return new SearchResult($results->getArrayCopy(), $results->getTotalCount());
+        return $this->buildResultSet($this->client->search($query));
     }
 
     public function query($queryString, $type, $start = 0, $count = 10, $order = '_id', $dir = 'DESC'): ResultSet
@@ -120,7 +124,9 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
             $query = $this->queryBuilder->getSearchParams($queryString, $type, $start, $count, $order, $dir);
             $this->logger->debug(sprintf('Elasticsearch Query %s', json_encode($query)));
 
-            return $this->buildResultSet($this->client->search($query));
+            return $this->searchResultNormalizer->normalizeByByResultSet(
+                $this->buildResultSet($this->client->search($query))
+            );
         } catch (Exception $exception) {
             switch ($exception->getCode()) {
                 case 400:
@@ -195,7 +201,7 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
         return $this->client->ping();
     }
 
-    private function buildResultSet(array $elasticResult = []): ResultSet
+    private function buildResultSet(array $elasticResult = []): SearchResult
     {
         $uris = [];
         $total = 0;
@@ -211,7 +217,7 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
                 : $elasticResult['hits']['total'];
         }
 
-        return new ResultSet($uris, $total);
+        return new SearchResult($uris, $total);
     }
 
     public function __toPhpCode()
