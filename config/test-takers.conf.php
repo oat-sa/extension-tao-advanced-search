@@ -19,6 +19,7 @@
  */
 
 declare(strict_types=1);
+
 return [
     'index' => 'test-takers',
     'body' => [

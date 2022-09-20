@@ -48,14 +48,14 @@ class SearchResultNormalizer
             $newResult = [];
 
             foreach ($result as $resultKey => $resultValue) {
-                if (in_array($resultKey, self::OMIT_PROPERTIES)) {
+                if ($this->isKeyAllowed($resultKey)) {
                     continue;
                 }
 
                 if (strpos($resultKey, self::PLAIN_TEXT_KEY) !== false) {
                     $originalKey = str_replace(self::PLAIN_TEXT_KEY, '', $resultKey);
 
-                    if (in_array($originalKey, self::OMIT_PROPERTIES)) {
+                    if ($this->isKeyAllowed($originalKey)) {
                         continue;
                     }
 
@@ -71,6 +71,11 @@ class SearchResultNormalizer
         }
 
         return new SearchResult($out, $resultSet->getTotalCount());
+    }
+
+    private function isKeyAllowed(string $key): bool
+    {
+        return in_array($key, self::OMIT_PROPERTIES, true);
     }
 
     private function extractId(string $key): string

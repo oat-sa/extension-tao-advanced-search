@@ -22,83 +22,83 @@ declare(strict_types=1);
 
 return [
     [
-        "Calendar" => [
-            "match" => "Calendar_*",
-            "match_mapping_type" => "string",
-            "mapping" => [
-                "type" => "keyword"
+        'Calendar' => [
+            'match' => 'Calendar_*',
+            'match_mapping_type' => 'string',
+            'mapping' => [
+                'type' => 'keyword'
             ]
         ]
     ],
     [
-        "HTMLArea" => [
-            "match" => "HTMLArea_*",
-            "match_mapping_type" => "string",
-            "mapping" => [
-                "type" => "keyword"
+        'HTMLArea' => [
+            'match' => 'HTMLArea_*',
+            'match_mapping_type' => 'string',
+            'mapping' => [
+                'type' => 'keyword'
             ]
         ]
     ],
     [
-        "TextArea" => [
-            "match" => "TextArea_*",
-            "match_mapping_type" => "string",
-            "mapping" => [
-                "type" => "keyword"
+        'TextArea' => [
+            'match' => 'TextArea_*',
+            'match_mapping_type' => 'string',
+            'mapping' => [
+                'type' => 'keyword'
             ]
         ]
     ],
     [
-        "TextBox" => [
-            "match" => "TextBox_*",
-            "match_mapping_type" => "string",
-            "mapping" => [
-                "type" => "keyword"
+        'TextBox' => [
+            'match' => 'TextBox_*',
+            'match_mapping_type' => 'string',
+            'mapping' => [
+                'type' => 'keyword'
             ]
         ]
     ],
     [
-        "SearchTextBox" => [
-            "match" => "SearchTextBox_*",
-            "match_mapping_type" => "string",
-            "mapping" => [
-                "type" => "keyword"
+        'SearchTextBox' => [
+            'match' => 'SearchTextBox_*',
+            'match_mapping_type' => 'string',
+            'mapping' => [
+                'type' => 'keyword'
             ]
         ]
     ],
     [
-        "SearchDropdown" => [
-            "match" => "SearchDropdown_*",
-            "match_mapping_type" => "string",
-            "mapping" => [
-                "type" => "keyword"
+        'SearchDropdown' => [
+            'match' => 'SearchDropdown_*',
+            'match_mapping_type' => 'string',
+            'mapping' => [
+                'type' => 'keyword'
             ]
         ]
     ],
     [
-        "CheckBox" => [
-            "match" => "CheckBox_*",
-            "match_mapping_type" => "string",
-            "mapping" => [
-                "type" => "keyword"
+        'CheckBox' => [
+            'match' => 'CheckBox_*',
+            'match_mapping_type' => 'string',
+            'mapping' => [
+                'type' => 'keyword'
             ]
         ]
     ],
     [
-        "ComboBox" => [
-            "match" => "ComboBox_*",
-            "match_mapping_type" => "string",
-            "mapping" => [
-                "type" => "keyword"
+        'ComboBox' => [
+            'match' => 'ComboBox_*',
+            'match_mapping_type' => 'string',
+            'mapping' => [
+                'type' => 'keyword'
             ]
         ]
     ],
     [
-        "RadioBox" => [
-            "match" => "RadioBox_*",
-            "match_mapping_type" => "string",
-            "mapping" => [
-                "type" => "keyword"
+        'RadioBox' => [
+            'match' => 'RadioBox_*',
+            'match_mapping_type' => 'string',
+            'mapping' => [
+                'type' => 'keyword'
             ]
         ]
     ]
