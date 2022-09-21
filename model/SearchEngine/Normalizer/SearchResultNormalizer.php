@@ -16,19 +16,21 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * Copyright (c) 2022 (original work) Open Assessment Technologies SA;
+ *
+ * @author Gabriel Felipe Soares <gabriel.felipe.soares@taotesting.com>
  */
 
 declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\SearchEngine\Normalizer;
 
+use oat\tao\model\search\index\DocumentBuilder\PropertyIndexReferenceFactory;
 use oat\tao\model\search\ResultSet;
 use oat\taoAdvancedSearch\model\SearchEngine\SearchResult;
 use tao_helpers_Uri;
 
 class SearchResultNormalizer
 {
-    private const PLAIN_TEXT_KEY = '_raw';
     private const OMIT_PROPERTIES = [
         'read_access',
         'TextBox_http_2_www_0_w3_0_org_1_2000_1_01_1_rdf-schema_3_label',
@@ -52,8 +54,8 @@ class SearchResultNormalizer
                     continue;
                 }
 
-                if (strpos($resultKey, self::PLAIN_TEXT_KEY) !== false) {
-                    $originalKey = str_replace(self::PLAIN_TEXT_KEY, '', $resultKey);
+                if (strpos($resultKey, PropertyIndexReferenceFactory::RAW_SUFFIX) !== false) {
+                    $originalKey = str_replace(PropertyIndexReferenceFactory::RAW_SUFFIX, '', $resultKey);
 
                     if ($this->isKeyAllowed($originalKey)) {
                         continue;
