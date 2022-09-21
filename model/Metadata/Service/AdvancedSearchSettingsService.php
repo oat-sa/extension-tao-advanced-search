@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\Metadata\Service;
 
+use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\Lists\Business\Contract\ClassMetadataSearcherInterface;
 use oat\tao\model\Lists\Business\Domain\ClassMetadataSearchRequest;
 use oat\tao\model\Lists\Business\Input\ClassMetadataSearchInput;
@@ -36,20 +37,97 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
     /** @var ClassMetadataSearcherInterface */
     private $classMetadataSearcher;
 
-    public function __construct(ClassMetadataSearcherInterface $classMetadataSearcher)
-    {
+    /** @var AdvancedSearchChecker */
+    private $advancedSearchChecker;
+
+    /** @var SearchSettingsServiceInterface */
+    private $defaultSearchSettingsService;
+
+    public function __construct(
+        ClassMetadataSearcherInterface $classMetadataSearcher,
+        SearchSettingsServiceInterface $defaultSearchSettingsService,
+        AdvancedSearchChecker $advancedSearchChecker
+    ) {
         $this->classMetadataSearcher = $classMetadataSearcher;
+        $this->advancedSearchChecker = $advancedSearchChecker;
+        $this->defaultSearchSettingsService = $defaultSearchSettingsService;
     }
 
     public function getSettingsByClassMetadataSearchRequest(
         ClassMetadataSearchRequest $classMetadataSearchRequest
     ): SearchSettings {
+        if (!$this->advancedSearchChecker->isEnabled()) {
+            return $this->defaultSearchSettingsService
+                ->getSettingsByClassMetadataSearchRequest($classMetadataSearchRequest);
+        }
+
         $classCollection = $this->classMetadataSearcher->findAll(new ClassMetadataSearchInput($classMetadataSearchRequest));
 
-        //@TODO FIXME For "results", we need to add other default columns here
+        if ($classMetadataSearchRequest->getStructure() === 'results') {
+            return new SearchSettings(
+                [
+                    new ResultColumn(
+                        'label',
+                        'label',
+                        __('Label'),
+                        'text',
+                        null,
+                        null,
+                        false,
+                        true,
+                        true
+                    ),
+                    new ResultColumn(
+                        'test_taker',
+                        'test_taker',
+                        __('Test Taker ID'),
+                        'text',
+                        null,
+                        null,
+                        false,
+                        true,
+                        false
+                    ),
+                    new ResultColumn(
+                        'test_taker_name',
+                        'test_taker_name',
+                        __('Test Taker Name'),
+                        'text',
+                        null,
+                        null,
+                        false,
+                        true,
+                        true
+                    ),
+                    new ResultColumn(
+                        'delivery_execution_start_time',
+                        'delivery_execution_start_time',
+                        __('Start Time'),
+                        'text',
+                        null,
+                        null,
+                        false,
+                        true,
+                        true
+                    ),
+                    new ResultColumn(
+                        'delivery',
+                        'delivery',
+                        __('Delivery Uri'),
+                        'text',
+                        null,
+                        null,
+                        false,
+                        true,
+                        true
+                    ),
+                ]
+            );
+        }
 
         $out = [
             new ResultColumn(
+                'label',
                 'label',
                 __('Label'),
                 'text',
@@ -61,25 +139,40 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
             ),
             new ResultColumn(
                 'location',
+                'location',
                 __('Location'),
                 'text',
                 null,
                 null,
                 false,
                 true,
-                false
+                true
+            ),
+            new ResultColumn(
+                'updated_at',
+                'updated_at',
+                __('Last modified on'),
+                'text',
+                null,
+                null,
+                false,
+                true,
+                true
             )
         ];
 
         foreach ($classCollection->getIterator() as $class) {
             foreach ($class->getMetaData()->getIterator() as $metadata) {
-                $out[] =  new ResultColumn(
+                $out[] = new ResultColumn(
                     (string)$metadata->getPropertyUri(),
+                    (string)$metadata->getSortId(),
                     $metadata->getLabel(),
                     $metadata->getType(),
                     $metadata->getAlias(),
                     $metadata->getClassLabel(),
-                    $metadata->isDuplicated()
+                    $metadata->isDuplicated(),
+                    false,
+                    $metadata->isSortable()
                 );
             }
         }

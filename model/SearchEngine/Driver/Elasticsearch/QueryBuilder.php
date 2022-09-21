@@ -50,7 +50,7 @@ class QueryBuilder
         'tests' => IndexerInterface::TESTS_INDEX,
         'TestTaker' => IndexerInterface::TEST_TAKERS_INDEX,
         'taoMediaManager' => IndexerInterface::ASSETS_INDEX,
-        'property-list' => IndexerInterface::PROPERTY_LIST,
+        IndexerInterface::PROPERTY_LIST => IndexerInterface::PROPERTY_LIST,
     ];
 
     private const STANDARD_FIELDS = [

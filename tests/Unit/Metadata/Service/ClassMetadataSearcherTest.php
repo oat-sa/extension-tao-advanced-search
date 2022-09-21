@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2021 (original work) Open Assessment Technologies SA;
+ * Copyright (c) 2021-2022 (original work) Open Assessment Technologies SA;
  */
 
 declare(strict_types=1);
@@ -24,7 +24,7 @@ namespace oat\taoAdvancedSearch\tests\Unit\model\Metadata\Service;
 
 use core_kernel_classes_Property;
 use oat\generis\model\data\Ontology;
-use oat\generis\test\TestCase;
+use oat\generis\test\ServiceManagerMockTrait;
 use oat\oatbox\log\LoggerService;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\Lists\Business\Domain\ClassCollection;
@@ -38,10 +38,13 @@ use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 use oat\taoAdvancedSearch\model\SearchEngine\Query;
 use oat\taoAdvancedSearch\model\SearchEngine\SearchResult;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 use Traversable;
 
 class ClassMetadataSearcherTest extends TestCase
 {
+    use ServiceManagerMockTrait;
+
     /** @var ClassMetadataSearcher */
     private $subject;
 
@@ -72,8 +75,8 @@ class ClassMetadataSearcherTest extends TestCase
             ->willReturn($this->elasticSearch);
 
         $this->subject = new ClassMetadataSearcher();
-        $this->subject->setServiceLocator(
-            $this->getServiceLocatorMock(
+        $this->subject->setServiceManager(
+            $this->getServiceManagerMock(
                 [
                     ClassMetadataService::SERVICE_ID => $this->classMetadataService,
                     AdvancedSearchChecker::class => $this->advancedSearchChecker,

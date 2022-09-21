@@ -148,6 +148,8 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
             $relatedClass = $this->getProperty($property['propertyUri'])->getRelatedClass();
 
             $metadata = (new Metadata())
+                ->setSortId($property['propertyRawReference'] ?? $property['propertyUri'])
+                ->setIsSortable($this->isPropertySortable($property))
                 ->setLabel($property['propertyLabel'])
                 ->setAlias($property['propertyAlias'])
                 ->setClassLabel($relatedClass ? $relatedClass->getLabel() : null)
@@ -175,6 +177,15 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
                 ->setLabel($this->getClass($classUri)->getLabel())
                 ->setMetaData($metadataCollection)
         );
+    }
+
+    private function isPropertySortable(array $property): bool
+    {
+        return strpos($property['propertyUri'], 'RadioBox') === 0 ||
+            strpos($property['propertyUri'], 'ComboBox') === 0 ||
+            strpos($property['propertyUri'], 'Checkbox') === 0 ||
+            strpos($property['propertyUri'], 'TextBox') === 0 ||
+            strpos($property['propertyUri'], 'HTMLArea') === 0;
     }
 
     private function getDuplicatedPropertyUris(array $properties): array

@@ -23,12 +23,14 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\tests\Unit\model\Metadata\Normalizer;
 
 use core_kernel_classes_Class;
+use core_kernel_classes_Property;
 use InvalidArgumentException;
 use oat\generis\model\data\Ontology;
 use oat\generis\test\TestCase;
 use oat\tao\model\Lists\Business\Domain\Metadata;
 use oat\tao\model\Lists\Business\Domain\MetadataCollection;
 use oat\tao\model\Lists\Business\Service\GetClassMetadataValuesService;
+use oat\tao\model\search\index\DocumentBuilder\PropertyIndexReferenceFactory;
 use oat\tao\model\TaoOntology;
 use oat\taoAdvancedSearch\model\Metadata\Factory\ClassPathFactory;
 use oat\taoAdvancedSearch\model\Metadata\Normalizer\MetadataNormalizer;
@@ -62,6 +64,9 @@ class MetadataNormalizerTest extends TestCase
     /** @var PropertyAllowedSpecification|MockObject */
     private $propertyAllowedSpecification;
 
+    /** @var PropertyIndexReferenceFactory|MockObject */
+    private $propertyIndexReferenceFactory;
+
     public function setUp(): void
     {
         $this->subject = new MetadataNormalizer();
@@ -72,6 +77,7 @@ class MetadataNormalizerTest extends TestCase
         $this->ontology = $this->createMock(Ontology::class);
         $this->classPathFactory = $this->createMock(ClassPathFactory::class);
         $this->propertyAllowedSpecification = $this->createMock(PropertyAllowedSpecification::class);
+        $this->propertyIndexReferenceFactory = $this->createMock(PropertyIndexReferenceFactory::class);
 
         $this->classPathFactory
             ->method('create')
@@ -85,6 +91,7 @@ class MetadataNormalizerTest extends TestCase
                     ClassPathFactory::class => $this->classPathFactory,
                     IndexableClassCachedRepository::class => $this->indexableClassRepository,
                     PropertyAllowedSpecification::class => $this->propertyAllowedSpecification,
+                    PropertyIndexReferenceFactory::class => $this->propertyIndexReferenceFactory,
                 ]
             )
         );
@@ -118,6 +125,19 @@ class MetadataNormalizerTest extends TestCase
         ?string $propertyUri,
         ?array $getValuesResult
     ): void {
+        $this->ontology
+            ->method('getProperty')
+            ->willReturn($this->createMock(core_kernel_classes_Property::class));
+
+        $this->propertyIndexReferenceFactory
+            ->method('create')
+            ->willReturn('Combobox_');
+
+        $this->propertyIndexReferenceFactory
+            ->method('createRaw')
+            ->willReturn('Combobox_');
+
+
         $this->indexableClassRepository
             ->method('findAllUris')
             ->willReturn(
@@ -199,6 +219,8 @@ class MetadataNormalizerTest extends TestCase
                 'classPath' => [],
                 'propertiesTree' => [
                     [
+                        'propertyReference' => 'Combobox_',
+                        'propertyRawReference' => 'Combobox_',
                         'propertyUri' => 'PropertyUri Example',
                         'propertyLabel' => 'Label Example',
                         'propertyAlias' => 'Alias Example',
