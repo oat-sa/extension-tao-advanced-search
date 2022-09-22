@@ -24,10 +24,13 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\SearchEngine\Service;
 
+use InvalidArgumentException;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
 
 class IndexPrefixer
 {
+    private const VALID_PREFIX_REGEX = '/[^a-z0-9\-]/';
+
     /** @var ElasticSearchConfig */
     private $config;
 
@@ -36,10 +39,23 @@ class IndexPrefixer
         $this->config = $config;
     }
 
+    public function validate(string $prefix): void
+    {
+        if (preg_replace(self::VALID_PREFIX_REGEX, '', $prefix) !== $prefix) {
+            throw new InvalidArgumentException(
+                sprintf(
+                    'The index prefix %s does not follow the pattern %s',
+                    $prefix,
+                    self::VALID_PREFIX_REGEX
+                )
+            );
+        }
+    }
+
     public function prefix(string $indexName): string
     {
         if ($this->config->getIndexPrefix()) {
-            return preg_replace('/[^a-z\-]/', '', $this->config->getIndexPrefix()) . '-' . $indexName;
+            return $this->config->getIndexPrefix() . '-' . $indexName;
         }
 
         return $indexName;

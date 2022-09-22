@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\SearchEngine\Service;
 
+use InvalidArgumentException;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -52,17 +53,42 @@ class IndexPrefixerTest extends TestCase
 
         $this->assertEquals(
             [
-                'p-a',
+                'p-a1',
                 'p-b',
-                'p-c'
+                'p-c2'
             ],
             $this->sut->prefixAll(
                 [
-                    'a',
+                    'a1',
                     'b',
-                    'c'
+                    'c2'
                 ]
             )
         );
+    }
+
+    /**
+     * @dataProvider validateDataProvider
+     */
+    public function testValidate(string $value): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->sut->validate($value);
+    }
+
+    public function validateDataProvider(): array
+    {
+        return [
+            'no camel Case allowed' => [
+                'Abc123',
+            ],
+            'no space allowed' => [
+                'ab c',
+            ],
+            'no special chars allowed' => [
+                'abc123$',
+            ],
+        ];
     }
 }
