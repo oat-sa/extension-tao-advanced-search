@@ -44,7 +44,7 @@ class IndexPrefixer
         if (preg_replace(self::VALID_PREFIX_REGEX, '', $prefix) !== $prefix) {
             throw new InvalidArgumentException(
                 sprintf(
-                    'The index prefix %s does not follow the patter %s',
+                    'The index prefix %s does not follow the pattern %s',
                     $prefix,
                     self::VALID_PREFIX_REGEX
                 )
