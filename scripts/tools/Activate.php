@@ -35,6 +35,7 @@ use oat\taoAdvancedSearch\model\Metadata\Service\AdvancedSearchSettingsService;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\IndexUpdater;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use Zend\ServiceManager\ServiceLocatorAwareInterface;
 use Zend\ServiceManager\ServiceLocatorAwareTrait;
 
@@ -167,6 +168,8 @@ class Activate extends ScriptAction implements ServiceLocatorAwareInterface
             }
 
             if ($this->hasOption('indexPrefix')) {
+                $this->getIndexPrefixer()->validate($this->getOption('indexPrefix'));
+
                 $serviceOptions->save(
                     ElasticSearchConfig::class,
                     ElasticSearchConfig::OPTION_INDEX_PREFIX,
@@ -185,7 +188,15 @@ class Activate extends ScriptAction implements ServiceLocatorAwareInterface
         } catch (BadRequest400Exception $e) {
             $report->add(Report::createError('Unable to create index: ' . $e->getMessage()));
         } catch (Exception $e) {
-            $report->add(Report::createError('ElasticSearch server could not be found: ' . $e->getTraceAsString()));
+            $report->add(
+                Report::createError(
+                    sprintf(
+                        'Unable to activate ElasticSearch: %s - TRACE: %s',
+                        $e->getMessage(),
+                        $e->getTraceAsString()
+                    )
+                )
+            );
         }
 
         return $report;
@@ -199,5 +210,10 @@ class Activate extends ScriptAction implements ServiceLocatorAwareInterface
     private function getServiceOptions(): ServiceOptions
     {
         return $this->getServiceManager()->getContainer()->get(ServiceOptions::class);
+    }
+
+    private function getIndexPrefixer(): IndexPrefixer
+    {
+        return $this->getServiceManager()->getContainer()->get(IndexPrefixer::class);
     }
 }
