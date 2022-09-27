@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\SearchEngine\Normalizer;
 
+use DateTime;
 use oat\tao\model\search\index\DocumentBuilder\PropertyIndexReferenceFactory;
 use oat\tao\model\search\ResultSet;
 use oat\taoAdvancedSearch\model\SearchEngine\SearchResult;
@@ -66,6 +67,11 @@ class SearchResultNormalizer
                     continue;
                 }
 
+                if ($this->isCalendar($resultKey)) {
+                    $resultValue = is_array($resultValue) ? current($resultValue) : $resultValue;
+                    $resultValue = (new DateTime('now'))->setTimestamp((int)$resultValue)->format('d/m/Y - H:i');
+                }
+
                 $newResult[$this->extractId($resultKey)] = $resultValue;
             }
 
@@ -73,6 +79,11 @@ class SearchResultNormalizer
         }
 
         return new SearchResult($out, $resultSet->getTotalCount());
+    }
+
+    private function isCalendar(string $key): bool
+    {
+        return $key === 'updated_at' || strpos($key, 'Calendar_') === 0;
     }
 
     private function isKeyAllowed(string $key): bool
