@@ -15,7 +15,9 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2021 (original work) Open Assessment Technologies SA;
+ * Copyright (c) 2022 (original work) Open Assessment Technologies SA;
+ *
+ * @author Gabriel Felipe Soares <gabriel.felipe.soares@taotesting.com>
  */
 
 declare(strict_types=1);
@@ -27,10 +29,11 @@ use Doctrine\DBAL\Query\QueryBuilder;
 use oat\generis\model\OntologyRdfs;
 use oat\generis\persistence\PersistenceManager;
 use common_persistence_SqlPersistence;
+use oat\tao\model\Lists\Business\Event\ListSavedEvent;
 use oat\taoAdvancedSearch\model\Resource\Service\ResourceIndexer;
 use PDO;
 
-class ListMetadataSynchonizer
+class ListSavedEventListener
 {
     /** @var PersistenceManager */
     private $persistenceManager;
@@ -41,28 +44,25 @@ class ListMetadataSynchonizer
     /** @var ResourceIndexer */
     private $resourceIndexer;
 
-    public function __construct(ResourceIndexer $resourceIndexer, PersistenceManager $persistenceManager, string $persistenceId)
-    {
+    public function __construct(
+        ResourceIndexer $resourceIndexer,
+        PersistenceManager $persistenceManager,
+        string $persistenceId
+    ) {
         $this->persistenceManager = $persistenceManager;
         $this->persistenceId = $persistenceId;
         $this->resourceIndexer = $resourceIndexer;
     }
 
-    public function sync(string $listUri): void
+    public function listen(ListSavedEvent $event): void
     {
         $platform = $this->getPersistence()->getPlatForm();
+        $propertyUris = $this->getProperties($platform->getQueryBuilder(), $event->getListUri());
+        $allRecordUris = $this->getRecordsUsingProperty($platform->getQueryBuilder(), $propertyUris);
 
-        $propertyUris = $this->getProperties($platform->getQueryBuilder(), $listUri);
-        $recordUris = $this->getRecordsUsingProperty($platform->getQueryBuilder(), $propertyUris);
-
-        foreach ($recordUris as $record) {
-            $uri = $record['subject'];
-            $listItemValue = $record['object'];
-
-            $this->resourceIndexer->addIndex($uri);
+        foreach (array_chunk($allRecordUris, 100) as $recordUrisChunk) {
+            $this->resourceIndexer->addIndex($recordUrisChunk);
         }
-
-        var_export($recordUris); exit(); //FIXME @TODO remove after testing
     }
 
     private function getProperties(QueryBuilder $queryBuilder, string $listUri): array
@@ -81,9 +81,7 @@ class ListMetadataSynchonizer
                 ]
             );
 
-        $result = $queryBuilder->execute();
-
-        return $result->getIterator()->fetchAll(PDO::FETCH_COLUMN);
+        return $queryBuilder->execute()->getIterator()->fetchAll(PDO::FETCH_COLUMN);
     }
 
     private function getRecordsUsingProperty(QueryBuilder $queryBuilder, array $propertyUris): array
@@ -95,14 +93,12 @@ class ListMetadataSynchonizer
         $expressionBuilder = $queryBuilder->expr();
 
         $queryBuilder
-            ->select('subject, predicate, object')
+            ->select('subject')
             ->from('statements')
             ->andWhere($expressionBuilder->in('statements.predicate', ':predicate'))
             ->setParameter('predicate', $propertyUris, Connection::PARAM_STR_ARRAY);
 
-        $result = $queryBuilder->execute();
-
-        return $result->getIterator()->fetchAll();
+        return $queryBuilder->execute()->getIterator()->fetchAll(PDO::FETCH_COLUMN);
     }
 
     private function getPersistence(): common_persistence_SqlPersistence

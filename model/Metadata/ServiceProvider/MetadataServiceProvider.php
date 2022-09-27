@@ -28,7 +28,7 @@ use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\Lists\Business\Service\ClassMetadataSearcherProxy;
 use oat\tao\model\search\Service\DefaultSearchSettingsService;
 use oat\taoAdvancedSearch\model\Metadata\Service\AdvancedSearchSettingsService;
-use oat\taoAdvancedSearch\model\Metadata\Service\ListMetadataSynchonizer;
+use oat\taoAdvancedSearch\model\Metadata\Service\ListSavedEventListener;
 use oat\taoAdvancedSearch\model\Metadata\Specification\PropertyAllowedSpecification;
 use oat\taoAdvancedSearch\model\Resource\Service\ResourceIndexer;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -62,7 +62,7 @@ class MetadataServiceProvider implements ContainerServiceProviderInterface
                 ]
             )->public();
 
-        $services->set(ListMetadataSynchonizer::class, ListMetadataSynchonizer::class)
+        $services->set(ListSavedEventListener::class, ListSavedEventListener::class)
             ->args(
                 [
                     service(ResourceIndexer::class),

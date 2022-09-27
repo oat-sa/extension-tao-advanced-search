@@ -53,9 +53,9 @@ class ResourceIndexer implements IndexerInterface
         $this->queueDispatcher->createTask(
             new UpdateResourceInIndex(),
             [
-                current($resourcesProcessed)//FIXME @TODO See how can we process multiple at same time...
+                $resourcesProcessed
             ],
-            sprintf('Indexing resource %s:%s', $resource->getUri(), $resource->getLabel()),
+            sprintf('Indexing resource(s) %s', substr(implode(',', $resourcesProcessed), 0, 100) . '...'),
         );
     }
 }
