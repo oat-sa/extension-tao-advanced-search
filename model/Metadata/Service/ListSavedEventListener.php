@@ -62,7 +62,7 @@ class ListSavedEventListener
         $expressionBuilder = $this->queryBuilder->expr();
 
         $this->queryBuilder
-            ->select('subject', 'predicate')
+            ->select('subject')
             ->from('statements')
             ->andWhere($expressionBuilder->eq('statements.predicate', ':predicate'))
             ->andWhere($expressionBuilder->eq('statements.object', ':list_uri'))
