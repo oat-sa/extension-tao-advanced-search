@@ -33,11 +33,16 @@ use PDO;
 
 class ListSavedEventListener
 {
+    private const PROCESS_CHUCK_SIZE = 100;
+
     /** @var ResourceIndexer */
     private $resourceIndexer;
 
     /** @var QueryBuilder */
     private $queryBuilder;
+
+    /** @var string */
+    private $chunkSize = self::PROCESS_CHUCK_SIZE;
 
     public function __construct(ResourceIndexer $resourceIndexer, QueryBuilder $queryBuilder)
     {
@@ -45,12 +50,19 @@ class ListSavedEventListener
         $this->queryBuilder = $queryBuilder;
     }
 
+    public function setChunkSize(int $chunkSize): self
+    {
+        $this->chunkSize = $chunkSize;
+
+        return $this;
+    }
+
     public function listen(ListSavedEvent $event): void
     {
         $propertyUris = $this->getProperties($event->getListUri());
         $allRecordUris = $this->getRecordsUsingProperty($propertyUris);
 
-        foreach (array_chunk($allRecordUris, 100) as $recordUrisChunk) {
+        foreach (array_chunk($allRecordUris, $this->chunkSize) as $recordUrisChunk) {
             $this->resourceIndexer->addIndex($recordUrisChunk);
         }
     }
