@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\Metadata\ServiceProvider;
 
 use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
-use oat\generis\persistence\PersistenceManager;
+use oat\generis\persistence\PersistenceServiceProvider;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\Lists\Business\Service\ClassMetadataSearcherProxy;
 use oat\tao\model\search\Service\DefaultSearchSettingsService;
@@ -66,8 +66,7 @@ class MetadataServiceProvider implements ContainerServiceProviderInterface
             ->args(
                 [
                     service(ResourceIndexer::class),
-                    service(PersistenceManager::SERVICE_ID),
-                    'default', //FIXME @TODO Get this parameter properly
+                    service(PersistenceServiceProvider::DEFAULT_QUERY_BUILDER)
                 ]
             )->public();
     }

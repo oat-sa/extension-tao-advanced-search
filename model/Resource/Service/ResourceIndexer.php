@@ -55,7 +55,7 @@ class ResourceIndexer implements IndexerInterface
             [
                 $resourcesProcessed
             ],
-            sprintf('Indexing resource(s) %s', substr(implode(',', $resourcesProcessed), 0, 100) . '...'),
+            sprintf('Indexing resource(s) %s...', substr(implode(',', $resourcesProcessed), 0, 100)),
         );
     }
 }

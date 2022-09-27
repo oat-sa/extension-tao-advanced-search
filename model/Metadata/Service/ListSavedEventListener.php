@@ -27,49 +27,41 @@ namespace oat\taoAdvancedSearch\model\Metadata\Service;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Query\QueryBuilder;
 use oat\generis\model\OntologyRdfs;
-use oat\generis\persistence\PersistenceManager;
-use common_persistence_SqlPersistence;
 use oat\tao\model\Lists\Business\Event\ListSavedEvent;
 use oat\taoAdvancedSearch\model\Resource\Service\ResourceIndexer;
 use PDO;
 
 class ListSavedEventListener
 {
-    /** @var PersistenceManager */
-    private $persistenceManager;
-
-    /** @var string */
-    private $persistenceId;
-
     /** @var ResourceIndexer */
     private $resourceIndexer;
 
-    public function __construct(
-        ResourceIndexer $resourceIndexer,
-        PersistenceManager $persistenceManager,
-        string $persistenceId
-    ) {
-        $this->persistenceManager = $persistenceManager;
-        $this->persistenceId = $persistenceId;
+    /** @var QueryBuilder */
+    private $queryBuilder;
+
+    public function __construct(ResourceIndexer $resourceIndexer, QueryBuilder $queryBuilder)
+    {
         $this->resourceIndexer = $resourceIndexer;
+        $this->queryBuilder = $queryBuilder;
     }
 
     public function listen(ListSavedEvent $event): void
     {
-        $platform = $this->getPersistence()->getPlatForm();
-        $propertyUris = $this->getProperties($platform->getQueryBuilder(), $event->getListUri());
-        $allRecordUris = $this->getRecordsUsingProperty($platform->getQueryBuilder(), $propertyUris);
+        $propertyUris = $this->getProperties($event->getListUri());
+        $allRecordUris = $this->getRecordsUsingProperty($propertyUris);
 
         foreach (array_chunk($allRecordUris, 100) as $recordUrisChunk) {
             $this->resourceIndexer->addIndex($recordUrisChunk);
         }
     }
 
-    private function getProperties(QueryBuilder $queryBuilder, string $listUri): array
+    private function getProperties(string $listUri): array
     {
-        $expressionBuilder = $queryBuilder->expr();
+        $this->queryBuilder->resetQueryParts();
 
-        $queryBuilder
+        $expressionBuilder = $this->queryBuilder->expr();
+
+        $this->queryBuilder
             ->select('subject', 'predicate')
             ->from('statements')
             ->andWhere($expressionBuilder->eq('statements.predicate', ':predicate'))
@@ -81,29 +73,25 @@ class ListSavedEventListener
                 ]
             );
 
-        return $queryBuilder->execute()->getIterator()->fetchAll(PDO::FETCH_COLUMN);
+        return $this->queryBuilder->execute()->getIterator()->fetchAll(PDO::FETCH_COLUMN);
     }
 
-    private function getRecordsUsingProperty(QueryBuilder $queryBuilder, array $propertyUris): array
+    private function getRecordsUsingProperty(array $propertyUris): array
     {
         if (empty($propertyUris)) {
             return [];
         }
 
-        $expressionBuilder = $queryBuilder->expr();
+        $this->queryBuilder->resetQueryParts();
 
-        $queryBuilder
+        $expressionBuilder = $this->queryBuilder->expr();
+
+        $this->queryBuilder
             ->select('subject')
             ->from('statements')
             ->andWhere($expressionBuilder->in('statements.predicate', ':predicate'))
             ->setParameter('predicate', $propertyUris, Connection::PARAM_STR_ARRAY);
 
-        return $queryBuilder->execute()->getIterator()->fetchAll(PDO::FETCH_COLUMN);
-    }
-
-    private function getPersistence(): common_persistence_SqlPersistence
-    {
-        /** @noinspection PhpIncompatibleReturnTypeInspection */
-        return $this->persistenceManager->getPersistenceById($this->persistenceId);
+        return $this->queryBuilder->execute()->getIterator()->fetchAll(PDO::FETCH_COLUMN);
     }
 }
