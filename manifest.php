@@ -19,6 +19,7 @@
  */
 
 use oat\taoAdvancedSearch\model\Metadata\ServiceProvider\MetadataServiceProvider;
+use oat\taoAdvancedSearch\model\Resource\ServiceProvider\ResourceServiceProvider;
 use oat\taoAdvancedSearch\model\SearchEngine\ServiceProvider\SearchEngineProvider;
 use oat\taoAdvancedSearch\scripts\install\RegisterEvents;
 use oat\taoAdvancedSearch\scripts\install\RegisterServices;
@@ -58,5 +59,6 @@ return [
     'containerServiceProviders' => [
         MetadataServiceProvider::class,
         SearchEngineProvider::class,
+        ResourceServiceProvider::class,
     ]
 ];
