@@ -51,14 +51,14 @@ class SearchResultNormalizer
             $newResult = [];
 
             foreach ($result as $resultKey => $resultValue) {
-                if ($this->isKeyAllowed($resultKey)) {
+                if (!$this->isKeyAllowed($resultKey)) {
                     continue;
                 }
 
                 if (strpos($resultKey, PropertyIndexReferenceFactory::RAW_SUFFIX) !== false) {
                     $originalKey = str_replace(PropertyIndexReferenceFactory::RAW_SUFFIX, '', $resultKey);
 
-                    if ($this->isKeyAllowed($originalKey)) {
+                    if (!$this->isKeyAllowed($originalKey)) {
                         continue;
                     }
 
@@ -88,7 +88,7 @@ class SearchResultNormalizer
 
     private function isKeyAllowed(string $key): bool
     {
-        return in_array($key, self::OMIT_PROPERTIES, true);
+        return !in_array($key, self::OMIT_PROPERTIES, true);
     }
 
     private function extractId(string $key): string
