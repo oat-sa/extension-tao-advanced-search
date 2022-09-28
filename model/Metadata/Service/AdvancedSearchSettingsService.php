@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\Metadata\Service;
 
+use oat\generis\model\OntologyRdfs;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\Lists\Business\Contract\ClassMetadataSearcherInterface;
 use oat\tao\model\Lists\Business\Domain\ClassMetadataSearchRequest;
@@ -34,6 +35,10 @@ use oat\tao\model\search\SearchSettings;
 
 class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
 {
+    private const OMIT_PROPERTIES = [
+        OntologyRdfs::RDFS_LABEL
+    ];
+
     /** @var ClassMetadataSearcherInterface */
     private $classMetadataSearcher;
 
@@ -163,6 +168,10 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
 
         foreach ($classCollection->getIterator() as $class) {
             foreach ($class->getMetaData()->getIterator() as $metadata) {
+                if (in_array($metadata->getPropertyUri(), self::OMIT_PROPERTIES, true)) {
+                    continue;
+                }
+
                 $out[] = new ResultColumn(
                     (string)$metadata->getPropertyUri(),
                     (string)$metadata->getSortId(),
