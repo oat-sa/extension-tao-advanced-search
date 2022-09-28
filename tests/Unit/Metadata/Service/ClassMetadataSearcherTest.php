@@ -228,6 +228,7 @@ class ClassMetadataSearcherTest extends TestCase
             'propertiesTree' => [
                 [
                     'propertyUri' => 'propertyUri1',
+                    'propertyReference' => 'SearchBox_',
                     'propertyLabel' => 'propertyLabel1',
                     'propertyType' => 'list',
                     'propertyAlias' => null,
@@ -235,6 +236,7 @@ class ClassMetadataSearcherTest extends TestCase
                 ],
                 [
                     'propertyUri' => 'propertyUri2',
+                    'propertyReference' => 'SearchBox_',
                     'propertyLabel' => 'propertyLabel2',
                     'propertyType' => 'text',
                     'propertyAlias' => null,
