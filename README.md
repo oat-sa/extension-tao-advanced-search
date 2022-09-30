@@ -10,9 +10,9 @@
 
 > Extension required to advanced search integration with TAO platform `oat-sa/extension-tao-advanced-search`
 
-# !DEPRECATION NOTICE!
+# WARNING
 
-The library `oat-sa/lib-tao-elasticsearch` is deprecated and this presence in the [composer.json](composer.json)
+The library `oat-sa/lib-tao-elasticsearch` is **deprecated** and this presence in the [composer.json](composer.json)
 is maintained only for backward compatibility purposes with already installed applications. 
 
 Please, do not use this classes anymore! Use only classes from this very extension.
