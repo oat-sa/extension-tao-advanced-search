@@ -73,7 +73,7 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
                 [
                     new ResultColumn(
                         'label',
-                        'label',
+                        'label.raw',
                         __('Label'),
                         'text',
                         null,
@@ -84,7 +84,7 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
                     ),
                     new ResultColumn(
                         'test_taker',
-                        'test_taker',
+                        'test_taker.raw',
                         __('Test Taker ID'),
                         'text',
                         null,
@@ -95,7 +95,7 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
                     ),
                     new ResultColumn(
                         'test_taker_name',
-                        'test_taker_name',
+                        'test_taker_name.raw',
                         __('Test Taker Name'),
                         'text',
                         null,
@@ -106,7 +106,7 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
                     ),
                     new ResultColumn(
                         'delivery_execution_start_time',
-                        'delivery_execution_start_time',
+                        'delivery_execution_start_time.raw',
                         __('Start Time'),
                         'text',
                         null,
@@ -117,7 +117,7 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
                     ),
                     new ResultColumn(
                         'delivery',
-                        'delivery',
+                        'delivery.raw',
                         __('Delivery Uri'),
                         'text',
                         null,
@@ -133,7 +133,7 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
         $out = [
             new ResultColumn(
                 'label',
-                'label',
+                'label.raw',
                 __('Label'),
                 'text',
                 null,
@@ -144,7 +144,7 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
             ),
             new ResultColumn(
                 'location',
-                'location',
+                'location.raw',
                 __('Location'),
                 'text',
                 null,
@@ -155,7 +155,7 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
             ),
             new ResultColumn(
                 'updated_at',
-                'updated_at',
+                'updated_at.raw',
                 __('Last modified on'),
                 'text',
                 null,
@@ -174,7 +174,7 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
 
                 $out[] = new ResultColumn(
                     (string)$metadata->getPropertyUri(),
-                    (string)$metadata->getSortId(),
+                    ((string)$metadata->getSortId()) . '.raw',
                     $metadata->getLabel(),
                     $metadata->getType(),
                     $metadata->getAlias(),

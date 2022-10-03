@@ -26,35 +26,80 @@ return [
         'mappings' => [
             'properties' => [
                 'label' => [
-                    'type' => 'keyword'
+                    'type' => 'text',
+                    'fields' => [
+                        'raw' => [
+                            'type' => 'keyword'
+                        ]
+                    ]
                 ],
                 'updated_at' => [
-                    'type' => 'keyword',
+                    'type' => 'text',
+                    'fields' => [
+                        'raw' => [
+                            'type' => 'keyword'
+                        ]
+                    ]
                 ],
                 'location' => [
-                    'type' => 'keyword'
+                    'type' => 'text',
+                    'fields' => [
+                        'raw' => [
+                            'type' => 'keyword'
+                        ]
+                    ]
                 ],
                 'delivery' => [
-                    'type' => 'keyword'
+                    'type' => 'text',
+                    'fields' => [
+                        'raw' => [
+                            'type' => 'keyword'
+                        ]
+                    ]
                 ],
                 'type' => [
                     'type' => 'keyword',
                     'ignore_above' => 256,
                 ],
                 'test_taker' => [
-                    'type' => 'keyword'
+                    'type' => 'text',
+                    'fields' => [
+                        'raw' => [
+                            'type' => 'keyword'
+                        ]
+                    ]
                 ],
                 'test_taker_name' => [
-                    'type' => 'keyword'
+                    'type' => 'text',
+                    'fields' => [
+                        'raw' => [
+                            'type' => 'keyword'
+                        ]
+                    ]
                 ],
                 'delivery_execution' => [
-                    'type' => 'keyword'
+                    'type' => 'text',
+                    'fields' => [
+                        'raw' => [
+                            'type' => 'keyword'
+                        ]
+                    ]
                 ],
                 'custom_tag' => [
-                    'type' => 'keyword'
+                    'type' => 'text',
+                    'fields' => [
+                        'raw' => [
+                            'type' => 'keyword'
+                        ]
+                    ]
                 ],
                 'context_label' => [
-                    'type' => 'keyword'
+                    'type' => 'text',
+                    'fields' => [
+                        'raw' => [
+                            'type' => 'keyword'
+                        ]
+                    ]
                 ],
                 'context_id' => [
                     'type' => 'keyword',
@@ -65,13 +110,28 @@ return [
                     'ignore_above' => 256,
                 ],
                 'delivery_execution_start_time' => [
-                    'type' => 'text'
+                    'type' => 'text',
+                    'fields' => [
+                        'raw' => [
+                            'type' => 'keyword'
+                        ]
+                    ]
                 ],
                 'test_taker_first_name' => [
-                    'type' => 'text'
+                    'type' => 'text',
+                    'fields' => [
+                        'raw' => [
+                            'type' => 'keyword'
+                        ]
+                    ]
                 ],
                 'test_taker_first_last_name' => [
-                    'type' => 'text'
+                    'type' => 'text',
+                    'fields' => [
+                        'raw' => [
+                            'type' => 'keyword'
+                        ]
+                    ]
                 ],
             ],
         ],
