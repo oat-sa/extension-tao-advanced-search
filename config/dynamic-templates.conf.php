@@ -26,7 +26,12 @@ return [
             'match' => 'Calendar_*',
             'match_mapping_type' => 'string',
             'mapping' => [
-                'type' => 'keyword'
+                'type' => 'text',
+                'fields' => [
+                    'raw' => [
+                        'type' => 'keyword'
+                    ]
+                ]
             ]
         ]
     ],
@@ -35,7 +40,12 @@ return [
             'match' => 'HTMLArea_*',
             'match_mapping_type' => 'string',
             'mapping' => [
-                'type' => 'keyword'
+                'type' => 'text',
+                'fields' => [
+                    'raw' => [
+                        'type' => 'keyword'
+                    ]
+                ]
             ]
         ]
     ],
@@ -44,7 +54,12 @@ return [
             'match' => 'TextArea_*',
             'match_mapping_type' => 'string',
             'mapping' => [
-                'type' => 'keyword'
+                'type' => 'text',
+                'fields' => [
+                    'raw' => [
+                        'type' => 'keyword'
+                    ]
+                ]
             ]
         ]
     ],
@@ -53,7 +68,12 @@ return [
             'match' => 'TextBox_*',
             'match_mapping_type' => 'string',
             'mapping' => [
-                'type' => 'keyword'
+                'type' => 'text',
+                'fields' => [
+                    'raw' => [
+                        'type' => 'keyword'
+                    ]
+                ]
             ]
         ]
     ],
@@ -62,7 +82,12 @@ return [
             'match' => 'SearchTextBox_*',
             'match_mapping_type' => 'string',
             'mapping' => [
-                'type' => 'keyword'
+                'type' => 'text',
+                'fields' => [
+                    'raw' => [
+                        'type' => 'keyword'
+                    ]
+                ]
             ]
         ]
     ],
@@ -71,8 +96,13 @@ return [
             'match' => 'SearchDropdown_*',
             'match_mapping_type' => 'string',
             'mapping' => [
-                'type' => 'keyword'
-            ]
+                'type' => 'keyword',
+                'fields' => [
+                    'raw' => [
+                        'type' => 'keyword'
+                    ]
+                ]
+            ],
         ]
     ],
     [
@@ -80,7 +110,12 @@ return [
             'match' => 'CheckBox_*',
             'match_mapping_type' => 'string',
             'mapping' => [
-                'type' => 'keyword'
+                'type' => 'keyword',
+                'fields' => [
+                    'raw' => [
+                        'type' => 'keyword'
+                    ]
+                ]
             ]
         ]
     ],
@@ -89,7 +124,12 @@ return [
             'match' => 'ComboBox_*',
             'match_mapping_type' => 'string',
             'mapping' => [
-                'type' => 'keyword'
+                'type' => 'keyword',
+                'fields' => [
+                    'raw' => [
+                        'type' => 'keyword'
+                    ]
+                ]
             ]
         ]
     ],
@@ -98,7 +138,12 @@ return [
             'match' => 'RadioBox_*',
             'match_mapping_type' => 'string',
             'mapping' => [
-                'type' => 'keyword'
+                'type' => 'keyword',
+                'fields' => [
+                    'raw' => [
+                        'type' => 'keyword'
+                    ]
+                ]
             ]
         ]
     ]

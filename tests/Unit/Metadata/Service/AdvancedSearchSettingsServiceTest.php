@@ -100,7 +100,7 @@ class AdvancedSearchSettingsServiceTest extends TestCase
                 'availableColumns' => [
                     [
                         'id' => 'label',
-                        'sortId' => 'label',
+                        'sortId' => 'label.raw',
                         'label' => 'Label',
                         'type' => 'text',
                         'alias' => null,
@@ -111,7 +111,7 @@ class AdvancedSearchSettingsServiceTest extends TestCase
                     ],
                     [
                         'id' => 'location',
-                        'sortId' => 'location',
+                        'sortId' => 'location.raw',
                         'label' => 'Location',
                         'type' => 'text',
                         'alias' => null,
@@ -122,7 +122,7 @@ class AdvancedSearchSettingsServiceTest extends TestCase
                     ],
                     [
                         'id' => 'updated_at',
-                        'sortId' => 'updated_at',
+                        'sortId' => 'updated_at.raw',
                         'label' => 'Last modified on',
                         'type' => 'text',
                         'alias' => null,

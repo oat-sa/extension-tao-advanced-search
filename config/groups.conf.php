@@ -26,20 +26,40 @@ return [
         'mappings' => [
             'properties' => [
                 'class' => [
-                    'type' => 'keyword',
+                    'type' => 'text',
+                    'fields' => [
+                        'raw' => [
+                            'type' => 'keyword'
+                        ]
+                    ]
                 ],
                 'label' => [
-                    'type' => 'keyword'
+                    'type' => 'text',
+                    'fields' => [
+                        'raw' => [
+                            'type' => 'keyword'
+                        ]
+                    ]
                 ],
                 'type' => [
                     'type' => 'keyword',
                     'ignore_above' => 256,
                 ],
                 'updated_at' => [
-                    'type' => 'keyword',
+                    'type' => 'text',
+                    'fields' => [
+                        'raw' => [
+                            'type' => 'keyword'
+                        ]
+                    ]
                 ],
                 'location' => [
-                    'type' => 'keyword'
+                    'type' => 'text',
+                    'fields' => [
+                        'raw' => [
+                            'type' => 'keyword'
+                        ]
+                    ]
                 ],
             ],
             'dynamic_templates' => require __DIR__ . '/dynamic-templates.conf.php',

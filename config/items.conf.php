@@ -26,19 +26,44 @@ return [
         'mappings' => [
             'properties' => [
                 'class' => [
-                    'type' => 'keyword',
+                    'type' => 'text',
+                    'fields' => [
+                        'raw' => [
+                            'type' => 'keyword'
+                        ]
+                    ]
                 ],
                 'content' => [
-                    'type' => 'keyword',
+                    'type' => 'text',
+                    'fields' => [
+                        'raw' => [
+                            'type' => 'keyword'
+                        ]
+                    ]
                 ],
                 'label' => [
-                    'type' => 'keyword'
+                    'type' => 'text',
+                    'fields' => [
+                        'raw' => [
+                            'type' => 'keyword'
+                        ]
+                    ]
                 ],
                 'updated_at' => [
-                    'type' => 'keyword',
+                    'type' => 'text',
+                    'fields' => [
+                        'raw' => [
+                            'type' => 'keyword'
+                        ]
+                    ]
                 ],
                 'location' => [
-                    'type' => 'keyword'
+                    'type' => 'text',
+                    'fields' => [
+                        'raw' => [
+                            'type' => 'keyword'
+                        ]
+                    ]
                 ],
                 'model' => [
                     'type' => 'keyword',
