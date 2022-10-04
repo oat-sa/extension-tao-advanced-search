@@ -133,7 +133,7 @@ class AdvancedSearchSettingsServiceTest extends TestCase
                     ],
                     [
                         'id' => 'metadataUri1',
-                        'sortId' => 'metadataUri1.raw',
+                        'sortId' => 'metadataUri1',
                         'label' => 'metadataLabel1',
                         'type' => 'list',
                         'alias' => 'metadataAlias1',

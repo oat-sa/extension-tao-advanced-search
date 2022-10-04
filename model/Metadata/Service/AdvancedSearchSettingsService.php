@@ -174,7 +174,7 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
 
                 $out[] = new ResultColumn(
                     (string)$metadata->getPropertyUri(),
-                    ((string)$metadata->getSortId()) . '.raw',
+                    ((string)$metadata->getSortId()),
                     $metadata->getLabel(),
                     $metadata->getType(),
                     $metadata->getAlias(),
