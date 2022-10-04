@@ -115,6 +115,9 @@ class ClassMetadataSearcherTest extends TestCase
         $property->method('getRelatedClass')
             ->willReturn(null);
 
+        $property->method('getWidget')
+            ->willReturn(null);
+
         $class = $this->createMock(core_kernel_classes_Property::class);
         $class->method('getLabel')
             ->willReturn('Class label');
@@ -173,6 +176,9 @@ class ClassMetadataSearcherTest extends TestCase
     {
         $property = $this->createMock(core_kernel_classes_Property::class);
         $property->method('getRelatedClass')
+            ->willReturn(null);
+
+        $property->method('getWidget')
             ->willReturn(null);
 
         $class = $this->createMock(core_kernel_classes_Property::class);

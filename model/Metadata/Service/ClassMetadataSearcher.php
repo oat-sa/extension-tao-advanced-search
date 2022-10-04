@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\Metadata\Service;
 
+use core_kernel_classes_Property;
 use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\service\ConfigurableService;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
@@ -49,7 +50,11 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
         if ($this->getAdvancedSearchChecker()->isEnabled()) {
             $currentClassUri = $input->getSearchRequest()->getClassUri();
 
-            return $this->createClassCollection($currentClassUri, $this->getProperties($currentClassUri));
+            return $this->createClassCollection(
+                $currentClassUri,
+                $this->getProperties($currentClassUri),
+                $input->getSearchRequest()->getIgnoredWidgets()
+            );
         }
 
         return $this->getClassMetadataSearcher()->findAll($input);
@@ -138,15 +143,23 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
         return $properties;
     }
 
-    private function createClassCollection(string $classUri, array $properties): ClassCollection
-    {
+    private function createClassCollection(
+        string $classUri,
+        array $properties,
+        array $ignoredWidgets
+    ): ClassCollection {
         $metadataCollection = new MetadataCollection();
 
         $duplicatedUris = $this->getDuplicatedPropertyUris($properties);
 
         foreach ($properties as $property) {
-            $relatedClass = $this->getProperty($property['propertyUri'])->getRelatedClass();
+            $rdfProperty = $this->getProperty($property['propertyUri']);
 
+            if (!$this->isAllowedWidget($rdfProperty, $ignoredWidgets)) {
+                continue;
+            }
+
+            $relatedClass = $rdfProperty->getRelatedClass();
             $metadata = (new Metadata())
                 ->setSortId(($property['propertyRawReference'] ?? $property['propertyReference']) . '.raw')
                 ->setIsSortable($this->isPropertySortable($property))
@@ -183,6 +196,7 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
     {
         return strpos($property['propertyReference'], 'RadioBox') === 0 ||
             strpos($property['propertyReference'], 'ComboBox') === 0 ||
+            strpos($property['propertyReference'], 'Calendar') === 0 ||
             strpos($property['propertyReference'], 'Checkbox') === 0 ||
             strpos($property['propertyReference'], 'TextBox') === 0 ||
             strpos($property['propertyReference'], 'TextArea') === 0 ||
@@ -235,6 +249,13 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
         }
 
         return sprintf(self::BASE_LIST_ITEMS_URI, urlencode($propertyUri));
+    }
+
+    private function isAllowedWidget(core_kernel_classes_Property $property, array $ignoredWidgets): bool
+    {
+        $widget = $property->getWidget();
+
+        return $widget && $widget->getUri() && !in_array($widget->getUri(), $ignoredWidgets, true);
     }
 
     private function getClassMetadataSearcher(): ClassMetadataSearcherInterface
