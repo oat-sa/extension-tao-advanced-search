@@ -39,6 +39,8 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
         OntologyRdfs::RDFS_LABEL
     ];
 
+    public const DEFAULT_SORT_COLUMN = 'label.raw';
+
     /** @var ClassMetadataSearcherInterface */
     private $classMetadataSearcher;
 
@@ -73,7 +75,7 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
                 [
                     new ResultColumn(
                         'label',
-                        'label.raw',
+                        self::DEFAULT_SORT_COLUMN,
                         __('Label'),
                         'text',
                         null,
@@ -133,7 +135,7 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
         $out = [
             new ResultColumn(
                 'label',
-                'label.raw',
+                self::DEFAULT_SORT_COLUMN,
                 __('Label'),
                 'text',
                 null,

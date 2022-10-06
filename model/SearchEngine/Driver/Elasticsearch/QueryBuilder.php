@@ -24,6 +24,7 @@ namespace oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch;
 
 use oat\generis\model\data\permission\PermissionInterface;
 use oat\oatbox\session\SessionService;
+use oat\taoAdvancedSearch\model\Metadata\Service\AdvancedSearchSettingsService;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\QueryBlock;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
@@ -97,12 +98,13 @@ class QueryBuilder
     private $prefixer;
 
     public function __construct(
-        LoggerInterface $logger,
+        LoggerInterface     $logger,
         PermissionInterface $permission,
-        SessionService $sessionService,
-        IndexPrefixer $prefixer,
+        SessionService      $sessionService,
+        IndexPrefixer       $prefixer,
         UseAclSpecification $useAclSpecification
-    ) {
+    )
+    {
         $this->logger = $logger;
         $this->permission = $permission;
         $this->sessionService = $sessionService;
@@ -110,8 +112,14 @@ class QueryBuilder
         $this->useAclSpecification = $useAclSpecification;
     }
 
-    public function getSearchParams(string $queryString, string $type, int $start, int $count, string $order, string $dir): array
-    {
+    public function getSearchParams(
+        string $queryString,
+        string $type,
+        int $start,
+        int $count,
+        string $order,
+        string $dir
+    ): array {
         $queryString = str_replace(
             array_keys(self::QUERY_STRING_REPLACEMENTS),
             array_values(self::QUERY_STRING_REPLACEMENTS),
@@ -119,7 +127,7 @@ class QueryBuilder
         );
 
         $queryString = htmlspecialchars_decode($queryString);
-        $blocks = preg_split( '/( AND )/i', $queryString);
+        $blocks = preg_split('/( AND )/i', $queryString);
         $index = $this->getIndexByType($type);
         $conditions = $this->buildConditions($index, $blocks);
 
@@ -131,7 +139,18 @@ class QueryBuilder
                         'query' => implode(' AND ', $conditions)
                     ]
             ],
-            'sort' => [$order => ['order' => $dir]]
+            'sort' => [
+                $order => [
+                    'order' => $dir,
+                    'missing' => '_last',
+                    'unmapped_type' => 'long'
+                ],
+                AdvancedSearchSettingsService::DEFAULT_SORT_COLUMN => [
+                    'order' => $dir,
+                    'missing' => '_last',
+                    'unmapped_type' => 'long',
+                ],
+            ]
         ];
 
         $params = [
@@ -229,7 +248,7 @@ class QueryBuilder
             $conditions[] = sprintf('%s_%s:"%s"', $customField, $queryBlock->getField(), $queryBlock->getTerm());
         }
 
-        return '(' . implode(' OR ', $conditions). ')';
+        return '(' . implode(' OR ', $conditions) . ')';
     }
 
     private function buildAccessConditions(): string
@@ -265,7 +284,7 @@ class QueryBuilder
             return new QueryBlock(null, $block);
         }
 
-        preg_match('/((?P<field>[^:]*):)?(?P<term>.*)/', $block,$matches);
+        preg_match('/((?P<field>[^:]*):)?(?P<term>.*)/', $block, $matches);
 
         $field = trim($matches['field']);
 
