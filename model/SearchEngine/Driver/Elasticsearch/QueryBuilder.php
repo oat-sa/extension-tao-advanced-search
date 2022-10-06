@@ -98,13 +98,12 @@ class QueryBuilder
     private $prefixer;
 
     public function __construct(
-        LoggerInterface     $logger,
+        LoggerInterface $logger,
         PermissionInterface $permission,
-        SessionService      $sessionService,
-        IndexPrefixer       $prefixer,
+        SessionService $sessionService,
+        IndexPrefixer $prefixer,
         UseAclSpecification $useAclSpecification
-    )
-    {
+    ) {
         $this->logger = $logger;
         $this->permission = $permission;
         $this->sessionService = $sessionService;
