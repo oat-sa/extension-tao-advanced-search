@@ -100,7 +100,7 @@ class AdvancedSearchSettingsServiceTest extends TestCase
                 'availableColumns' => [
                     [
                         'id' => 'label',
-                        'sortId' => 'label.raw',
+                        'sortId' => AdvancedSearchSettingsService::DEFAULT_SORT_COLUMN,
                         'label' => 'Label',
                         'type' => 'text',
                         'alias' => null,
