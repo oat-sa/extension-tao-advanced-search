@@ -28,6 +28,7 @@ use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\service\ConfigurableService;
 use oat\tao\model\Lists\Business\Domain\Metadata;
 use oat\tao\model\Lists\Business\Service\GetClassMetadataValuesService;
+use oat\tao\model\search\index\DocumentBuilder\PropertyIndexReferenceFactory;
 use oat\taoAdvancedSearch\model\Index\IndexResource;
 use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
 use oat\taoAdvancedSearch\model\Metadata\Factory\ClassPathFactory;
@@ -79,11 +80,15 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
             : $this->getGetClassMetadataValuesService()->getByClassExplicitly($class, 0);
 
         $specification = $this->getPropertyAllowedSpecification();
+        $propertyIndexReferenceFactory = $this->getPropertyIndexReferenceFactory();
 
         /** @var Metadata $property */
         foreach ($properties as $property) {
             if ($specification->isSatisfiedBy($property->getPropertyUri())) {
+                $rdfProperty = $this->getProperty($property->getPropertyUri());
                 $propertyCollection[] = [
+                    'propertyReference' => $propertyIndexReferenceFactory->create($rdfProperty),
+                    'propertyRawReference' => $propertyIndexReferenceFactory->createRaw($rdfProperty),
                     'propertyUri' => $property->getPropertyUri(),
                     'propertyLabel' => $property->getLabel(),
                     'propertyAlias' => $property->getAlias(),
@@ -119,5 +124,10 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
     private function getPropertyAllowedSpecification(): PropertyAllowedSpecification
     {
         return $this->getServiceManager()->getContainer()->get(PropertyAllowedSpecification::class);
+    }
+
+    private function getPropertyIndexReferenceFactory(): PropertyIndexReferenceFactory
+    {
+        return $this->getServiceManager()->getContainer()->get(PropertyIndexReferenceFactory::class);
     }
 }

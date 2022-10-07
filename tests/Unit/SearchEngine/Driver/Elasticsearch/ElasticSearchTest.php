@@ -31,6 +31,7 @@ use oat\tao\model\search\SyntaxException;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\QueryBuilder;
+use oat\taoAdvancedSearch\model\SearchEngine\Normalizer\SearchResultNormalizer;
 use oat\taoAdvancedSearch\model\SearchEngine\Query;
 use oat\taoAdvancedSearch\model\SearchEngine\SearchResult;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
@@ -59,6 +60,9 @@ class ElasticSearchTest extends TestCase
     /** @var IndexerInterface|MockObject */
     private $indexer;
 
+    /** @var SearchResultNormalizer|MockObject */
+    private $searchResultNormalizer;
+
     protected function setUp(): void
     {
         $this->generisSearch = $this->createMock(GenerisSearch::class);
@@ -67,13 +71,15 @@ class ElasticSearchTest extends TestCase
         $this->logger = $this->createMock(LoggerInterface::class);
         $this->indexer = $this->createMock(IndexerInterface::class);
         $this->prefixer = $this->createMock(IndexPrefixer::class);
+        $this->searchResultNormalizer = $this->createMock(SearchResultNormalizer::class);
 
         $this->sut = new ElasticSearch(
             $this->client,
             $this->queryBuilder,
             $this->indexer,
             $this->prefixer,
-            $this->logger
+            $this->logger,
+            $this->searchResultNormalizer
         );
 
         $this->sut->setIndexFile(__DIR__ . '/../../../../sample/testIndexes.conf.php');
@@ -81,6 +87,11 @@ class ElasticSearchTest extends TestCase
         $this->prefixer
             ->expects($this->any())
             ->method('prefix')
+            ->willReturnArgument(0);
+
+        $this->searchResultNormalizer
+            ->expects($this->any())
+            ->method('normalizeByByResultSet')
             ->willReturnArgument(0);
 
         $reflection = new ReflectionObject($this->sut);

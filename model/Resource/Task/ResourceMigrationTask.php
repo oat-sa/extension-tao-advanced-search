@@ -22,11 +22,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\Resource\Task;
 
-use oat\tao\model\TaoOntology;
-use oat\taoAdvancedSearch\model\DeliveryResult\Factory\DeliveryResultFilterFactory;
-use oat\taoAdvancedSearch\model\DeliveryResult\Normalizer\DeliveryResultNormalizer;
 use oat\taoAdvancedSearch\model\Index\Service\AbstractIndexMigrationTask;
-use oat\taoAdvancedSearch\model\Index\Service\SyncResultIndexer;
 use oat\taoAdvancedSearch\model\Resource\Factory\ResourceResultFilterFactory;
 use oat\taoAdvancedSearch\model\Resource\Service\ResourceSearcher;
 use oat\taoAdvancedSearch\model\Resource\Service\SyncResourceResultIndexer;
