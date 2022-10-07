@@ -35,6 +35,7 @@ use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchC
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchIndexer;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\QueryBuilder;
+use oat\taoAdvancedSearch\model\SearchEngine\Normalizer\SearchResultNormalizer;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use oat\taoAdvancedSearch\model\SearchEngine\Specification\UseAclSpecification;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -96,6 +97,7 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
                     service(ElasticSearchIndexer::class),
                     service(IndexPrefixer::class),
                     service(LoggerService::SERVICE_ID),
+                    service(SearchResultNormalizer::class),
                 ]
             )->public();
 
@@ -107,5 +109,8 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
                     service(IndexPrefixer::class),
                 ]
             )->public();
+
+        $services->set(SearchResultNormalizer::class, SearchResultNormalizer::class)
+            ->public();
     }
 }

@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2021 (original work) Open Assessment Technologies SA;
+ * Copyright (c) 2021-2022 (original work) Open Assessment Technologies SA;
  */
 
 declare(strict_types=1);
@@ -30,11 +30,13 @@ use oat\oatbox\event\EventManager;
 use oat\oatbox\extension\InstallAction;
 use oat\tao\model\event\ClassMovedEvent;
 use oat\tao\model\event\ClassPropertiesChangedEvent;
+use oat\tao\model\Lists\Business\Event\ListSavedEvent;
 use oat\taoAdvancedSearch\model\Metadata\Listener\ClassDeletionListener;
 use oat\taoAdvancedSearch\model\Metadata\Listener\ClassMovedListener;
 use oat\taoAdvancedSearch\model\Metadata\Listener\MetadataChangedListener;
 use oat\taoAdvancedSearch\model\Metadata\Listener\MetadataInheritanceListener;
 use oat\taoAdvancedSearch\model\Metadata\Listener\MetadataListener;
+use oat\taoAdvancedSearch\model\Metadata\Service\ListSavedEventListener;
 
 class RegisterEvents extends InstallAction
 {
@@ -92,6 +94,14 @@ class RegisterEvents extends InstallAction
             ClassMovedEvent::class,
             [
                 ClassMovedListener::class,
+                'listen'
+            ]
+        );
+
+        $eventManager->attach(
+            ListSavedEvent::class,
+            [
+                ListSavedEventListener::class,
                 'listen'
             ]
         );
