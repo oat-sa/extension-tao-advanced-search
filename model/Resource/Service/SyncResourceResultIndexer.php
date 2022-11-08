@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2021 (original work) Open Assessment Technologies SA;
+ * Copyright (c) 2021-2022 (original work) Open Assessment Technologies SA;
  */
 
 declare(strict_types=1);
@@ -24,55 +24,46 @@ namespace oat\taoAdvancedSearch\model\Resource\Service;
 
 use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\service\ConfigurableService;
+use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexService;
 use oat\tao\model\search\SearchInterface;
 use oat\tao\model\search\SearchProxy;
 use oat\taoAdvancedSearch\model\Index\Service\IndexerInterface;
-use Throwable;
 
+/**
+ * This service is used by tasks and command line tools.
+ */
 class SyncResourceResultIndexer extends ConfigurableService implements IndexerInterface
 {
     use OntologyAwareTrait;
 
     public function addIndex($resource): void
     {
-        try {
-            $documentBuilder = $this->getIndexerService()->getDocumentBuilder();
-            $this->propagate($documentBuilder);
+        // Not called? Called just from cmdline indexer?
+        $this->logInfo("Hello from SyncResourceResultIndexer");
+        $this->getProcessor()->addIndex($resource);
+    }
 
-            $document = $documentBuilder->createDocumentFromResource($resource);
-
-            $totalIndexed = $this->getSearch()->index(
-                [
-                    $document,
-                ]
-            );
-
-            if ($totalIndexed < 1) {
-                $this->logWarning(
-                    sprintf(
-                        'Could not index resource %s (%s): totalIndexed=%d',
-                        $resource->getLabel(),
-                        $resource->getUri(),
-                        $totalIndexed
-                    )
-                );
-            }
-        } catch (Throwable $exception) {
-            $this->logError(
-                sprintf(
-                    'Could not index resource %s (%s). Error: %s',
-                    $resource->getLabel(),
-                    $resource->getUri(),
-                    $exception->getMessage()
-                )
-            );
-        }
+    private function getProcessor(): ResourceIndexationProcessor
+    {
+        return new ResourceIndexationProcessor(
+            $this->getLogger(),
+            $this->getDocumentBuilder(),
+            $this->getSearch()
+        );
     }
 
     private function getSearch(): SearchInterface
     {
         return $this->getServiceLocator()->get(SearchProxy::SERVICE_ID);
+    }
+
+    private function getDocumentBuilder(): IndexDocumentBuilderInterface
+    {
+        $documentBuilder = $this->getIndexerService()->getDocumentBuilder();
+        $this->propagate($documentBuilder);
+
+        return $documentBuilder;
     }
 
     private function getIndexerService(): IndexService

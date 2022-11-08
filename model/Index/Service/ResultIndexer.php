@@ -40,6 +40,8 @@ class ResultIndexer extends ConfigurableService implements IndexerInterface, Nor
 
     public function addIndex($resource): void
     {
+        $this->logInfo('ResultIndexer: addIndex');
+
         if (!$this->getServiceLocator()->get(AdvancedSearchChecker::class)->isEnabled()) {
             $this->logDebug(
                 sprintf(

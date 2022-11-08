@@ -46,6 +46,10 @@ class SyncResultIndexer extends ConfigurableService implements IndexerInterface,
      */
     public function addIndex($resource): void
     {
+        $this->logInfo(
+            'SyncResultIndexer: Indexing resource'
+        );
+
         $normalizedResource = $this->normalizer->normalize($resource);
 
         try {

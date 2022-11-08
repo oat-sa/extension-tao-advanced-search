@@ -27,6 +27,9 @@ use oat\generis\persistence\PersistenceServiceProvider;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\Lists\Business\Service\ClassMetadataSearcherProxy;
 use oat\tao\model\search\Service\DefaultSearchSettingsService;
+use oat\taoAdvancedSearch\model\Metadata\Listener\ResourceDeletedListener;
+use oat\taoAdvancedSearch\model\Metadata\Listener\ResourceUpdatedListener;
+use oat\taoAdvancedSearch\model\Metadata\Listener\TestUpdatedListener;
 use oat\taoAdvancedSearch\model\Metadata\Service\AdvancedSearchSettingsService;
 use oat\taoAdvancedSearch\model\Metadata\Service\ListSavedEventListener;
 use oat\taoAdvancedSearch\model\Metadata\Specification\PropertyAllowedSpecification;
@@ -63,6 +66,30 @@ class MetadataServiceProvider implements ContainerServiceProviderInterface
             )->public();
 
         $services->set(ListSavedEventListener::class, ListSavedEventListener::class)
+            ->args(
+                [
+                    service(ResourceIndexer::class),
+                    service(PersistenceServiceProvider::DEFAULT_QUERY_BUILDER)
+                ]
+            )->public();
+
+        $services->set(ResourceUpdatedListener::class, ResourceUpdatedListener::class)
+            ->args(
+                [
+                    service(ResourceIndexer::class),
+                    service(PersistenceServiceProvider::DEFAULT_QUERY_BUILDER)
+                ]
+            )->public();
+
+        $services->set(ResourceDeletedListener::class, ResourceDeletedListener::class)
+            ->args(
+                [
+                    service(ResourceIndexer::class),
+                    service(PersistenceServiceProvider::DEFAULT_QUERY_BUILDER)
+                ]
+            )->public();
+
+        $services->set(TestUpdatedListener::class, TestUpdatedListener::class)
             ->args(
                 [
                     service(ResourceIndexer::class),

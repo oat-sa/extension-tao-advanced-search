@@ -26,16 +26,18 @@ use oat\generis\model\data\event\ClassDeletedEvent;
 use oat\generis\model\data\event\ClassPropertyCreatedEvent;
 use oat\generis\model\data\event\ClassPropertyDeletedEvent;
 use oat\generis\model\data\event\ResourceCreated;
+use oat\generis\model\data\event\ResourceDeleted;
+use oat\generis\model\data\event\ResourceUpdated;
 use oat\oatbox\event\EventManager;
 use oat\oatbox\extension\InstallAction;
 use oat\tao\model\event\ClassMovedEvent;
 use oat\tao\model\event\ClassPropertiesChangedEvent;
-use oat\tao\model\Lists\Business\Event\ListSavedEvent;
 use oat\taoAdvancedSearch\model\Metadata\Listener\ClassDeletionListener;
 use oat\taoAdvancedSearch\model\Metadata\Listener\ClassMovedListener;
 use oat\taoAdvancedSearch\model\Metadata\Listener\MetadataChangedListener;
 use oat\taoAdvancedSearch\model\Metadata\Listener\MetadataInheritanceListener;
 use oat\taoAdvancedSearch\model\Metadata\Listener\MetadataListener;
+use oat\taoAdvancedSearch\model\Metadata\Listener\ResourceUpdatedListener;
 use oat\taoAdvancedSearch\model\Metadata\Service\ListSavedEventListener;
 
 class RegisterEvents extends InstallAction
@@ -94,6 +96,31 @@ class RegisterEvents extends InstallAction
             ClassMovedEvent::class,
             [
                 ClassMovedListener::class,
+                'listen'
+            ]
+        );
+
+        // @todo This also needs a migration
+        $eventManager->attach(
+            ResourceUpdated::class,
+            [
+                ResourceUpdatedListener::class,
+                'listen'
+            ]
+        );
+        /*//initially the test is empty
+         * / @todo What happens when a test is imported? Do we call create or update?
+         * $eventManager->attach(
+            ResourceCreated::class,
+            [
+                ResourceUpdatedListener::class,
+                'listen'
+            ]
+        );*/
+        $eventManager->attach(
+            ResourceDeleted::class,
+            [
+                ResourceUpdatedListener::class, // @fixme
                 'listen'
             ]
         );
