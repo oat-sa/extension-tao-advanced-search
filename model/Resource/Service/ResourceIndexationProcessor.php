@@ -21,11 +21,15 @@
 namespace oat\taoAdvancedSearch\model\Resource\Service;
 
 use core_kernel_classes_Resource;
+use oat\oatbox\service\ServiceManager;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\search\SearchInterface;
+use oat\tao\model\TaoOntology;
 use oat\taoAdvancedSearch\model\Index\Service\IndexerInterface;
+use oat\taoQtiTest\models\QtiTestUtils;
 use Psr\Log\LoggerInterface;
+use qtism\data\AssessmentTest;
 
 /**
  * @todo Find a better name for this
@@ -89,6 +93,68 @@ class ResourceIndexationProcessor implements IndexerInterface
 
         return $document;
     }
+
+    /* Draft code to get items related with a test
+
+    private function getResourceRelations(
+        Resource $resource,
+        array $tokenizationInfo,
+        array $body
+    )
+    {
+        $this->logInfo("Now we try to get resource relations");
+        $this->logInfo("tokenizationInfo: ".var_export($tokenizationInfo,true));
+        $this->logInfo("body: ".var_export($body,true));
+
+        if ($this->isTestType($body['type']))
+        {
+            $this->logInfo(
+                "Resource is a test, we'll need to extract its related Items"
+            );
+
+            // Get Item IDs stored in the tao-qtitestdefinition.xml file
+            // associated with the test
+            $items = $this->getQtiTestService()->getItems($resource);
+            //$this->logInfo("items: ".var_export($items,true));
+            foreach ($items as $assessmentItemRef => $item)
+            {
+                $this->logInfo(
+                    " {$assessmentItemRef} -> item: ".$item->getUri()
+                );
+            }
+
+            //$this->getQtiTestUtils()->getTestDefinition()
+
+                //Then we should call buildAssessmentItemRefsTestMap ?
+        }
+    }
+
+    private function isTestType($type): bool
+    {
+        return (in_array(TaoOntology::CLASS_URI_TEST, $type));
+    }
+
+    public function getTestDefinition($qtiTestCompilation): AssessmentTest
+    {
+        return $this->getQtiTestUtils()->getTestDefinition($qtiTestCompilation);
+    }
+
+    private function getQtiTestService(): taoQtiTest_models_classes_QtiTestService
+    {
+        return $this->getService(taoQtiTest_models_classes_QtiTestService::class);
+    }
+
+    private function getQtiTestUtils(): QtiTestUtils
+    {
+        return $this->getService(QtiTestUtils::SERVICE_ID);
+    }
+
+    private function getService(string $serviceId)
+    {
+        return ServiceManager::getServiceManager()->get($serviceId);
+    }
+
+     */
 
     private function logWarning(
         core_kernel_classes_Resource $resource,
