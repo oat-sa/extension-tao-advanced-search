@@ -50,7 +50,6 @@ class TestUpdatedListener implements ListenerInterface
     public function listen($event): void
     {
         try {
-            $this->logger->info(self::class.' called');
             $this->assertIsSupportedEvent($event);
 
             /** @var TestUpdatedEvent $event */
@@ -64,15 +63,9 @@ class TestUpdatedListener implements ListenerInterface
                                                 : core_kernel_classes_Resource
     {
         $eventData = json_decode(json_encode($event->jsonSerialize()));
-        $this->logger->info(
-            self::class.' eventData=' . var_export($eventData, true)
-        );
 
-        if (empty($eventData->testUri))
-        {
-            throw new RuntimeException(
-                spinrtf('%s: Missing testUri', self::class)
-            );
+        if (empty($eventData->testUri)) {
+            throw new RuntimeException('Missing testUri');
         }
 
         return new core_kernel_classes_Resource($eventData->testUri);

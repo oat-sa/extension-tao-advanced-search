@@ -51,7 +51,6 @@ class ResourceUpdatedListener implements ListenerInterface
     public function listen($event): void
     {
         try {
-            $this->logger->info(self::class.' called');
             $this->assertIsSupportedEvent($event);
 
             /** @var ResourceUpdated $event */
