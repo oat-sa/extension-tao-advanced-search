@@ -25,8 +25,8 @@ use oat\oatbox\service\ServiceManager;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\search\SearchInterface;
-use oat\tao\model\TaoOntology;
 use oat\taoAdvancedSearch\model\Index\Service\IndexerInterface;
+use oat\taoAdvancedSearch\model\Resource\Service\DocumentTransformation\TestTransformationStrategy;
 use oat\taoQtiTest\models\QtiTestUtils;
 use Psr\Log\LoggerInterface;
 use qtism\data\AssessmentTest;
@@ -53,6 +53,11 @@ class ResourceIndexationProcessor implements IndexerInterface
     /** @var SearchInterface */
     private $searchService;
 
+    /**
+     * @var array
+     */
+    private $transformations = [];
+
     public function __construct(
         LoggerInterface $logger,
         IndexDocumentBuilderInterface $indexDocumentBuilder,
@@ -61,12 +66,20 @@ class ResourceIndexationProcessor implements IndexerInterface
         $this->logger = $logger;
         $this->indexDocumentBuilder = $indexDocumentBuilder;
         $this->searchService = $searchService;
+
+        // @todo May be passed by IoD
+        $this->transformations = [
+            new TestTransformationStrategy(
+                $this->logger,
+                $this->indexDocumentBuilder,
+                $this->searchService,
+                $this->getQtiTestService()
+            )
+        ];
     }
 
     public function addIndex($resource): void
     {
-        $this->logger->info("Hello from ResourceIndexationProcessor");
-
         try {
             $totalIndexed = $this->searchService->index(
                 [
@@ -85,81 +98,27 @@ class ResourceIndexationProcessor implements IndexerInterface
     private function getDocumentFor(
         core_kernel_classes_Resource $resource
     ): IndexDocument {
-        // Index Document Builder is from Core
+        $this->logger->debug(
+            sprintf(
+                'Preparing data to index, resource = %s',
+                $resource->getUri()
+            )
+        );
 
+        // Index Document Builder is from Core
         $document = $this->indexDocumentBuilder->createDocumentFromResource(
             $resource
         );
 
-        return $this->addRelations($resource, $document);
-    }
-
-    private function addRelations(
-        core_kernel_classes_Resource $resource,
-        IndexDocument $document
-    ): IndexDocument
-    {
-        $this->logger->info("Now we try to get resource relations");
-
-        $body = $document->getBody();
-        $this->logger->info("body: ".var_export($body,true));
-
-        if ($this->isTestType($body['type']))
-        {
-            $this->logger->info(
-                "Resource is a test, we'll need to extract its related Items"
+        foreach ($this->transformations as $strategy) {
+            $this->logger->debug(
+                sprintf('Applying transformation: %s', get_class($strategy))
             );
 
-            // @todo Move this to a helper method (or, even better, move it
-            //       to a strategy class)
-
-            // Get Item IDs stored in the tao-qtitestdefinition.xml file
-            // associated with the test
-            $items = $this->getQtiTestService()->getItems($resource);
-
-            $itemURIs = [];
-            foreach ($items as $assessmentItemRef => $item)
-            {
-                $this->logger->info(
-                    " {$assessmentItemRef} -> item: ".$item->getUri()
-                );
-
-                // @todo Pass the item instances themselves to addItemIds and
-                //       let it decide how to extract the IDs etc (SRP)
-                $itemURIs[] = $item->getUri();
-            }
-
-            $document = $this->addItemIds($document, $itemURIs);
+            $document = $strategy->transform($resource, $document);
         }
 
         return $document;
-    }
-
-    private function addItemIds(IndexDocument $doc, array $ids): IndexDocument
-    {
-        // IndexDocument is a ValueObject from Core: We need to rebuild it
-        // with the additional properties
-        //
-        $id = $doc->getId();
-        $body = $doc->getBody();
-        $indexesProperties = $doc->getIndexProperties();
-        $accessProperties = $doc->getAccessProperties();
-        $dynamicProperties = $doc->getDynamicProperties();
-
-        // @todo Magic goes here
-
-        return new IndexDocument(
-            $id,
-            $body,
-            $indexesProperties,
-            $dynamicProperties,
-            $accessProperties
-        );
-    }
-
-    private function isTestType($type): bool
-    {
-        return (in_array(TaoOntology::CLASS_URI_TEST, $type));
     }
 
     public function getTestDefinition($qtiTestCompilation): AssessmentTest
