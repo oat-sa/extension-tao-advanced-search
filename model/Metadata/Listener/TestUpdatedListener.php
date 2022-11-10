@@ -28,6 +28,7 @@ use oat\taoAdvancedSearch\model\Index\Listener\ListenerInterface;
 use oat\taoAdvancedSearch\model\Resource\Service\ResourceIndexationProcessor;
 use oat\taoTests\models\event\TestUpdatedEvent;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use Throwable;
 
 class TestUpdatedListener implements ListenerInterface
@@ -69,7 +70,7 @@ class TestUpdatedListener implements ListenerInterface
 
         if (empty($eventData->testUri))
         {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 spinrtf('%s: Missing testUri', self::class)
             );
         }
