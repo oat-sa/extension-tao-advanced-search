@@ -30,9 +30,17 @@ use oat\taoAdvancedSearch\model\Index\Service\IndexerInterface;
 use oat\taoQtiTest\models\QtiTestUtils;
 use Psr\Log\LoggerInterface;
 use qtism\data\AssessmentTest;
+// @todo Add a dependency to taoQtiTest in composer.json
+use taoQtiTest_models_classes_QtiTestService;
+use Throwable;
 
 /**
- * @todo Find a better name for this
+ * @todo Find a better name for this?
+ *
+ * @todo UpdateResourceInIndex from TAO Core calls directly
+ *       $this->getSearchProxy()->index(), we'll likely need changes in Core to
+ *       call this instead (that task just creates the doc with the document
+ *       builder and then passes it to the search proxy)
  */
 class ResourceIndexationProcessor implements IndexerInterface
 {
@@ -46,7 +54,6 @@ class ResourceIndexationProcessor implements IndexerInterface
     private $searchService;
 
     public function __construct(
-
         LoggerInterface $logger,
         IndexDocumentBuilderInterface $indexDocumentBuilder,
         SearchInterface $searchService
@@ -60,73 +67,64 @@ class ResourceIndexationProcessor implements IndexerInterface
     {
         $this->logger->info("Hello from ResourceIndexationProcessor");
 
-        // @todo UpdateResourceInIndex from TAO Core calls directly
-        //       $this->getSearchProxy()->index(), we'll likely need changes in
-        //       Core to call this instead (that task just creates the doc with
-        //       the document builder and then passes it to the search proxy)
-
         try {
-
             $totalIndexed = $this->searchService->index(
                 [
-                    $this->getDocumentFrom($resource)
+                    $this->getDocumentFor($resource)
                 ]
             );
 
             if ($totalIndexed < 1) {
                 $this->logWarning($resource, $totalIndexed);
             }
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             $this->logException($resource, $exception);
         }
     }
 
-
-    private function getDocumentFrom(
+    private function getDocumentFor(
         core_kernel_classes_Resource $resource
     ): IndexDocument {
+        // Index Document Builder is from Core
+
         $document = $this->indexDocumentBuilder->createDocumentFromResource(
             $resource
         );
 
-        // @todo Add additional properties if needed (items referenced etc)
-
-        return $document;
+        return $this->addRelations($resource, $document);
     }
 
-    /* Draft code to get items related with a test
-
-    private function getResourceRelations(
-        Resource $resource,
-        array $tokenizationInfo,
-        array $body
-    )
+    private function addRelations(
+        core_kernel_classes_Resource $resource,
+        IndexDocument $document
+    ): IndexDocument
     {
-        $this->logInfo("Now we try to get resource relations");
-        $this->logInfo("tokenizationInfo: ".var_export($tokenizationInfo,true));
-        $this->logInfo("body: ".var_export($body,true));
+        $this->logger->info("Now we try to get resource relations");
+
+        $body = $document->getBody();
+        $this->logger->info("body: ".var_export($body,true));
 
         if ($this->isTestType($body['type']))
         {
-            $this->logInfo(
+            $this->logger->info(
                 "Resource is a test, we'll need to extract its related Items"
             );
 
             // Get Item IDs stored in the tao-qtitestdefinition.xml file
             // associated with the test
             $items = $this->getQtiTestService()->getItems($resource);
-            //$this->logInfo("items: ".var_export($items,true));
+
             foreach ($items as $assessmentItemRef => $item)
             {
-                $this->logInfo(
+                $this->logger->info(
                     " {$assessmentItemRef} -> item: ".$item->getUri()
                 );
             }
-
-            //$this->getQtiTestUtils()->getTestDefinition()
-
-                //Then we should call buildAssessmentItemRefsTestMap ?
         }
+
+        // @todo Add additional properties if needed (items referenced etc)
+
+        return $document;
     }
 
     private function isTestType($type): bool
@@ -149,12 +147,13 @@ class ResourceIndexationProcessor implements IndexerInterface
         return $this->getService(QtiTestUtils::SERVICE_ID);
     }
 
+    /**
+     * @fixme use DI
+     */
     private function getService(string $serviceId)
     {
         return ServiceManager::getServiceManager()->get($serviceId);
     }
-
-     */
 
     private function logWarning(
         core_kernel_classes_Resource $resource,
@@ -172,7 +171,7 @@ class ResourceIndexationProcessor implements IndexerInterface
 
     private function logException(
         core_kernel_classes_Resource $resource,
-        \Throwable $exception
+        Throwable $exception
     ): void {
         $this->logger->error(
             sprintf(

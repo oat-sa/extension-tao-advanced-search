@@ -41,11 +41,6 @@ class ResourceIndexer implements IndexerInterface
 
     public function addIndex($resource): void
     {
-        // Not called
-        \common_Logger::singleton()->logInfo(
-            "Hello from ResourceIndexer"
-        );
-
         $resources = is_array($resource) ? $resource : [$resource];
         $resourcesProcessed = [];
 

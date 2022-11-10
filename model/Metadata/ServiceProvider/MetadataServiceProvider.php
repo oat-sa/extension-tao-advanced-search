@@ -24,6 +24,7 @@ namespace oat\taoAdvancedSearch\model\Metadata\ServiceProvider;
 
 use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
 use oat\generis\persistence\PersistenceServiceProvider;
+use oat\oatbox\log\LoggerService;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\Lists\Business\Service\ClassMetadataSearcherProxy;
 use oat\tao\model\search\Service\DefaultSearchSettingsService;
@@ -33,6 +34,7 @@ use oat\taoAdvancedSearch\model\Metadata\Listener\TestUpdatedListener;
 use oat\taoAdvancedSearch\model\Metadata\Service\AdvancedSearchSettingsService;
 use oat\taoAdvancedSearch\model\Metadata\Service\ListSavedEventListener;
 use oat\taoAdvancedSearch\model\Metadata\Specification\PropertyAllowedSpecification;
+use oat\taoAdvancedSearch\model\Resource\Service\ResourceIndexationProcessor;
 use oat\taoAdvancedSearch\model\Resource\Service\ResourceIndexer;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
@@ -76,8 +78,8 @@ class MetadataServiceProvider implements ContainerServiceProviderInterface
         $services->set(ResourceUpdatedListener::class, ResourceUpdatedListener::class)
             ->args(
                 [
-                    service(ResourceIndexer::class),
-                    service(PersistenceServiceProvider::DEFAULT_QUERY_BUILDER)
+                    service(ResourceIndexationProcessor::class),
+                    service(LoggerService::SERVICE_ID),
                 ]
             )->public();
 
@@ -92,8 +94,8 @@ class MetadataServiceProvider implements ContainerServiceProviderInterface
         $services->set(TestUpdatedListener::class, TestUpdatedListener::class)
             ->args(
                 [
-                    service(ResourceIndexer::class),
-                    service(PersistenceServiceProvider::DEFAULT_QUERY_BUILDER)
+                    service(ResourceIndexationProcessor::class),
+                    service(LoggerService::SERVICE_ID),
                 ]
             )->public();
     }

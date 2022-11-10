@@ -25,7 +25,12 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\Resource\ServiceProvider;
 
 use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
+use oat\oatbox\log\LoggerService;
+use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilder;
+use oat\tao\model\search\SearchProxy;
 use oat\tao\model\taskQueue\QueueDispatcherInterface;
+use oat\taoAdvancedSearch\model\Resource\Factory\IndexDocumentBuilderFactory;
+use oat\taoAdvancedSearch\model\Resource\Service\ResourceIndexationProcessor;
 use oat\taoAdvancedSearch\model\Resource\Service\ResourceIndexer;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -45,6 +50,23 @@ class ResourceServiceProvider implements ContainerServiceProviderInterface
                 [
                     service(QueueDispatcherInterface::SERVICE_ID),
                 ]
+            )->public();
+
+        $services->set(IndexDocumentBuilder::class, IndexDocumentBuilder::class)
+            ->factory(
+                [
+                    IndexDocumentBuilderFactory::class,
+                    'getIndexDocumentBuilder'
+                ])
+            ->private();
+
+        $services->set(ResourceIndexationProcessor::class, ResourceIndexationProcessor::class)
+            ->args(
+                 [
+                    service(LoggerService::SERVICE_ID),
+                    service(IndexDocumentBuilder::class),
+                    service(SearchProxy::SERVICE_ID)
+                 ]
             )->public();
     }
 }
