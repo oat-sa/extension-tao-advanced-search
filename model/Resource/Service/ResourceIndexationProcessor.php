@@ -110,21 +110,51 @@ class ResourceIndexationProcessor implements IndexerInterface
                 "Resource is a test, we'll need to extract its related Items"
             );
 
+            // @todo Move this to a helper method (or, even better, move it
+            //       to a strategy class)
+
             // Get Item IDs stored in the tao-qtitestdefinition.xml file
             // associated with the test
             $items = $this->getQtiTestService()->getItems($resource);
 
+            $itemURIs = [];
             foreach ($items as $assessmentItemRef => $item)
             {
                 $this->logger->info(
                     " {$assessmentItemRef} -> item: ".$item->getUri()
                 );
+
+                // @todo Pass the item instances themselves to addItemIds and
+                //       let it decide how to extract the IDs etc (SRP)
+                $itemURIs[] = $item->getUri();
             }
+
+            $document = $this->addItemIds($document, $itemURIs);
         }
 
-        // @todo Add additional properties if needed (items referenced etc)
-
         return $document;
+    }
+
+    private function addItemIds(IndexDocument $doc, array $ids): IndexDocument
+    {
+        // IndexDocument is a ValueObject from Core: We need to rebuild it
+        // with the additional properties
+        //
+        $id = $doc->getId();
+        $body = $doc->getBody();
+        $indexesProperties = $doc->getIndexProperties();
+        $accessProperties = $doc->getAccessProperties();
+        $dynamicProperties = $doc->getDynamicProperties();
+
+        // @todo Magic goes here
+
+        return new IndexDocument(
+            $id,
+            $body,
+            $indexesProperties,
+            $dynamicProperties,
+            $accessProperties
+        );
     }
 
     private function isTestType($type): bool
