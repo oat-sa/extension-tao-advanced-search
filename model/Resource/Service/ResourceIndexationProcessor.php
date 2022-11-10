@@ -77,7 +77,7 @@ class ResourceIndexationProcessor implements IndexerInterface
                 $this->logWarning($resource, $totalIndexed);
             }
         } catch (\Throwable $exception) {
-            $this->logException($exception);
+            $this->logException($resource, $exception);
         }
     }
 
