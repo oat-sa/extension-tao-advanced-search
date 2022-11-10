@@ -102,8 +102,6 @@ class TestTransformationStrategy implements DocumentTransformationStrategy
             $itemURIs[] = $item->getUri();
         }
 
-        // @todo Magic goes here
-
         $this->logger->info("item: ".$item->getUri());
         $this->logger->info("id: " . var_export($id, true));
         $this->logger->info("body: " . var_export($body, true));
