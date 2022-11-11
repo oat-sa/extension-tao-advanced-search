@@ -44,6 +44,7 @@ class SyncResourceResultIndexer extends ConfigurableService implements IndexerIn
         $this->getProcessor()->addIndex($resource);
     }
 
+    // @todo Should be obtained through the container / IoD
     private function getProcessor(): ResourceIndexationProcessor
     {
         return new ResourceIndexationProcessor(
