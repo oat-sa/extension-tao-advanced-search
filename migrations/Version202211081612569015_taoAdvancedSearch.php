@@ -11,10 +11,6 @@ use oat\tao\scripts\tools\migrations\AbstractMigration;
 use oat\taoAdvancedSearch\model\Metadata\Listener\TestUpdatedListener;
 use oat\taoTests\models\event\TestUpdatedEvent;
 
-// @fixme We need to update composer to add a dependency pointing to taoQtiTest
-//        because TestUpdatedEvent is triggered from
-//        taoQtiTest_models_classes_QtiTestService
-//
 final class Version202211081612569015_taoAdvancedSearch extends AbstractMigration
 {
     // sudo -u www-data php index.php '\oat\tao\scripts\tools\Migrations' -c rollback -v 'oat\taoAdvancedSearch\migrations\Version202211081550022884_taoAdvancedSearch'
