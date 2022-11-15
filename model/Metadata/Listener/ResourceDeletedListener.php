@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\Metadata\Listener;
 
-use oat\generis\model\data\event\ResourceUpdated;
+use oat\generis\model\data\event\ResourceDeleted;
 use oat\taoAdvancedSearch\model\Index\Listener\ListenerInterface;
 use oat\taoAdvancedSearch\model\Resource\Service\ResourceIndexer;
 use Exception;
@@ -46,7 +46,8 @@ class ResourceDeletedListener implements ListenerInterface
 
         $this->assertIsSupportedEvent($event);
 
-
+        // @todo Reomve the resource URI from all resources in index holding a
+        //       reference to its URI
         // $this->resourceIndexer->addIndex(...);
     }
 
@@ -55,8 +56,8 @@ class ResourceDeletedListener implements ListenerInterface
      */
     private function assertIsSupportedEvent($event): void
     {
-        if (!($event instanceof ResourceUpdated)) {
-            throw new UnsupportedEventException(ResourceUpdated::class);
+        if (!($event instanceof ResourceDeleted)) {
+            throw new UnsupportedEventException(ResourceDeleted::class);
         }
     }
 }
