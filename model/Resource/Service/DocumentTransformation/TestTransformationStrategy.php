@@ -62,8 +62,6 @@ class TestTransformationStrategy implements DocumentTransformationStrategy
     ): IndexDocument {
         $body = $indexDocument->getBody();
 
-        $this->logger->info("body: ".var_export($body,true));
-
         if (!$this->isTestType($body['type'])) {
             return $indexDocument;
         }
@@ -103,35 +101,18 @@ class TestTransformationStrategy implements DocumentTransformationStrategy
         $this->logger->info(
             sprintf("%s: id: %s", self::class, var_export($id, true))
         );
-        $this->logger->info(
-            sprintf("%s: body: %s", self::class, var_export($body, true))
-        );
-        $this->logger->info(
-            sprintf("%s: idxProp: %s",
-                self::class, var_export($indexesProperties, true)
-            )
-        );
-        $this->logger->info(
-            sprintf("%s: accessProp: %s",
-                self::class, var_export($accessProperties, true)
-            )
-        );
-        $this->logger->info(
-            sprintf("%s: dynProp: %s",
-                self::class, var_export($dynamicProperties, true)
-            )
-        );
 
         // Add a new property for referenced items (in the same level as
         // label, class, parent classes, etc)
         //
         $body['referenced_resources'] = $this->getReferencedResources($items);
 
-        $this->logger->info(
+        $this->logger->debug(
             sprintf(
-                '%s: referenced_resources = %s',
+                '%s: id=%s new body=%s',
                 self::class,
-                var_export($body['referenced_resources'], true)
+                $id,
+                var_export($body, true)
             )
         );
 
@@ -150,16 +131,10 @@ class TestTransformationStrategy implements DocumentTransformationStrategy
         foreach ($items as $item) {
             assert($item instanceof core_kernel_classes_Resource);
 
-            $this->logger->info("item: ".$item->getUri());
             $itemURIs[] = $item->getUri();
         }
 
-        $this->logger->info("before: ". var_export($itemURIs,true));
-
         // Remove duplicates *and* reindex the array to have sequential offsets
-        $itemURIs = array_values(array_unique($itemURIs));
-        $this->logger->info("after:  ". var_export($itemURIs,true));
-
-        return $itemURIs;
+        return array_values(array_unique($itemURIs));
     }
 }
