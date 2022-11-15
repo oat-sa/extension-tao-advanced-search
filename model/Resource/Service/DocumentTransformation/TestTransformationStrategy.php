@@ -27,6 +27,8 @@ use oat\tao\model\search\SearchInterface;
 use oat\tao\model\TaoOntology;
 use Psr\Log\LoggerInterface;
 use taoQtiTest_models_classes_QtiTestService;
+use ArrayIterator;
+use Iterator;
 
 class TestTransformationStrategy implements DocumentTransformationStrategy
 {
@@ -34,10 +36,10 @@ class TestTransformationStrategy implements DocumentTransformationStrategy
     private $logger;
 
     /** @var IndexDocumentBuilderInterface */
-    private $indexDocumentBuilder;
+    private $indexDocumentBuilder; // @todo It may be removed
 
     /** @var SearchInterface */
-    private $searchService;
+    private $searchService; // @todo It may be removed
 
     /** @var taoQtiTest_models_classes_QtiTestService */
     private $qtiTestService;
@@ -80,7 +82,11 @@ class TestTransformationStrategy implements DocumentTransformationStrategy
 
     private function isTestType($type): bool
     {
-        return (in_array(TaoOntology::CLASS_URI_TEST, $type));
+        return in_array(
+            TaoOntology::CLASS_URI_TEST,
+            is_array($type) ? $type : [$type],
+            true
+        );
     }
 
     private function addItems(IndexDocument $doc, array $items): IndexDocument
@@ -94,25 +100,40 @@ class TestTransformationStrategy implements DocumentTransformationStrategy
         $accessProperties = $doc->getAccessProperties();
         $dynamicProperties = $doc->getDynamicProperties();
 
-        $itemURIs = [];
-        foreach ($items as $item) {
-            assert($item instanceof core_kernel_classes_Resource);
-
-            $this->logger->info("item: ".$item->getUri());
-            $itemURIs[] = $item->getUri();
-        }
-
-        $this->logger->info("item: ".$item->getUri());
-        $this->logger->info("id: " . var_export($id, true));
-        $this->logger->info("body: " . var_export($body, true));
-        $this->logger->info("idxProp: " . var_export($indexesProperties, true));
-        //$this->logger->info("accessProp: " . var_export($accessProperties, true));
-        $this->logger->info("dynProp: " . var_export($dynamicProperties, true));
+        $this->logger->info(
+            sprintf("%s: id: %s", self::class, var_export($id, true))
+        );
+        $this->logger->info(
+            sprintf("%s: body: %s", self::class, var_export($body, true))
+        );
+        $this->logger->info(
+            sprintf("%s: idxProp: %s",
+                self::class, var_export($indexesProperties, true)
+            )
+        );
+        $this->logger->info(
+            sprintf("%s: accessProp: %s",
+                self::class, var_export($accessProperties, true)
+            )
+        );
+        $this->logger->info(
+            sprintf("%s: dynProp: %s",
+                self::class, var_export($dynamicProperties, true)
+            )
+        );
 
         // Add a new property for referenced items (in the same level as
         // label, class, parent classes, etc)
         //
-        $body['referencedItems'] = $itemURIs;
+        $body['referenced_resources'] = $this->getReferencedResources($items);
+
+        $this->logger->info(
+            sprintf(
+                '%s: referenced_resources = %s',
+                self::class,
+                var_export($body['referenced_resources'], true)
+            )
+        );
 
         return new IndexDocument(
             $id,
@@ -121,5 +142,24 @@ class TestTransformationStrategy implements DocumentTransformationStrategy
             $dynamicProperties,
             $accessProperties
         );
+    }
+
+    private function getReferencedResources(array $items): array
+    {
+        $itemURIs = [];
+        foreach ($items as $item) {
+            assert($item instanceof core_kernel_classes_Resource);
+
+            $this->logger->info("item: ".$item->getUri());
+            $itemURIs[] = $item->getUri();
+        }
+
+        $this->logger->info("before: ". var_export($itemURIs,true));
+
+        // Remove duplicates *and* reindex the array to have sequential offsets
+        $itemURIs = array_values(array_unique($itemURIs));
+        $this->logger->info("after:  ". var_export($itemURIs,true));
+
+        return $itemURIs;
     }
 }
