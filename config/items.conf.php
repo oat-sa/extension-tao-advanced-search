@@ -77,6 +77,9 @@ return [
                     'type' => 'keyword',
                     'ignore_above' => 256,
                 ],
+                'referenced_resources' => [
+                    'type' => 'keyword',
+                ],
             ],
             'dynamic_templates' => require __DIR__ . '/dynamic-templates.conf.php',
         ],
