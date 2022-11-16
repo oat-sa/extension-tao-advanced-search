@@ -22,14 +22,19 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\Index\ServiceProvider;
 
+use oat\generis\model\data\event\ResourceDeleted;
+use oat\generis\model\data\event\ResourceUpdated;
 use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
 use oat\oatbox\log\LoggerService;
+use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilder;
+use oat\tao\model\search\SearchProxy;
+use oat\taoAdvancedSearch\model\Index\Handler\ResourceDeletedHandler;
+use oat\taoAdvancedSearch\model\Index\Handler\ResourceUpdatedHandler;
+use oat\taoAdvancedSearch\model\Index\Handler\TestUpdatedHandler;
 use oat\taoAdvancedSearch\model\Index\Listener\AgnosticEventListener;
-use oat\taoAdvancedSearch\model\Index\Listener\HandlerMap;
-use oat\taoAdvancedSearch\model\Metadata\Specification\PropertyAllowedSpecification;
 use oat\taoAdvancedSearch\model\Resource\Service\ResourceIndexationProcessor;
+use oat\taoTests\models\event\TestUpdatedEvent;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
-use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 /**
@@ -39,26 +44,43 @@ class IndexServiceProvider implements ContainerServiceProviderInterface
 {
     public function __invoke(ContainerConfigurator $configurator): void
     {
-        // $this->setParameters($configurator);
-
         $services = $configurator->services();
 
-        $services->set(HandlerMap::class, HandlerMap::class)
-            ->args(
-                [
-                    // Mappings: Event => [Handlers]
-                    [
+        $services->set(ResourceUpdatedHandler::class, ResourceUpdatedHandler::class)
+            ->args([
+                service(LoggerService::SERVICE_ID),
+                service(IndexDocumentBuilder::class),
+                service(SearchProxy::SERVICE_ID)
+            ]);
 
-                    ]
-                ]
-            )->private();
+        $services->set(ResourceDeletedHandler::class, ResourceDeletedHandler::class)
+            ->args([
+                service(LoggerService::SERVICE_ID),
+                service(ResourceIndexationProcessor::class),
+            ]);
+
+        $services->set(TestUpdatedHandler::class, TestUpdatedHandler::class)
+            ->args([
+                service(LoggerService::SERVICE_ID),
+                service(IndexDocumentBuilder::class),
+                service(SearchProxy::SERVICE_ID)
+            ]);
 
         $services->set(AgnosticEventListener::class, AgnosticEventListener::class)
             ->args(
                 [
-                    service(HandlerMap::class),
-                    service(ResourceIndexationProcessor::class),
                     service(LoggerService::SERVICE_ID),
+                    [
+                        ResourceUpdated::class => [
+                            service(ResourceUpdatedHandler::class)
+                        ],
+                        ResourceDeleted::class => [
+                            service(ResourceDeletedHandler::class)
+                        ],
+                        TestUpdatedEvent::class => [
+                            service(TestUpdatedHandler::class)
+                        ]
+                    ]
                 ]
             )->public();
     }

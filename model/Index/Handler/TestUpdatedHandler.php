@@ -18,39 +18,30 @@
  * Copyright (c) 2022 (original work) Open Assessment Technologies SA.
  */
 
-namespace oat\taoAdvancedSearch\model\Resource\Service;
+namespace oat\taoAdvancedSearch\model\Index\Handler;
 
+use common_exception_Error;
 use core_kernel_classes_Resource;
+use oat\oatbox\event\Event;
 use oat\oatbox\service\ServiceManager;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
-use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\search\SearchInterface;
-use oat\taoAdvancedSearch\model\Index\Service\IndexerInterface;
+use oat\taoAdvancedSearch\model\Metadata\Listener\UnsupportedEventException;
 use oat\taoAdvancedSearch\model\Resource\Service\DocumentTransformation\TestTransformationStrategy;
+use oat\taoAdvancedSearch\model\Resource\Service\ResourceIndexationProcessor;
+use oat\taoTests\models\event\TestUpdatedEvent;
 use Psr\Log\LoggerInterface;
-// @todo Add a dependency to taoQtiTest in composer.json
-use taoQtiTest_models_classes_QtiTestService;
-use Throwable;
 
-/**
- * @todo Remove this class and rely only in "Handlers"
- * @todo Find a better name for this?
- *
- * @todo UpdateResourceInIndex from TAO Core calls directly
- *       $this->getSearchProxy()->index(), we'll likely need changes in Core to
- *       call this instead (that task just creates the doc with the document
- *       builder and then passes it to the search proxy)
- */
-class ResourceIndexationProcessor implements IndexerInterface
+class TestUpdatedHandler implements EventHandlerInterface
 {
     /** @var LoggerInterface */
     private $logger;
 
-    /** @var IndexDocumentBuilderInterface */
-    private $indexDocumentBuilder;
-
     /** @var SearchInterface */
     private $searchService;
+
+    /** @var IndexDocumentBuilderInterface */
+    private $indexDocumentBuilder;
 
     /** @var DocumentTransformationStrategy[] */
     private $transformations = [];
@@ -61,16 +52,31 @@ class ResourceIndexationProcessor implements IndexerInterface
         SearchInterface $searchService
     ) {
         $this->logger = $logger;
+        //$this->processor = $processor;
         $this->indexDocumentBuilder = $indexDocumentBuilder;
         $this->searchService = $searchService;
 
-        // @todo Pass them directly by IoD
         // @todo Remove "transformations" (merge them into the handlers)
         $this->transformations = [
             ServiceManager::getServiceManager()->getContainer()->get(
                 TestTransformationStrategy::class
             )
         ];
+    }
+
+    /**
+     * @throws UnsupportedEventException
+     * @throws common_exception_Error
+     */
+    public function handle(Event $event): void
+    {
+        $this->logger->info(self::class.' called');
+
+        $this->assertIsTestUpdatedEvent($event);
+
+        // @todo Use DI for all services
+
+        $this->addIndex(self::getResourceForEvent($event));
     }
 
     public function addIndex($resource): void
@@ -105,6 +111,7 @@ class ResourceIndexationProcessor implements IndexerInterface
             $resource
         );
 
+        // @todo Get rid of "transformations"
         foreach ($this->transformations as $strategy) {
             $this->logger->debug(
                 sprintf('Applying transformation: %s', get_class($strategy))
@@ -157,5 +164,30 @@ class ResourceIndexationProcessor implements IndexerInterface
                 $exception->getMessage()
             )
         );
+    }
+
+    /**
+     * @throws UnsupportedEventException
+     */
+    private function assertIsTestUpdatedEvent(Event $event): void
+    {
+        if (!($event instanceof TestUpdatedEvent)) {
+            throw new UnsupportedEventException(TestUpdatedEvent::class);
+        }
+    }
+
+    /**
+     * @throws common_exception_Error
+     */
+    private static function getResourceForEvent(TestUpdatedEvent $event)
+                                                : core_kernel_classes_Resource
+    {
+        $eventData = json_decode(json_encode($event->jsonSerialize()));
+
+        if (empty($eventData->testUri)) {
+            throw new RuntimeException('Missing testUri');
+        }
+
+        return new core_kernel_classes_Resource($eventData->testUri);
     }
 }

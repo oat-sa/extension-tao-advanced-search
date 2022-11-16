@@ -18,39 +18,28 @@
  * Copyright (c) 2022 (original work) Open Assessment Technologies SA.
  */
 
-namespace oat\taoAdvancedSearch\model\Resource\Service;
+namespace oat\taoAdvancedSearch\model\Index\Handler;
 
 use core_kernel_classes_Resource;
+use oat\generis\model\data\event\ResourceUpdated;
+use oat\oatbox\event\Event;
 use oat\oatbox\service\ServiceManager;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
-use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\search\SearchInterface;
-use oat\taoAdvancedSearch\model\Index\Service\IndexerInterface;
+use oat\taoAdvancedSearch\model\Metadata\Listener\UnsupportedEventException;
 use oat\taoAdvancedSearch\model\Resource\Service\DocumentTransformation\TestTransformationStrategy;
 use Psr\Log\LoggerInterface;
-// @todo Add a dependency to taoQtiTest in composer.json
-use taoQtiTest_models_classes_QtiTestService;
-use Throwable;
 
-/**
- * @todo Remove this class and rely only in "Handlers"
- * @todo Find a better name for this?
- *
- * @todo UpdateResourceInIndex from TAO Core calls directly
- *       $this->getSearchProxy()->index(), we'll likely need changes in Core to
- *       call this instead (that task just creates the doc with the document
- *       builder and then passes it to the search proxy)
- */
-class ResourceIndexationProcessor implements IndexerInterface
+class ResourceUpdatedHandler implements EventHandlerInterface
 {
     /** @var LoggerInterface */
     private $logger;
 
-    /** @var IndexDocumentBuilderInterface */
-    private $indexDocumentBuilder;
-
     /** @var SearchInterface */
     private $searchService;
+
+    /** @var IndexDocumentBuilderInterface */
+    private $indexDocumentBuilder;
 
     /** @var DocumentTransformationStrategy[] */
     private $transformations = [];
@@ -64,7 +53,6 @@ class ResourceIndexationProcessor implements IndexerInterface
         $this->indexDocumentBuilder = $indexDocumentBuilder;
         $this->searchService = $searchService;
 
-        // @todo Pass them directly by IoD
         // @todo Remove "transformations" (merge them into the handlers)
         $this->transformations = [
             ServiceManager::getServiceManager()->getContainer()->get(
@@ -73,7 +61,21 @@ class ResourceIndexationProcessor implements IndexerInterface
         ];
     }
 
-    public function addIndex($resource): void
+    /**
+     * @throws UnsupportedEventException
+     */
+    public function handle(Event $event): void
+    {
+        $this->logger->info(self::class.' called');
+
+        $this->assertIsResourceUpdatedEvent($event);
+
+        $this->addIndex($event->getResource());
+
+
+    }
+
+    private function addIndex($resource): void
     {
         try {
             $totalIndexed = $this->searchService->index(
@@ -105,6 +107,7 @@ class ResourceIndexationProcessor implements IndexerInterface
             $resource
         );
 
+        // @todo Get rid of "transformations"
         foreach ($this->transformations as $strategy) {
             $this->logger->debug(
                 sprintf('Applying transformation: %s', get_class($strategy))
@@ -116,22 +119,7 @@ class ResourceIndexationProcessor implements IndexerInterface
         return $document;
     }
 
-    /*private function getService(string $id)
-    {
-        return ServiceManager::getServiceManager()->getContainer()->get($id);
-    }
-
-    private function getQtiTestService(): taoQtiTest_models_classes_QtiTestService
-    {
-        /**
-         * @fixme use DI
-         * /
-        return ServiceManager::getServiceManager()->get(
-            taoQtiTest_models_classes_QtiTestService::class
-        );
-    }*/
-
-    private function logWarning(
+        private function logWarning(
         core_kernel_classes_Resource $resource,
         int $totalIndexed
     ): void {
@@ -158,4 +146,16 @@ class ResourceIndexationProcessor implements IndexerInterface
             )
         );
     }
+
+    /**
+     * @throws UnsupportedEventException
+     */
+    private function assertIsResourceUpdatedEvent($event): void
+    {
+        if (!($event instanceof ResourceUpdated)) {
+            throw new UnsupportedEventException(ResourceUpdated::class);
+        }
+    }
+
+
 }

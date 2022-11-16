@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,17 +18,11 @@
  * Copyright (c) 2022 (original work) Open Assessment Technologies SA.
  */
 
-namespace oat\taoAdvancedSearch\model\Index\Listener;
+namespace oat\taoAdvancedSearch\model\Index\Handler;
 
-class HandlerMap
+use oat\oatbox\event\Event;
+
+interface EventHandlerInterface
 {
-    public function __construct(array $map)
-    {
-
-    }
-
-    public function getEventHandlers($event): array
-    {
-        return [];
-    }
+    public function handle(Event $event): void;
 }

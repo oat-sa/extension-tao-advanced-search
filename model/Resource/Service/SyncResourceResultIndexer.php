@@ -33,6 +33,8 @@ class SyncResourceResultIndexer extends ConfigurableService implements IndexerIn
 {
     use OntologyAwareTrait;
 
+    // @todo How can we know from here which "Handler" shall we call if there is
+    //       no "processor" to dispatch the resoruce types anymore?
     public function addIndex($resource): void
     {
         // Not called? Called just from cmdline indexer?
@@ -41,7 +43,6 @@ class SyncResourceResultIndexer extends ConfigurableService implements IndexerIn
     }
     private function getProcessor(): ResourceIndexationProcessor
     {
-
         return $this->getServiceManager()->getContainer()->get(
             ResourceIndexationProcessor::class
         );
