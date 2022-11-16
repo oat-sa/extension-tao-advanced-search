@@ -24,6 +24,7 @@ use common_exception_Error;
 use core_kernel_classes_Resource;
 use oat\oatbox\event\Event;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
+use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\search\SearchInterface;
 use oat\taoAdvancedSearch\model\Metadata\Listener\UnsupportedEventException;
 use oat\taoTests\models\event\TestUpdatedEvent;
