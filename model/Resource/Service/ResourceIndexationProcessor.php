@@ -26,7 +26,7 @@ use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\search\SearchInterface;
 use oat\taoAdvancedSearch\model\Index\Service\IndexerInterface;
-use oat\taoAdvancedSearch\model\Resource\Service\DocumentTransformation\TestTransformationStrategy;
+/*use oat\taoAdvancedSearch\model\Resource\Service\DocumentTransformation\TestTransformationStrategy;*/
 use Psr\Log\LoggerInterface;
 // @todo Add a dependency to taoQtiTest in composer.json
 use taoQtiTest_models_classes_QtiTestService;
@@ -53,7 +53,7 @@ class ResourceIndexationProcessor implements IndexerInterface
     private $searchService;
 
     /** @var DocumentTransformationStrategy[] */
-    private $transformations = [];
+    //private $transformations = [];
 
     public function __construct(
         LoggerInterface $logger,
@@ -66,11 +66,11 @@ class ResourceIndexationProcessor implements IndexerInterface
 
         // @todo Pass them directly by IoD
         // @todo Remove "transformations" (merge them into the handlers)
-        $this->transformations = [
+        /*$this->transformations = [
             ServiceManager::getServiceManager()->getContainer()->get(
                 TestTransformationStrategy::class
             )
-        ];
+        ];*/
     }
 
     public function addIndex($resource): void
@@ -105,13 +105,16 @@ class ResourceIndexationProcessor implements IndexerInterface
             $resource
         );
 
-        foreach ($this->transformations as $strategy) {
+        // @todo Retest/Ensure the new fields are still there for all cases
+        //       they were added prior to the refactor
+
+        /*foreach ($this->transformations as $strategy) {
             $this->logger->debug(
                 sprintf('Applying transformation: %s', get_class($strategy))
             );
 
             $document = $strategy->transform($resource, $document);
-        }
+        }*/
 
         return $document;
     }

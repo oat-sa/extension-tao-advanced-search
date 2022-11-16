@@ -23,14 +23,12 @@ namespace oat\taoAdvancedSearch\model\Index\Handler;
 use common_exception_Error;
 use core_kernel_classes_Resource;
 use oat\oatbox\event\Event;
-use oat\oatbox\service\ServiceManager;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\SearchInterface;
 use oat\taoAdvancedSearch\model\Metadata\Listener\UnsupportedEventException;
-use oat\taoAdvancedSearch\model\Resource\Service\DocumentTransformation\TestTransformationStrategy;
-use oat\taoAdvancedSearch\model\Resource\Service\ResourceIndexationProcessor;
 use oat\taoTests\models\event\TestUpdatedEvent;
 use Psr\Log\LoggerInterface;
+use taoQtiTest_models_classes_QtiTestService;
 
 class TestUpdatedHandler implements EventHandlerInterface
 {
@@ -43,25 +41,19 @@ class TestUpdatedHandler implements EventHandlerInterface
     /** @var IndexDocumentBuilderInterface */
     private $indexDocumentBuilder;
 
-    /** @var DocumentTransformationStrategy[] */
-    private $transformations = [];
+    /** @var taoQtiTest_models_classes_QtiTestService */
+    private $qtiTestService;
 
     public function __construct(
         LoggerInterface $logger,
         IndexDocumentBuilderInterface $indexDocumentBuilder,
-        SearchInterface $searchService
+        SearchInterface $searchService,
+        taoQtiTest_models_classes_QtiTestService $qtiTestService
     ) {
         $this->logger = $logger;
-        //$this->processor = $processor;
         $this->indexDocumentBuilder = $indexDocumentBuilder;
         $this->searchService = $searchService;
-
-        // @todo Remove "transformations" (merge them into the handlers)
-        $this->transformations = [
-            ServiceManager::getServiceManager()->getContainer()->get(
-                TestTransformationStrategy::class
-            )
-        ];
+        $this->qtiTestService = $qtiTestService;
     }
 
     /**
@@ -111,32 +103,90 @@ class TestUpdatedHandler implements EventHandlerInterface
             $resource
         );
 
-        // @todo Get rid of "transformations"
-        foreach ($this->transformations as $strategy) {
-            $this->logger->debug(
-                sprintf('Applying transformation: %s', get_class($strategy))
-            );
+        return $this->transform($resource, $document);
+    }
 
-            $document = $strategy->transform($resource, $document);
+    private function transform(
+        core_kernel_classes_Resource $resource,
+        IndexDocument $indexDocument
+    ): IndexDocument {
+        $body = $indexDocument->getBody();
+
+        if (!$this->isTestType($body['type'])) {
+            return $indexDocument;
         }
 
-        return $document;
-    }
-
-    /*private function getService(string $id)
-    {
-        return ServiceManager::getServiceManager()->getContainer()->get($id);
-    }
-
-    private function getQtiTestService(): taoQtiTest_models_classes_QtiTestService
-    {
-        /**
-         * @fixme use DI
-         * /
-        return ServiceManager::getServiceManager()->get(
-            taoQtiTest_models_classes_QtiTestService::class
+        $this->logger->info(
+            "Resource is a test, we'll need to extract its related Items"
         );
-    }*/
+
+        // Get the resources associated with the items of the tests. Item URIs
+        // come from tao-qtitestdefinition.xml file associated with the test.
+        //
+        $items = $this->qtiTestService->getItems($resource);
+
+        return $this->addItems($indexDocument, $items);
+    }
+
+    private function isTestType($type): bool
+    {
+        return in_array(
+            TaoOntology::CLASS_URI_TEST,
+            is_array($type) ? $type : [$type],
+            true
+        );
+    }
+
+    private function addItems(IndexDocument $doc, array $items): IndexDocument
+    {
+        // IndexDocument is a ValueObject from Core: We need to rebuild it
+        // with the additional properties
+        //
+        $id = $doc->getId();
+        $body = $doc->getBody();
+        $indexesProperties = $doc->getIndexProperties();
+        $accessProperties = $doc->getAccessProperties();
+        $dynamicProperties = $doc->getDynamicProperties();
+
+        $this->logger->info(
+            sprintf("%s: id: %s", self::class, var_export($id, true))
+        );
+
+        // Add a new property for referenced items (in the same level as
+        // label, class, parent classes, etc)
+        //
+        $body['referenced_resources'] = $this->getReferencedResources($items);
+
+        $this->logger->debug(
+            sprintf(
+                '%s: id=%s new body=%s',
+                self::class,
+                $id,
+                var_export($body, true)
+            )
+        );
+
+        return new IndexDocument(
+            $id,
+            $body,
+            $indexesProperties,
+            $dynamicProperties,
+            $accessProperties
+        );
+    }
+
+    private function getReferencedResources(array $items): array
+    {
+        $itemURIs = [];
+        foreach ($items as $item) {
+            assert($item instanceof core_kernel_classes_Resource);
+
+            $itemURIs[] = $item->getUri();
+        }
+
+        // Remove duplicates *and* reindex the array to have sequential offsets
+        return array_values(array_unique($itemURIs));
+    }
 
     private function logWarning(
         core_kernel_classes_Resource $resource,

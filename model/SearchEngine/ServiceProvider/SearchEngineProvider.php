@@ -92,14 +92,6 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
             ->factory([service(ElasticSearchClientFactory::class), 'create'])
             ->public();
 
-        $services->set(TestTransformationStrategy::class, TestTransformationStrategy::class)
-            ->args([
-                service(LoggerService::SERVICE_ID),
-                service(taoQtiTest_models_classes_QtiTestService::class),
-            ])
-            ->tag('tao.advancedsearch.document.transformation')
-            ->public();
-
         $services->set(ElasticSearch::class, ElasticSearch::class)
             ->args(
                 [

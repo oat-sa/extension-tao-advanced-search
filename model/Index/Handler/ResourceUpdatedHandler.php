@@ -23,11 +23,9 @@ namespace oat\taoAdvancedSearch\model\Index\Handler;
 use core_kernel_classes_Resource;
 use oat\generis\model\data\event\ResourceUpdated;
 use oat\oatbox\event\Event;
-use oat\oatbox\service\ServiceManager;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\SearchInterface;
 use oat\taoAdvancedSearch\model\Metadata\Listener\UnsupportedEventException;
-use oat\taoAdvancedSearch\model\Resource\Service\DocumentTransformation\TestTransformationStrategy;
 use Psr\Log\LoggerInterface;
 
 class ResourceUpdatedHandler implements EventHandlerInterface
@@ -41,9 +39,6 @@ class ResourceUpdatedHandler implements EventHandlerInterface
     /** @var IndexDocumentBuilderInterface */
     private $indexDocumentBuilder;
 
-    /** @var DocumentTransformationStrategy[] */
-    private $transformations = [];
-
     public function __construct(
         LoggerInterface $logger,
         IndexDocumentBuilderInterface $indexDocumentBuilder,
@@ -52,13 +47,6 @@ class ResourceUpdatedHandler implements EventHandlerInterface
         $this->logger = $logger;
         $this->indexDocumentBuilder = $indexDocumentBuilder;
         $this->searchService = $searchService;
-
-        // @todo Remove "transformations" (merge them into the handlers)
-        $this->transformations = [
-            ServiceManager::getServiceManager()->getContainer()->get(
-                TestTransformationStrategy::class
-            )
-        ];
     }
 
     /**
@@ -71,8 +59,6 @@ class ResourceUpdatedHandler implements EventHandlerInterface
         $this->assertIsResourceUpdatedEvent($event);
 
         $this->addIndex($event->getResource());
-
-
     }
 
     private function addIndex($resource): void
@@ -107,19 +93,12 @@ class ResourceUpdatedHandler implements EventHandlerInterface
             $resource
         );
 
-        // @todo Get rid of "transformations"
-        foreach ($this->transformations as $strategy) {
-            $this->logger->debug(
-                sprintf('Applying transformation: %s', get_class($strategy))
-            );
-
-            $document = $strategy->transform($resource, $document);
-        }
+        // @todo Check resource type and inject additional info if needed
 
         return $document;
     }
 
-        private function logWarning(
+    private function logWarning(
         core_kernel_classes_Resource $resource,
         int $totalIndexed
     ): void {
@@ -156,6 +135,4 @@ class ResourceUpdatedHandler implements EventHandlerInterface
             throw new UnsupportedEventException(ResourceUpdated::class);
         }
     }
-
-
 }

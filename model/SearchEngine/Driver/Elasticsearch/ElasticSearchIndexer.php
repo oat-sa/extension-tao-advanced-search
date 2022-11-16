@@ -228,7 +228,7 @@ class ElasticSearchIndexer implements IndexerInterface
         // Apply transformations
         // @todo IoD
         //
-        $transformations = [
+        /*$transformations = [
             new TestTransformationStrategy(
                 $this->logger,
                 $this->getQtiTestService()
@@ -243,7 +243,10 @@ class ElasticSearchIndexer implements IndexerInterface
             );
 
             $document = $strategy->transform($resource, $document);
-        }
+        }*/
+
+        // @todo Find a way to include the new fields here (or check if
+        //       other layers have already added them)
 
         $params['body'][] = [
             $action => [
@@ -279,15 +282,15 @@ class ElasticSearchIndexer implements IndexerInterface
         return $params;
     }
 
-    private function getQtiTestService(): taoQtiTest_models_classes_QtiTestService
+    /*private function getQtiTestService(): taoQtiTest_models_classes_QtiTestService
     {
         return $this->getService(taoQtiTest_models_classes_QtiTestService::class);
-    }
+    }*/
 
     /**
      * @fixme use DI
      */
-    private function getService(string $serviceId)
+    /*private function getService(string $serviceId)
     {
         return ServiceManager::getServiceManager()->get($serviceId);
     }
@@ -300,5 +303,5 @@ class ElasticSearchIndexer implements IndexerInterface
     private function getSearchService(): SearchInterface
     {
         return $this->getService(SearchProxy::SERVICE_ID);
-    }
+    }*/
 }

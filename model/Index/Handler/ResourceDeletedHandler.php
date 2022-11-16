@@ -23,7 +23,6 @@ namespace oat\taoAdvancedSearch\model\Index\Handler;
 use oat\generis\model\data\event\ResourceDeleted;
 use oat\oatbox\event\Event;
 use oat\taoAdvancedSearch\model\Metadata\Listener\UnsupportedEventException;
-use oat\taoAdvancedSearch\model\Resource\Service\ResourceIndexationProcessor;
 use Psr\Log\LoggerInterface;
 
 class ResourceDeletedHandler implements EventHandlerInterface
@@ -31,15 +30,10 @@ class ResourceDeletedHandler implements EventHandlerInterface
     /** @var LoggerInterface */
     private $logger;
 
-    /** @var ResourceIndexationProcessor */
-    private $processor;
-
     public function __construct(
-        LoggerInterface $logger,
-        ResourceIndexationProcessor $processor
+        LoggerInterface $logger
     ) {
         $this->logger = $logger;
-        $this->processor = $processor;
     }
 
     /**
@@ -56,7 +50,6 @@ class ResourceDeletedHandler implements EventHandlerInterface
         // @todo Reomve the resource URI from all resources in index holding a
         //       reference to its URI
         // $this->resourceIndexer->addIndex(...);
-
     }
 
     /**

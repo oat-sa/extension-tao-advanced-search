@@ -32,8 +32,8 @@ use oat\taoAdvancedSearch\model\Index\Handler\ResourceDeletedHandler;
 use oat\taoAdvancedSearch\model\Index\Handler\ResourceUpdatedHandler;
 use oat\taoAdvancedSearch\model\Index\Handler\TestUpdatedHandler;
 use oat\taoAdvancedSearch\model\Index\Listener\AgnosticEventListener;
-use oat\taoAdvancedSearch\model\Resource\Service\ResourceIndexationProcessor;
 use oat\taoTests\models\event\TestUpdatedEvent;
+use taoQtiTest_models_classes_QtiTestService;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
@@ -56,14 +56,14 @@ class IndexServiceProvider implements ContainerServiceProviderInterface
         $services->set(ResourceDeletedHandler::class, ResourceDeletedHandler::class)
             ->args([
                 service(LoggerService::SERVICE_ID),
-                service(ResourceIndexationProcessor::class),
             ]);
 
         $services->set(TestUpdatedHandler::class, TestUpdatedHandler::class)
             ->args([
                 service(LoggerService::SERVICE_ID),
                 service(IndexDocumentBuilder::class),
-                service(SearchProxy::SERVICE_ID)
+                service(SearchProxy::SERVICE_ID),
+                service(taoQtiTest_models_classes_QtiTestService::class),
             ]);
 
         $services->set(AgnosticEventListener::class, AgnosticEventListener::class)
