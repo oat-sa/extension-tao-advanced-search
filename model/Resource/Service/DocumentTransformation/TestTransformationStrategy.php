@@ -21,38 +21,24 @@
 namespace oat\taoAdvancedSearch\model\Resource\Service\DocumentTransformation;
 
 use core_kernel_classes_Resource;
-use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
-use oat\tao\model\search\SearchInterface;
 use oat\tao\model\TaoOntology;
 use Psr\Log\LoggerInterface;
 use taoQtiTest_models_classes_QtiTestService;
-use ArrayIterator;
-use Iterator;
 
 class TestTransformationStrategy implements DocumentTransformationStrategy
 {
     /** @var LoggerInterface */
     private $logger;
 
-    /** @var IndexDocumentBuilderInterface */
-    private $indexDocumentBuilder; // @todo It may be removed
-
-    /** @var SearchInterface */
-    private $searchService; // @todo It may be removed
-
     /** @var taoQtiTest_models_classes_QtiTestService */
     private $qtiTestService;
 
     public function __construct(
         LoggerInterface $logger,
-        IndexDocumentBuilderInterface $indexDocumentBuilder,
-        SearchInterface $searchService,
         taoQtiTest_models_classes_QtiTestService $qtiTestService
     ) {
         $this->logger = $logger;
-        $this->indexDocumentBuilder = $indexDocumentBuilder;
-        $this->searchService = $searchService;
         $this->qtiTestService = $qtiTestService;
     }
 

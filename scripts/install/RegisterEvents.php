@@ -37,8 +37,8 @@ use oat\taoAdvancedSearch\model\Metadata\Listener\ClassMovedListener;
 use oat\taoAdvancedSearch\model\Metadata\Listener\MetadataChangedListener;
 use oat\taoAdvancedSearch\model\Metadata\Listener\MetadataInheritanceListener;
 use oat\taoAdvancedSearch\model\Metadata\Listener\MetadataListener;
-use oat\taoAdvancedSearch\model\Metadata\Listener\ResourceUpdatedListener;
 use oat\taoAdvancedSearch\model\Metadata\Service\ListSavedEventListener;
+use oat\taoTests\models\event\TestUpdatedEvent;
 
 class RegisterEvents extends InstallAction
 {
@@ -100,27 +100,26 @@ class RegisterEvents extends InstallAction
             ]
         );
 
-        // @todo This also needs a migration
         $eventManager->attach(
             ResourceUpdated::class,
             [
-                ResourceUpdatedListener::class,
+                AgnosticEventListener::class,
                 'listen'
             ]
         );
-        /*//initially the test is empty
-         * / @todo What happens when a test is imported? Do we call create or update?
-         * $eventManager->attach(
-            ResourceCreated::class,
-            [
-                ResourceUpdatedListener::class,
-                'listen'
-            ]
-        );*/
+
         $eventManager->attach(
             ResourceDeleted::class,
             [
-                ResourceUpdatedListener::class, // @fixme
+                AgnosticEventListener::class,
+                'listen'
+            ]
+        );
+
+        $eventManager->attach(
+            TestUpdatedEvent::class,
+            [
+                AgnosticEventListener::class,
                 'listen'
             ]
         );

@@ -24,10 +24,6 @@ namespace oat\taoAdvancedSearch\model\Resource\Service;
 
 use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\service\ConfigurableService;
-use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
-use oat\tao\model\search\index\IndexService;
-use oat\tao\model\search\SearchInterface;
-use oat\tao\model\search\SearchProxy;
 use oat\taoAdvancedSearch\model\Index\Service\IndexerInterface;
 
 /**
@@ -40,35 +36,14 @@ class SyncResourceResultIndexer extends ConfigurableService implements IndexerIn
     public function addIndex($resource): void
     {
         // Not called? Called just from cmdline indexer?
-        $this->logInfo("Hello from SyncResourceResultIndexer");
+        $this->logInfo("SyncResourceResultIndexer called");
         $this->getProcessor()->addIndex($resource);
     }
-
-    // @todo Should be obtained through the container / IoD
     private function getProcessor(): ResourceIndexationProcessor
     {
-        return new ResourceIndexationProcessor(
-            $this->getLogger(),
-            $this->getDocumentBuilder(),
-            $this->getSearch()
+
+        return $this->getServiceManager()->getContainer()->get(
+            ResourceIndexationProcessor::class
         );
-    }
-
-    private function getSearch(): SearchInterface
-    {
-        return $this->getServiceLocator()->get(SearchProxy::SERVICE_ID);
-    }
-
-    private function getDocumentBuilder(): IndexDocumentBuilderInterface
-    {
-        $documentBuilder = $this->getIndexerService()->getDocumentBuilder();
-        $this->propagate($documentBuilder);
-
-        return $documentBuilder;
-    }
-
-    private function getIndexerService(): IndexService
-    {
-        return $this->getServiceLocator()->get(IndexService::SERVICE_ID);
     }
 }

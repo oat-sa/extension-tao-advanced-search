@@ -231,8 +231,6 @@ class ElasticSearchIndexer implements IndexerInterface
         $transformations = [
             new TestTransformationStrategy(
                 $this->logger,
-                $this->getDocumentBuilder(),
-                $this->getSearchService(),
                 $this->getQtiTestService()
             )
         ];

@@ -27,9 +27,7 @@ use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\search\SearchInterface;
 use oat\taoAdvancedSearch\model\Index\Service\IndexerInterface;
 use oat\taoAdvancedSearch\model\Resource\Service\DocumentTransformation\TestTransformationStrategy;
-use oat\taoQtiTest\models\QtiTestUtils;
 use Psr\Log\LoggerInterface;
-use qtism\data\AssessmentTest;
 // @todo Add a dependency to taoQtiTest in composer.json
 use taoQtiTest_models_classes_QtiTestService;
 use Throwable;
@@ -53,9 +51,7 @@ class ResourceIndexationProcessor implements IndexerInterface
     /** @var SearchInterface */
     private $searchService;
 
-    /**
-     * @var array
-     */
+    /** @var DocumentTransformationStrategy[] */
     private $transformations = [];
 
     public function __construct(
@@ -67,13 +63,10 @@ class ResourceIndexationProcessor implements IndexerInterface
         $this->indexDocumentBuilder = $indexDocumentBuilder;
         $this->searchService = $searchService;
 
-        // @todo May be passed by IoD
+        // @todo Pass them directly by IoD
         $this->transformations = [
-            new TestTransformationStrategy(
-                $this->logger,
-                $this->indexDocumentBuilder,
-                $this->searchService,
-                $this->getQtiTestService()
+            ServiceManager::getServiceManager()->getContainer()->get(
+                TestTransformationStrategy::class
             )
         ];
     }
@@ -121,28 +114,20 @@ class ResourceIndexationProcessor implements IndexerInterface
         return $document;
     }
 
-    public function getTestDefinition($qtiTestCompilation): AssessmentTest
+    /*private function getService(string $id)
     {
-        return $this->getQtiTestUtils()->getTestDefinition($qtiTestCompilation);
+        return ServiceManager::getServiceManager()->getContainer()->get($id);
     }
 
     private function getQtiTestService(): taoQtiTest_models_classes_QtiTestService
     {
-        return $this->getService(taoQtiTest_models_classes_QtiTestService::class);
-    }
-
-    private function getQtiTestUtils(): QtiTestUtils
-    {
-        return $this->getService(QtiTestUtils::SERVICE_ID);
-    }
-
-    /**
-     * @fixme use DI
-     */
-    private function getService(string $serviceId)
-    {
-        return ServiceManager::getServiceManager()->get($serviceId);
-    }
+        /**
+         * @fixme use DI
+         * /
+        return ServiceManager::getServiceManager()->get(
+            taoQtiTest_models_classes_QtiTestService::class
+        );
+    }*/
 
     private function logWarning(
         core_kernel_classes_Resource $resource,
