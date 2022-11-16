@@ -28,7 +28,6 @@ use oat\tao\model\search\index\IndexDocument;
 use Elasticsearch\Client;
 use oat\tao\model\search\SearchInterface;
 use oat\tao\model\search\SearchProxy;
-use oat\taoAdvancedSearch\model\Resource\Service\DocumentTransformation\TestTransformationStrategy;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use Psr\Log\LoggerInterface;

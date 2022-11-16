@@ -128,6 +128,7 @@ class TestUpdatedHandler implements EventHandlerInterface
         return $this->addItems($indexDocument, $items);
     }
 
+    // @todo Maybe we can just let qtiTestService to decide if it is in fact a test or not
     private function isTestType($type): bool
     {
         return in_array(
