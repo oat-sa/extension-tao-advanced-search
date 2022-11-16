@@ -83,5 +83,10 @@ class IndexServiceProvider implements ContainerServiceProviderInterface
                     ]
                 ]
             )->public();
+
+        $services->set(ResourceOperationAdapter::class, ResourceOperationAdapter::class)
+            ->args([
+                service(AgnosticEventListener::class)
+            ]);
     }
 }
