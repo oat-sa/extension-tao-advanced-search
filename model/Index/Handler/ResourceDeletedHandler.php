@@ -47,7 +47,7 @@ class ResourceDeletedHandler implements EventHandlerInterface
 
         $this->assertIsResourceDeletedEvent($event);
 
-        // @todo Reomve the resource URI from all resources in index holding a
+        // @todo Remove the resource URI from all resources in index holding a
         //       reference to its URI
         // $this->resourceIndexer->addIndex(...);
     }

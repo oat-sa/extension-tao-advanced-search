@@ -22,15 +22,16 @@ declare(strict_types = 1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\Index\Listener;
 
+use oat\generis\model\data\event\ResourceDeleted;
 use oat\generis\model\data\event\ResourceUpdated;
 use oat\oatbox\log\LoggerService;
 use oat\tao\model\media\MediaAsset;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
-use oat\tao\model\search\index\IndexService;
 use oat\tao\model\search\SearchInterface;
 use oat\taoAdvancedSearch\model\Index\Handler\ResourceUpdatedHandler;
 use oat\taoAdvancedSearch\model\Index\Specification\ItemResourceSpecification;
+use oat\taoAdvancedSearch\model\Metadata\Listener\UnsupportedEventException;
 use oat\taoItems\model\media\ItemMediaResolver;
 use oat\taoQtiItem\model\qti\container\ContainerItemBody;
 use oat\taoQtiItem\model\qti\interaction\MediaInteraction;
@@ -97,9 +98,13 @@ class ResourceUpdatedHandlerTest extends TestCase
         $this->qtiItemBodyMock = $this->createMock(ContainerItemBody::class);
         $this->mediaResolver = $this->createMock(ItemMediaResolver::class);
 
-        $this->indexDocumentBuilder = $this->createMock(IndexDocumentBuilderInterface::class);
+        $this->indexDocumentBuilder = $this->createMock(
+            IndexDocumentBuilderInterface::class
+        );
 
-        $this->itemSpecification = $this->createMock(ItemResourceSpecification::class);
+        $this->itemSpecification = $this->createMock(
+            ItemResourceSpecification::class
+        );
 
         $this->sut = new ResourceUpdatedHandler(
             $this->createMock(LoggerService::class),
@@ -111,12 +116,19 @@ class ResourceUpdatedHandlerTest extends TestCase
 
         $this->event = $this->createMock(ResourceUpdated::class);
         $this->event
-            ->expects($this->once())
             ->method('getResource')
             ->willReturn($this->resource);
     }
 
-    public function testHandle(): void
+    public function testRejectsUnsupportedEvents(): void
+    {
+        $this->expectException(UnsupportedEventException::class);
+
+        $this->event = $this->createMock(ResourceDeleted::class);
+        $this->sut->handle($this->event);
+    }
+
+    public function testHandleItem(): void
     {
         $this->document
             ->method('getBody')
@@ -206,9 +218,6 @@ class ResourceUpdatedHandlerTest extends TestCase
                 $this->fail('Unexpected Object URI: ' . $data);
             });
 
-        // The document is rebuilt with a new body, so we cannot compare with
-        // the instance provided by createDocumentFromResource()
-        //
         $this->search
             ->expects($this->once())
             ->method('index')
@@ -225,6 +234,59 @@ class ResourceUpdatedHandlerTest extends TestCase
                         'http://resources/referenced/1',
                         'http://resources/referenced/2',
                     ],
+                    $documents[0]->getBody()['referenced_resources']
+                );
+
+                return 1;
+            });
+
+        $this->sut->handle($this->event);
+    }
+
+    public function testHandleNonItem(): void
+    {
+        $this->document
+            ->method('getBody')
+            ->willReturn([
+                'type' => 'resource-type'
+            ]);
+
+        $this->itemSpecification
+            ->expects($this->once())
+            ->method('isSatisfiedBy')
+            ->with($this->resource)
+            ->willReturn(false);
+
+        $this->indexDocumentBuilder
+            ->expects($this->once())
+            ->method('createDocumentFromResource')
+            ->with($this->resource)
+            ->willReturn($this->document);
+
+        $this->qtiService
+              ->expects($this->never())
+              ->method('getDataItemByRdfItem');
+
+        $this->qtiItemBodyMock
+              ->expects($this->never())
+              ->method('getElements');
+
+        $this->mediaResolver
+              ->expects($this->never())
+              ->method('resolve');
+
+        $this->search
+            ->expects($this->once())
+            ->method('index')
+            ->willReturnCallback(function (array $documents) {
+                /** @var $documents IndexDocument[] */
+
+                $this->assertCount(1, $documents);
+                $this->assertEquals(
+                    'resource-type',
+                    $documents[0]->getBody()['type']
+                );
+                $this->assertEmpty(
                     $documents[0]->getBody()['referenced_resources']
                 );
 
