@@ -23,13 +23,13 @@ namespace oat\taoAdvancedSearch\model\Index\Handler;
 use common_Exception;
 use common_exception_Error;
 use core_kernel_classes_Resource;
-use oat\generis\model\data\event\ResourceUpdated;
 use oat\oatbox\event\Event;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\search\SearchInterface;
 use oat\taoTests\models\event\TestUpdatedEvent;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use taoQtiTest_models_classes_QtiTestService;
 use taoQtiTest_models_classes_QtiTestServiceException;
 
@@ -48,7 +48,7 @@ class TestUpdatedHandler extends AbstractEventHandler
             $logger,
             $indexDocumentBuilder,
             $searchService,
-            [ResourceUpdated::class]
+            [TestUpdatedEvent::class]
         );
 
         $this->qtiTestService = $qtiTestService;
