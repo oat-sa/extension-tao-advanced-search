@@ -45,12 +45,16 @@ class ResourceUpdatedHandler extends AbstractEventHandler
     /** @var QtiService */
     private $qtiService;
 
+    /** @var ItemMediaResolver|null */
+    private $resolver;
+
     public function __construct(
         LoggerInterface $logger,
         IndexDocumentBuilderInterface $indexDocumentBuilder,
         SearchInterface $searchService,
         ItemResourceSpecification $itemSpecification,
-        QtiService $qtiService
+        QtiService $qtiService,
+        ItemMediaResolver $resolver = null
     ) {
         parent::__construct(
             $logger,
@@ -61,6 +65,7 @@ class ResourceUpdatedHandler extends AbstractEventHandler
 
         $this->itemSpecification = $itemSpecification;
         $this->qtiService = $qtiService;
+        $this->resolver = $resolver;
     }
 
     protected function getResource(Event $event): core_kernel_classes_Resource
@@ -73,7 +78,7 @@ class ResourceUpdatedHandler extends AbstractEventHandler
      * @throws common_exception_InconsistentData
      * @throws common_Exception
      */
-    public function doHandle(
+    protected function doHandle(
         Event $event,
         core_kernel_classes_Resource $resource
     ): void {
@@ -138,7 +143,7 @@ class ResourceUpdatedHandler extends AbstractEventHandler
     private function getResourceURIsFromItem(
         core_kernel_classes_Resource $resource
     ): array {
-        $resolver = $this->getResolver($resource);
+        $resolver = $this->resolver ?? $this->buildResolver($resource);
         if ($resolver === null) {
             return [];
         }
@@ -160,7 +165,7 @@ class ResourceUpdatedHandler extends AbstractEventHandler
         return array_values(array_unique($mediaURIs));
     }
 
-    private function getResolver(
+    private function buildResolver(
         core_kernel_classes_Resource $resource
     ): ?ItemMediaResolver {
         if (!class_exists(ItemMediaResolver::class)) {

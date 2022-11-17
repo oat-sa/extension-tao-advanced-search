@@ -33,6 +33,7 @@ use PHPUnit\Framework\MockObject\Builder\InvocationMocker;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Log\LoggerInterface;
 
+// @todo We may be able to extend the std base test instead of Generis class now
 class AgnosticEventListenerTest extends TestCase
 {
     private const EVENT1_NAME = 'Event1';

@@ -73,7 +73,7 @@ class TestUpdatedHandler extends AbstractEventHandler
      * @throws common_Exception
      * @throws taoQtiTest_models_classes_QtiTestServiceException
      */
-    public function doHandle(
+    protected function doHandle(
         Event $event,
         core_kernel_classes_Resource $resource
     ): void {
