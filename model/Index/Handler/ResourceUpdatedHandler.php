@@ -20,119 +20,171 @@
 
 namespace oat\taoAdvancedSearch\model\Index\Handler;
 
+use common_Exception;
+use common_exception_InconsistentData;
 use core_kernel_classes_Resource;
+use Exception;
 use oat\generis\model\data\event\ResourceUpdated;
 use oat\oatbox\event\Event;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
+use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\search\SearchInterface;
-use oat\taoAdvancedSearch\model\Metadata\Listener\UnsupportedEventException;
+use oat\taoAdvancedSearch\model\Index\Specification\ItemResourceSpecification;
+use oat\taoItems\model\media\ItemMediaResolver;
+use oat\taoQtiItem\model\qti\interaction\MediaInteraction;
+use oat\taoQtiItem\model\qti\Service as QtiService;
 use Psr\Log\LoggerInterface;
+use tao_helpers_Uri;
+use Throwable;
 
-class ResourceUpdatedHandler implements EventHandlerInterface
+class ResourceUpdatedHandler extends AbstractEventHandler
 {
-    /** @var LoggerInterface */
-    private $logger;
+    /** @var ItemResourceSpecification */
+    private $itemSpecification;
 
-    /** @var SearchInterface */
-    private $searchService;
-
-    /** @var IndexDocumentBuilderInterface */
-    private $indexDocumentBuilder;
+    /** @var QtiService */
+    private $qtiService;
 
     public function __construct(
         LoggerInterface $logger,
         IndexDocumentBuilderInterface $indexDocumentBuilder,
-        SearchInterface $searchService
+        SearchInterface $searchService,
+        ItemResourceSpecification $itemSpecification,
+        QtiService $qtiService
     ) {
-        $this->logger = $logger;
-        $this->indexDocumentBuilder = $indexDocumentBuilder;
-        $this->searchService = $searchService;
+        parent::__construct(
+            $logger,
+            $indexDocumentBuilder,
+            $searchService,
+            [ResourceUpdated::class]
+        );
+
+        $this->itemSpecification = $itemSpecification;
+        $this->qtiService = $qtiService;
+    }
+
+    protected function getResource(Event $event): core_kernel_classes_Resource
+    {
+        /** @var $event ResourceUpdated */
+        return $event->getResource();
     }
 
     /**
-     * @throws UnsupportedEventException
+     * @throws common_exception_InconsistentData
+     * @throws common_Exception
      */
-    public function handle(Event $event): void
-    {
-        $this->logger->info(self::class.' called');
+    public function doHandle(
+        Event $event,
+        core_kernel_classes_Resource $resource
+    ): void {
+        $doc = $this->getDocumentFor($resource);
+        $totalIndexed = $this->searchService->index([$doc]);
 
-        $this->assertIsResourceUpdatedEvent($event);
-
-        $this->addIndex($event->getResource());
-    }
-
-    private function addIndex($resource): void
-    {
-        try {
-            $totalIndexed = $this->searchService->index(
-                [
-                    $this->getDocumentFor($resource)
-                ]
-            );
-
-            if ($totalIndexed < 1) {
-                $this->logWarning($resource, $totalIndexed);
-            }
-        } catch (Throwable $exception) {
-            $this->logException($resource, $exception);
+        if ($totalIndexed < 1) {
+            $this->logResourceNotIndexed($resource, $totalIndexed);
         }
     }
 
+    /**
+     * @throws common_exception_InconsistentData
+     * @throws common_Exception
+     */
     private function getDocumentFor(
         core_kernel_classes_Resource $resource
     ): IndexDocument {
         $this->logger->debug(
             sprintf(
-                'Preparing data to index, resource = %s',
+                '%s: Preparing data to index, resource = %s',
+                self::class,
                 $resource->getUri()
             )
         );
 
-        // Index Document Builder is from Core
         $document = $this->indexDocumentBuilder->createDocumentFromResource(
             $resource
         );
 
-        // @todo Check resource type and inject additional info if needed
-
-        return $document;
-    }
-
-    private function logWarning(
-        core_kernel_classes_Resource $resource,
-        int $totalIndexed
-    ): void {
-        $this->logger->warning(
-            sprintf(
-                'Could not index resource %s (%s): totalIndexed=%d',
-                $resource->getLabel(),
-                $resource->getUri(),
-                $totalIndexed
-            )
-        );
-    }
-
-    private function logException(
-        core_kernel_classes_Resource $resource,
-        Throwable $exception
-    ): void {
-        $this->logger->error(
-            sprintf(
-                'Could not index resource %s (%s). Error: %s',
-                $resource->getLabel(),
-                $resource->getUri(),
-                $exception->getMessage()
-            )
+        return new IndexDocument(
+            $document->getId(),
+            $this->getBody($document, $resource),
+            $document->getIndexProperties(),
+            $document->getDynamicProperties(),
+            $document->getAccessProperties()
         );
     }
 
     /**
-     * @throws UnsupportedEventException
+     * @throws common_Exception
      */
-    private function assertIsResourceUpdatedEvent($event): void
-    {
-        if (!($event instanceof ResourceUpdated)) {
-            throw new UnsupportedEventException(ResourceUpdated::class);
+    private function getBody(
+        IndexDocument $document,
+        core_kernel_classes_Resource $resource
+    ): array {
+        $references = [];
+
+        if ($this->itemSpecification->isSatisfiedBy($resource)) {
+            $references = $this->getResourceURIsFromItem($resource);
         }
+
+        $body = $document->getBody();
+        $body['referenced_resources'] = $references;
+
+        return $body;
+    }
+
+    /**
+     * @throws common_Exception
+     */
+    private function getResourceURIsFromItem(
+        core_kernel_classes_Resource $resource
+    ): array {
+        $resolver = $this->getResolver($resource);
+        if ($resolver === null) {
+            return [];
+        }
+
+        $mediaURIs = [];
+        $qtiItem = $this->qtiService->getDataItemByRdfItem($resource);
+
+        foreach ($qtiItem->getBody()->getElements() as $element) {
+            if ($element instanceof MediaInteraction) {
+                try {
+                    $mediaURIs[] = $this->extractMediaURI($resolver, $element);
+                } catch (Throwable $e) {
+                    $this->logger->warning('Unable to extract media URI');
+                }
+            }
+        }
+
+        // Remove duplicates *and* reindex the array to have sequential offsets
+        return array_values(array_unique($mediaURIs));
+    }
+
+    private function getResolver(
+        core_kernel_classes_Resource $resource
+    ): ?ItemMediaResolver {
+        if (!class_exists(ItemMediaResolver::class)) {
+            $this->logger->debug('ItemMediaResolver not available');
+            return null;
+        }
+
+        return new ItemMediaResolver($resource, '');
+    }
+
+    /**
+     * @throws Exception if the associated media URI is malformed
+     */
+    private function extractMediaURI(
+        ItemMediaResolver $resolver,
+        MediaInteraction $interaction
+    ): ?string {
+        $data = trim($interaction->getObject()->getAttributeValue('data'));
+        if (empty($data)) {
+            return null;
+        }
+
+        return tao_helpers_Uri::decode(
+            $resolver->resolve($data)->getMediaIdentifier()
+        );
     }
 }
