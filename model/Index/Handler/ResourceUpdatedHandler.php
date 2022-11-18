@@ -85,9 +85,19 @@ class ResourceUpdatedHandler extends AbstractEventHandler
         $doc = $this->getDocumentFor($resource);
         $totalIndexed = $this->searchService->index([$doc]);
 
+        $this->logger->critical(
+            sprintf(
+                "Indexed document for resource %s: %s",
+                $resource->getUri(),
+                var_export($doc,true)
+            )
+        );
+
         if ($totalIndexed < 1) {
             $this->logResourceNotIndexed($resource, $totalIndexed);
         }
+
+        // die("STOP");
     }
 
     /**
@@ -132,12 +142,23 @@ class ResourceUpdatedHandler extends AbstractEventHandler
         }
 
         $body = $document->getBody();
+
+        /*if (isset($body['referenced_resources'])) {
+            $this->logger->warning(
+                "There was a prev value for referenced_resources: ".
+                var_export($body['referenced_resources'], true)
+            );
+        }*/
+
         $body['referenced_resources'] = $references;
 
         return $body;
     }
 
     /**
+     * @todo Move this logic under a new service in Core and call it also from
+     *       UpdateResourceInIndex
+     *
      * @throws common_Exception
      */
     private function getResourceURIsFromItem(

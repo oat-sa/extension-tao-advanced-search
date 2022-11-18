@@ -27,6 +27,8 @@ use oat\oatbox\event\Event;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\search\SearchInterface;
+use oat\taoQtiTest\models\event\QtiTestImportEvent;
+use oat\taoTests\models\event\TestImportEvent;
 use oat\taoTests\models\event\TestUpdatedEvent;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -48,7 +50,10 @@ class TestUpdatedHandler extends AbstractEventHandler
             $logger,
             $indexDocumentBuilder,
             $searchService,
-            [TestUpdatedEvent::class]
+            [
+                QtiTestImportEvent::class, // @todo Add it to the unit tests
+                TestUpdatedEvent::class,
+            ]
         );
 
         $this->qtiTestService = $qtiTestService;
@@ -59,7 +64,7 @@ class TestUpdatedHandler extends AbstractEventHandler
      */
     protected function getResource(Event $event): core_kernel_classes_Resource
     {
-        /** @var $event TestUpdatedEvent */
+        /** @var $event TestImportEvent|TestUpdatedEvent */
         $eventData = json_decode(json_encode($event->jsonSerialize()));
 
         if (empty($eventData->testUri)) {
@@ -80,9 +85,21 @@ class TestUpdatedHandler extends AbstractEventHandler
         $doc = $this->getDocumentFor($resource);
         $totalIndexed = $this->searchService->index([$doc]);
 
+        $this->logger->critical(
+            sprintf(
+                "Indexed document for test %s: %s",
+                $resource->getUri(),
+                var_export($doc,true)
+            )
+        );
+
         if ($totalIndexed < 1) {
             $this->logResourceNotIndexed($resource, $totalIndexed);
         }
+
+        // When uncommenting this there is another layer (ResourceWatcher) that
+        // wipes out the "referenced_resources"
+        // die("STOP");
     }
 
     /**

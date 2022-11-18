@@ -30,10 +30,13 @@ use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilder;
 use oat\tao\model\search\SearchProxy;
 use oat\taoAdvancedSearch\model\Index\Handler\ResourceDeletedHandler;
 use oat\taoAdvancedSearch\model\Index\Handler\ResourceUpdatedHandler;
+use oat\taoAdvancedSearch\model\Index\Handler\TestImportHandler;
 use oat\taoAdvancedSearch\model\Index\Handler\TestUpdatedHandler;
 use oat\taoAdvancedSearch\model\Index\Listener\AgnosticEventListener;
 use oat\taoAdvancedSearch\model\Index\Specification\ItemResourceSpecification;
 use oat\taoQtiItem\model\qti\Service as QtiService;
+use oat\taoQtiTest\models\event\QtiTestImportEvent;
+use oat\taoTests\models\event\TestImportEvent;
 use oat\taoTests\models\event\TestUpdatedEvent;
 use taoQtiTest_models_classes_QtiTestService;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -50,6 +53,11 @@ class IndexServiceProvider implements ContainerServiceProviderInterface
 
         $services->set(ItemResourceSpecification::class, ItemResourceSpecification::class);
 
+        $services->set(ResourceDeletedHandler::class, ResourceDeletedHandler::class)
+            ->args([
+                service(LoggerService::SERVICE_ID),
+            ]);
+
         $services->set(ResourceUpdatedHandler::class, ResourceUpdatedHandler::class)
             ->args([
                 service(LoggerService::SERVICE_ID),
@@ -59,12 +67,15 @@ class IndexServiceProvider implements ContainerServiceProviderInterface
                 service(QtiService::class),
             ]);
 
-        $services->set(ResourceDeletedHandler::class, ResourceDeletedHandler::class)
+        $services->set(TestUpdatedHandler::class, TestUpdatedHandler::class)
             ->args([
                 service(LoggerService::SERVICE_ID),
+                service(IndexDocumentBuilder::class),
+                service(SearchProxy::SERVICE_ID),
+                service(taoQtiTest_models_classes_QtiTestService::class),
             ]);
 
-        $services->set(TestUpdatedHandler::class, TestUpdatedHandler::class)
+        $services->set(TestImportHandler::class, TestImportHandler::class)
             ->args([
                 service(LoggerService::SERVICE_ID),
                 service(IndexDocumentBuilder::class),
@@ -78,12 +89,15 @@ class IndexServiceProvider implements ContainerServiceProviderInterface
                     service(LoggerService::SERVICE_ID),
                     [
                         ResourceUpdated::class => [
-                            service(ResourceUpdatedHandler::class)
+                            //service(ResourceUpdatedHandler::class)
                         ],
                         ResourceDeleted::class => [
                             service(ResourceDeletedHandler::class)
                         ],
                         TestUpdatedEvent::class => [
+                            service(TestUpdatedHandler::class)
+                        ],
+                        QtiTestImportEvent::class => [
                             service(TestUpdatedHandler::class)
                         ]
                     ]

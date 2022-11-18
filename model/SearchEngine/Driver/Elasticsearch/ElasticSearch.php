@@ -114,6 +114,78 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
         return $this->buildResultSet($this->client->search($query));
     }
 
+    /**
+     * @fixme Duplicated from QueryBuilder
+     *
+     *        The index name is held in the QueryBuilder,
+     *        we may need to make it public or move there the code that makes
+     *        use of this method.
+     */
+    private function getIndexByType(string $type): string
+    {
+        if (isset(QueryBuilder::STRUCTURE_TO_INDEX_MAP[$type])) {
+            return $this->prefixer->prefix(
+                QueryBuilder::STRUCTURE_TO_INDEX_MAP[$type]
+            );
+        }
+
+        return IndexerInterface::UNCLASSIFIEDS_DOCUMENTS_INDEX;
+    }
+
+    public function queryByDocumentId(string $id, $type): SearchResult // ResultSet
+    {
+        $query = [
+            'index' => $this->getIndexByType($type),
+            'size' => 1,
+            'from' => 0,
+            'client' => ['ignore' => 404],
+            'body' => json_encode([
+                'query' => [
+                    'ids' => [
+                        'values' => [
+                            $id
+                        ]
+                    ]
+                ]
+            ])
+        ];
+
+        $this->logger->debug(
+            sprintf('Elasticsearch Query %s', json_encode($query))
+        );
+
+        $result = $this->client->search($query);
+        $this->logger->debug(
+            sprintf('searchResult = %s', json_encode($result)). ' '.
+            sprintf('is_array = %s', is_array($result) ? 't' : 'f')
+        );
+
+        return $this->buildResultSet($result);
+        /*return $this->searchResultNormalizer->normalizeByByResultSet(
+            $this->buildResultSet($result)
+        );*/
+
+        /*$hasAllKeys = isset(
+            $result['hits']['total']['value'],
+            $result['hits']['total']['relation'],
+            $result['hits']['hits'][0]['_id']
+        );
+
+        if (!$hasAllKeys
+            || ($result['hits']['total']['value'] != 1)
+            || ($result['hits']['total']['relation'] != 'eq')
+            || ($result['hits']['hits'][0]['_id'] != $id)
+        ) {
+            $this->logger->warning(
+                'Got a malformed response from Elasticsearch'
+            );
+
+            return false;
+        }
+
+        return true;*/
+    }
+
     public function query($queryString, $type, $start = 0, $count = 10, $order = '_id', $dir = 'DESC'): ResultSet
     {
         if ($order == 'id') {
@@ -122,6 +194,13 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
 
         try {
             $query = $this->queryBuilder->getSearchParams($queryString, $type, $start, $count, $order, $dir);
+
+            $this->logger->critical(
+                sprintf(
+                    'type is %s, ', $type
+                )
+            );
+
             $this->logger->debug(sprintf('Elasticsearch Query %s', json_encode($query)));
 
             return $this->searchResultNormalizer->normalizeByByResultSet(
