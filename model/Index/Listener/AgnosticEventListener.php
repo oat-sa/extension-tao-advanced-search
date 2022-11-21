@@ -61,7 +61,7 @@ class AgnosticEventListener implements ListenerInterface
         }
     }
 
-    /**.
+    /**
      * @throws UnsupportedEventException
      */
     private function assertIsSupportedEvent(string $eventClass): void
