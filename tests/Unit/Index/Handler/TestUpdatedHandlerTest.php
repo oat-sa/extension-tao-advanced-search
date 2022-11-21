@@ -29,8 +29,8 @@ use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\search\SearchInterface;
 use oat\taoAdvancedSearch\model\Index\Handler\TestUpdatedHandler;
+use oat\taoAdvancedSearch\model\Index\Service\ResourceReferencesService;
 use oat\taoAdvancedSearch\model\Metadata\Listener\UnsupportedEventException;
-use oat\taoQtiItem\model\qti\Item as QtiItem;
 use taoQtiTest_models_classes_QtiTestService as QtiTestService;
 use core_kernel_classes_Resource;
 use oat\taoTests\models\event\TestUpdatedEvent;
@@ -55,42 +55,32 @@ class TestUpdatedHandlerTest extends TestCase
     /** @var SearchInterface|MockObject */
     private $indexDocumentBuilder;
 
-    /** @var QtiItem[]|MockObject[] */
-    private $qtiItems;
-
     /** @var QtiTestService|MockObject */
     private $qtiTestService;
+
+    /** @var ResourceReferencesService|MockObject */
+    private $referencesService;
 
     public function setUp(): void
     {
         $this->search = $this->createMock(SearchInterface::class);
         $this->document = $this->createMock(IndexDocument::class);
         $this->event = $this->createMock(TestUpdatedEvent::class);
-
-        $this->item1 = $this->createMock(core_kernel_classes_Resource::class);
-        $this->item1
-            ->method('getUri')
-            ->willReturn('http://item/1');
-        $this->item2 = $this->createMock(core_kernel_classes_Resource::class);
-        $this->item2
-            ->method('getUri')
-            ->willReturn('http://item/2');
-
         $this->qtiTestService = $this->createMock(QtiTestService::class);
-        $this->qtiItems = [
-            $this->item1,
-            $this->item2,
-        ];
 
         $this->indexDocumentBuilder = $this->createMock(
             IndexDocumentBuilderInterface::class
+        );
+        $this->referencesService = $this->createMock(
+            ResourceReferencesService::class
         );
 
         $this->sut = new TestUpdatedHandler(
             $this->createMock(LoggerService::class),
             $this->indexDocumentBuilder,
             $this->search,
-            $this->qtiTestService
+            $this->qtiTestService,
+            $this->referencesService
         );
     }
 
@@ -134,7 +124,7 @@ class TestUpdatedHandlerTest extends TestCase
 
         $this->document
               ->method('getId')
-              ->willReturn('docId');
+              ->willReturn('documentId');
         $this->document
               ->method('getIndexProperties')
               ->willReturn([]);
@@ -159,19 +149,17 @@ class TestUpdatedHandlerTest extends TestCase
                 $this->fail('Unexpected resource URI: ' . $resource->getUri());
             });
 
-        $this->qtiTestService
+        $this->referencesService
             ->expects($this->once())
-            ->method('getItems')
-            ->willReturnCallback(function ($resource) {
-                if (!$resource instanceof core_kernel_classes_Resource) {
-                    $this->fail('Unexpected non-resource parameter');
-                }
-                if ($resource->getUri() === 'http://test/uri') {
-                    return $this->qtiItems;
-                }
-
-                $this->fail('Unexpected resource URI: ' . $resource->getUri());
-            });
+            ->method('getBodyWithReferences')
+            ->with($this->anything(), $this->document)
+            ->willReturn([
+                'type' => 'resource-type',
+                ResourceReferencesService::REFERENCES_KEY => [
+                    'http://item/1',
+                    'http://item/2',
+                ]
+            ]);
 
         $this->search
             ->expects($this->once())

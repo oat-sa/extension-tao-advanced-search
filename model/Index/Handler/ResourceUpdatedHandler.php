@@ -23,38 +23,24 @@ namespace oat\taoAdvancedSearch\model\Index\Handler;
 use common_Exception;
 use common_exception_InconsistentData;
 use core_kernel_classes_Resource;
-use Exception;
 use oat\generis\model\data\event\ResourceUpdated;
 use oat\oatbox\event\Event;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\search\SearchInterface;
-use oat\taoAdvancedSearch\model\Index\Specification\ItemResourceSpecification;
-use oat\taoItems\model\media\ItemMediaResolver;
-use oat\taoQtiItem\model\qti\interaction\MediaInteraction;
-use oat\taoQtiItem\model\qti\Service as QtiService;
+use oat\taoAdvancedSearch\model\Index\Service\ResourceReferencesService;
 use Psr\Log\LoggerInterface;
-use tao_helpers_Uri;
-use Throwable;
 
 class ResourceUpdatedHandler extends AbstractEventHandler
 {
-    /** @var ItemResourceSpecification */
-    private $itemSpecification;
-
-    /** @var QtiService */
-    private $qtiService;
-
-    /** @var ItemMediaResolver|null */
-    private $resolver;
+    /** @var ResourceReferencesService */
+    private $referencesService;
 
     public function __construct(
         LoggerInterface $logger,
         IndexDocumentBuilderInterface $indexDocumentBuilder,
         SearchInterface $searchService,
-        ItemResourceSpecification $itemSpecification,
-        QtiService $qtiService,
-        ItemMediaResolver $resolver = null
+        ResourceReferencesService $referencesService
     ) {
         parent::__construct(
             $logger,
@@ -63,9 +49,7 @@ class ResourceUpdatedHandler extends AbstractEventHandler
             [ResourceUpdated::class]
         );
 
-        $this->itemSpecification = $itemSpecification;
-        $this->qtiService = $qtiService;
-        $this->resolver = $resolver;
+        $this->referencesService = $referencesService;
     }
 
     protected function getResource(Event $event): core_kernel_classes_Resource
@@ -82,135 +66,32 @@ class ResourceUpdatedHandler extends AbstractEventHandler
         Event $event,
         core_kernel_classes_Resource $resource
     ): void {
-        $doc = $this->getDocumentFor($resource);
-        $totalIndexed = $this->searchService->index([$doc]);
-
-        $this->logger->critical(
-            sprintf(
-                "Indexed document for resource %s: %s",
-                $resource->getUri(),
-                var_export($doc,true)
-            )
+        $totalIndexed = $this->searchService->index(
+            [
+                $this->getDocument($resource)
+            ]
         );
 
         if ($totalIndexed < 1) {
             $this->logResourceNotIndexed($resource, $totalIndexed);
         }
-
-        // die("STOP");
     }
 
     /**
      * @throws common_exception_InconsistentData
      * @throws common_Exception
      */
-    private function getDocumentFor(
+    private function getDocument(
         core_kernel_classes_Resource $resource
     ): IndexDocument {
-        $this->logger->debug(
-            sprintf(
-                '%s: Preparing data to index, resource = %s',
-                self::class,
-                $resource->getUri()
-            )
-        );
-
-        $document = $this->indexDocumentBuilder->createDocumentFromResource(
-            $resource
-        );
+        $document = $this->documentBuilder->createDocumentFromResource($resource);
 
         return new IndexDocument(
             $document->getId(),
-            $this->getBody($document, $resource),
+            $this->referencesService->getBodyWithReferences($resource, $document),
             $document->getIndexProperties(),
             $document->getDynamicProperties(),
             $document->getAccessProperties()
-        );
-    }
-
-    /**
-     * @throws common_Exception
-     */
-    private function getBody(
-        IndexDocument $document,
-        core_kernel_classes_Resource $resource
-    ): array {
-        $references = [];
-
-        if ($this->itemSpecification->isSatisfiedBy($resource)) {
-            $references = $this->getResourceURIsFromItem($resource);
-        }
-
-        $body = $document->getBody();
-
-        /*if (isset($body['referenced_resources'])) {
-            $this->logger->warning(
-                "There was a prev value for referenced_resources: ".
-                var_export($body['referenced_resources'], true)
-            );
-        }*/
-
-        $body['referenced_resources'] = $references;
-
-        return $body;
-    }
-
-    /**
-     * @todo Move this logic under a new service in Core and call it also from
-     *       UpdateResourceInIndex
-     *
-     * @throws common_Exception
-     */
-    private function getResourceURIsFromItem(
-        core_kernel_classes_Resource $resource
-    ): array {
-        $resolver = $this->resolver ?? $this->buildResolver($resource);
-        if ($resolver === null) {
-            return [];
-        }
-
-        $mediaURIs = [];
-        $qtiItem = $this->qtiService->getDataItemByRdfItem($resource);
-
-        foreach ($qtiItem->getBody()->getElements() as $element) {
-            if ($element instanceof MediaInteraction) {
-                try {
-                    $mediaURIs[] = $this->extractMediaURI($resolver, $element);
-                } catch (Throwable $e) {
-                    $this->logger->warning('Unable to extract media URI');
-                }
-            }
-        }
-
-        // Remove duplicates *and* reindex the array to have sequential offsets
-        return array_values(array_unique($mediaURIs));
-    }
-
-    private function buildResolver(
-        core_kernel_classes_Resource $resource
-    ): ?ItemMediaResolver {
-        if (!class_exists(ItemMediaResolver::class)) {
-            $this->logger->debug('ItemMediaResolver not available');
-            return null;
-        }
-
-        return new ItemMediaResolver($resource, '');
-    }
-
-    /**
-     * @throws Exception if the associated media URI is malformed
-     */
-    private function extractMediaURI(
-        ItemMediaResolver $resolver,
-        MediaInteraction $interaction
-    ): ?string {
-        $data = trim($interaction->getObject()->getAttributeValue('data'));
-        if (empty($data)) {
-            return null;
-        }
-
-        return tao_helpers_Uri::decode(
-            $resolver->resolve($data)->getMediaIdentifier()
         );
     }
 }

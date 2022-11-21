@@ -36,7 +36,7 @@ abstract class AbstractEventHandler implements EventHandlerInterface
     protected $searchService;
 
     /** @var IndexDocumentBuilderInterface */
-    protected $indexDocumentBuilder;
+    protected $documentBuilder;
 
     /** @var string[] */
     protected $supportedEvents = [];
@@ -48,7 +48,7 @@ abstract class AbstractEventHandler implements EventHandlerInterface
         array $supportedEvents
     ) {
         $this->logger = $logger;
-        $this->indexDocumentBuilder = $indexDocumentBuilder;
+        $this->documentBuilder = $indexDocumentBuilder;
         $this->searchService = $searchService;
         $this->supportedEvents = $supportedEvents;
     }

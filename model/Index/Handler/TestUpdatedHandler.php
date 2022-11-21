@@ -27,6 +27,7 @@ use oat\oatbox\event\Event;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\search\SearchInterface;
+use oat\taoAdvancedSearch\model\Index\Service\ResourceReferencesService;
 use oat\taoQtiTest\models\event\QtiTestImportEvent;
 use oat\taoTests\models\event\TestImportEvent;
 use oat\taoTests\models\event\TestUpdatedEvent;
@@ -40,23 +41,28 @@ class TestUpdatedHandler extends AbstractEventHandler
     /** @var taoQtiTest_models_classes_QtiTestService */
     private $qtiTestService;
 
+    /** @var ResourceReferencesService */
+    private $referencesService;
+
     public function __construct(
         LoggerInterface $logger,
         IndexDocumentBuilderInterface $indexDocumentBuilder,
         SearchInterface $searchService,
-        taoQtiTest_models_classes_QtiTestService $qtiTestService
+        taoQtiTest_models_classes_QtiTestService $qtiTestService,
+        ResourceReferencesService $referencesService
     ) {
         parent::__construct(
             $logger,
             $indexDocumentBuilder,
             $searchService,
             [
-                QtiTestImportEvent::class, // @todo Add it to the unit tests
+                QtiTestImportEvent::class,
                 TestUpdatedEvent::class,
             ]
         );
 
         $this->qtiTestService = $qtiTestService;
+        $this->referencesService = $referencesService;
     }
 
     /**
@@ -96,10 +102,6 @@ class TestUpdatedHandler extends AbstractEventHandler
         if ($totalIndexed < 1) {
             $this->logResourceNotIndexed($resource, $totalIndexed);
         }
-
-        // When uncommenting this there is another layer (ResourceWatcher) that
-        // wipes out the "referenced_resources"
-        // die("STOP");
     }
 
     /**
@@ -109,38 +111,19 @@ class TestUpdatedHandler extends AbstractEventHandler
     private function getDocumentFor(
         core_kernel_classes_Resource $resource
     ): IndexDocument {
-        $document = $this->indexDocumentBuilder->createDocumentFromResource(
+        $document = $this->documentBuilder->createDocumentFromResource(
             $resource
-        );
-
-        // IndexDocument is a ValueObject from Core: We need to rebuild it with
-        // the updated values. Note also that if the resource is not a test,
-        // QtiTestService will throw an exception.
-        //
-        $body = $document->getBody();
-        $body['referenced_resources'] = $this->getReferencedResources(
-            $this->qtiTestService->getItems($resource)
         );
 
         return new IndexDocument(
             $document->getId(),
-            $body,
+            $this->referencesService->getBodyWithReferences(
+                $resource,
+                $document
+            ),
             $document->getIndexProperties(),
             $document->getDynamicProperties(),
             $document->getAccessProperties()
         );
-    }
-
-    private function getReferencedResources(array $items): array
-    {
-        $itemURIs = [];
-        foreach ($items as $item) {
-            assert($item instanceof core_kernel_classes_Resource);
-
-            $itemURIs[] = $item->getUri();
-        }
-
-        // Remove duplicates *and* reindex the array to have sequential offsets
-        return array_values(array_unique($itemURIs));
     }
 }
