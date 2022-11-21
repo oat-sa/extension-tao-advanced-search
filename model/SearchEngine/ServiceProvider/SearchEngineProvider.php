@@ -38,10 +38,8 @@ use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\QueryBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Normalizer\SearchResultNormalizer;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use oat\taoAdvancedSearch\model\SearchEngine\Specification\UseAclSpecification;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
-use taoQtiTest_models_classes_QtiTestService;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 class SearchEngineProvider implements ContainerServiceProviderInterface
