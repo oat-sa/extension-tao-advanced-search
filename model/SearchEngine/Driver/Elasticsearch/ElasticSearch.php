@@ -122,7 +122,6 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
 
         try {
             $query = $this->queryBuilder->getSearchParams($queryString, $type, $start, $count, $order, $dir);
-
             $this->logger->debug(sprintf('Elasticsearch Query %s', json_encode($query)));
 
             return $this->searchResultNormalizer->normalizeByByResultSet(
