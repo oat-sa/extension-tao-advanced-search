@@ -42,7 +42,7 @@ class ResourceDeletedHandler implements EventHandlerInterface
     public function handle(Event $event): void
     {
         $this->logger->info(
-            self::class.'::handleResourceDeletedEvent called'
+            self::class . '::handleResourceDeletedEvent called'
         );
 
         $this->assertIsResourceDeletedEvent($event);

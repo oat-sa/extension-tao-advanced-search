@@ -41,6 +41,7 @@ use oat\taoQtiTest\models\event\QtiTestImportEvent;
 use oat\taoTests\models\event\TestUpdatedEvent;
 use taoQtiTest_models_classes_QtiTestService;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 /**

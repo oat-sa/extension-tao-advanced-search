@@ -56,7 +56,7 @@ abstract class AbstractEventHandler implements EventHandlerInterface
     /**
      * @throws UnsupportedEventException
      */
-    public final function handle(Event $event): void
+    final public function handle(Event $event): void
     {
         $this->assertIsSupportedEvent($event);
 
@@ -68,7 +68,7 @@ abstract class AbstractEventHandler implements EventHandlerInterface
         }
     }
 
-    protected abstract function getResource(
+    abstract protected function getResource(
         Event $event
     ): core_kernel_classes_Resource;
 
@@ -110,8 +110,7 @@ abstract class AbstractEventHandler implements EventHandlerInterface
      */
     protected function assertIsSupportedEvent($event): void
     {
-        foreach ($this->supportedEvents as $eventClass)
-        {
+        foreach ($this->supportedEvents as $eventClass) {
             if ($event instanceof $eventClass) {
                 return;
             }

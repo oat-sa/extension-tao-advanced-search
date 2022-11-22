@@ -110,7 +110,7 @@ class ResourceReferencesService
         $mediaURIs = [];
         if ($this->isA(TaoOntology::CLASS_URI_ITEM, $resource)) {
             $mediaURIs = $this->getResourceURIsForItemAssets($resource);
-        } else if ($this->isA(TaoOntology::CLASS_URI_TEST, $resource)) {
+        } elseif ($this->isA(TaoOntology::CLASS_URI_TEST, $resource)) {
             $mediaURIs = $this->getResourceURIsForTestItems($resource);
         }
 

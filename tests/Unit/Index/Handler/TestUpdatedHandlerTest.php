@@ -18,7 +18,7 @@
  * Copyright (c) 2021-2022 (original work) Open Assessment Technologies SA.
  */
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\Index\Listener;
 
@@ -31,7 +31,6 @@ use oat\tao\model\search\SearchInterface;
 use oat\taoAdvancedSearch\model\Index\Handler\TestUpdatedHandler;
 use oat\taoAdvancedSearch\model\Index\Service\ResourceReferencesService;
 use oat\taoAdvancedSearch\model\Metadata\Listener\UnsupportedEventException;
-use taoQtiTest_models_classes_QtiTestService as QtiTestService;
 use core_kernel_classes_Resource;
 use oat\taoTests\models\event\TestUpdatedEvent;
 use PHPUnit\Framework\MockObject\MockObject;

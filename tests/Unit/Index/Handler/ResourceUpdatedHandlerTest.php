@@ -18,7 +18,7 @@
  * Copyright (c) 2021-2022 (original work) Open Assessment Technologies SA.
  */
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\Index\Listener;
 

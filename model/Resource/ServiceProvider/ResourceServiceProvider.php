@@ -54,7 +54,7 @@ class ResourceServiceProvider implements ContainerServiceProviderInterface
                 [
                     IndexDocumentBuilderFactory::class,
                     'getIndexDocumentBuilder'
-                ])
-            ->private();
+                ]
+            )->private();
     }
 }
