@@ -296,9 +296,6 @@ class ResourceReferenceServiceTest extends TestCase
                 [TaoOntology::CLASS_URI_TEST, $this->testType],
                 [TaoOntology::CLASS_URI_OBJECT, $this->genericType],
             ]);
-            /*->willReturnCallback(function (string $type) {
-                return $this->getClassMethodMock($type);
-            });*/
 
         $this->assertEquals(
             [
