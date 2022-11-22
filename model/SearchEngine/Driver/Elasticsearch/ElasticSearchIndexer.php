@@ -123,11 +123,7 @@ class ElasticSearchIndexer implements IndexerInterface
                 $this->logBatchFlush($this->logger, __METHOD__, $params);
 
                 $response = $this->client->bulk($params);
-                $this->logErrorsFromResponse(
-                    $this->logger,
-                    $document,
-                    $response
-                );
+                $this->logErrorsFromResponse($this->logger, $document, $response);
 
                 $count += $blockSize;
                 $blockSize = 0;
@@ -205,12 +201,8 @@ class ElasticSearchIndexer implements IndexerInterface
         return $document;
     }
 
-    private function extendBatch(
-        string $action,
-        string $indexName,
-        IndexDocument $document,
-        array $params
-    ): array {
+    private function extendBatch(string $action, string $indexName, IndexDocument $document, array $params): array
+    {
         $params['body'][] = [
             $action => [
                 '_index' => $indexName,
