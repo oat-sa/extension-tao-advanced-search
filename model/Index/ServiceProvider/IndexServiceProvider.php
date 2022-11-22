@@ -34,7 +34,6 @@ use oat\taoAdvancedSearch\model\Index\Handler\TestImportHandler;
 use oat\taoAdvancedSearch\model\Index\Handler\TestUpdatedHandler;
 use oat\taoAdvancedSearch\model\Index\Listener\AgnosticEventListener;
 use oat\taoAdvancedSearch\model\Index\Service\ResourceReferencesService;
-use oat\taoAdvancedSearch\model\Index\Specification\ItemResourceSpecification;
 use oat\taoMediaManager\model\relation\repository\rdf\RdfMediaRelationRepository;
 use taoQtiTest_models_classes_QtiTestService as QtiTestService;
 use oat\taoQtiTest\models\event\QtiTestImportEvent;

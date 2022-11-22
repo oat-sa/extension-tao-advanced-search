@@ -23,20 +23,20 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\tests\Unit\Index\Service;
 
 use core_kernel_classes_Class;
+use core_kernel_classes_Resource;
 use oat\generis\model\data\Ontology;
 use oat\oatbox\log\LoggerService;
 use oat\tao\model\resources\relation\ResourceRelation;
 use oat\tao\model\TaoOntology;
 use oat\taoAdvancedSearch\model\Index\Handler\ResourceUpdatedHandler;
 use oat\taoAdvancedSearch\model\Index\Service\ResourceReferencesService;
-use oat\taoAdvancedSearch\model\Index\Specification\ItemResourceSpecification;
 use oat\taoItems\model\media\ItemMediaResolver;
 use oat\taoMediaManager\model\relation\MediaRelation;
 use oat\taoMediaManager\model\relation\MediaRelationCollection;
 use oat\taoMediaManager\model\relation\repository\query\FindAllByTargetQuery;
 use oat\taoMediaManager\model\relation\repository\rdf\RdfMediaRelationRepository;
-use core_kernel_classes_Resource;
 use taoQtiTest_models_classes_QtiTestService as QtiTestService;
+use ArrayIterator;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -137,7 +137,7 @@ class ResourceReferenceServiceTest extends TestCase
         );
         $collection->expects($this->once())
             ->method('getIterator')
-            ->willReturn(new \ArrayIterator([$relation1, $relation2]));
+            ->willReturn(new ArrayIterator([$relation1, $relation2]));
 
         $this->mediaRelationRepository
             ->expects($this->once())
