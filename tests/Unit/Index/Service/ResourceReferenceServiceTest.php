@@ -25,17 +25,16 @@ namespace oat\taoAdvancedSearch\tests\Unit\Index\Service;
 use core_kernel_classes_Class;
 use oat\generis\model\data\Ontology;
 use oat\oatbox\log\LoggerService;
-use oat\tao\model\media\MediaAsset;
+use oat\tao\model\resources\relation\ResourceRelation;
 use oat\tao\model\TaoOntology;
 use oat\taoAdvancedSearch\model\Index\Handler\ResourceUpdatedHandler;
 use oat\taoAdvancedSearch\model\Index\Service\ResourceReferencesService;
 use oat\taoAdvancedSearch\model\Index\Specification\ItemResourceSpecification;
 use oat\taoItems\model\media\ItemMediaResolver;
-use oat\taoQtiItem\model\qti\container\ContainerItemBody;
-use oat\taoQtiItem\model\qti\interaction\MediaInteraction;
-use oat\taoQtiItem\model\qti\interaction\ObjectInteraction;
-use oat\taoQtiItem\model\qti\Item as QtiItem;
-use oat\taoQtiItem\model\qti\Service as QtiItemService;
+use oat\taoMediaManager\model\relation\MediaRelation;
+use oat\taoMediaManager\model\relation\MediaRelationCollection;
+use oat\taoMediaManager\model\relation\repository\query\FindAllByTargetQuery;
+use oat\taoMediaManager\model\relation\repository\rdf\RdfMediaRelationRepository;
 use core_kernel_classes_Resource;
 use taoQtiTest_models_classes_QtiTestService as QtiTestService;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -55,20 +54,8 @@ class ResourceReferenceServiceTest extends TestCase
     /** @var core_kernel_classes_Resource|MockObject */
     private $item2;
 
-    /** @var QtiService|MockObject */
-    private $qtiItemService;
-
     /** @var QtiTestService|MockObject */
     private $qtiTestService;
-
-    /** @var QtiItem|MockObject */
-    private $qtiItem;
-
-    /** @var ContainerItemBody|MockObject */
-    private $qtiItemBodyMock;
-
-    /** @var ItemMediaResolver|MockObject */
-    private $itemMediaResolver;
 
     /** @var core_kernel_classes_Class|MockObject */
     private $itemType;
@@ -76,6 +63,8 @@ class ResourceReferenceServiceTest extends TestCase
     /** @var core_kernel_classes_Class|MockObject */
     private $testType;
 
+    /** @var RdfMediaRelationRepository|MockObject */
+    private $mediaRelationRepository;
 
     public function setUp(): void
     {
@@ -89,22 +78,23 @@ class ResourceReferenceServiceTest extends TestCase
             );
         }
 
-        $this->qtiItemService = $this->createMock(QtiItemService::class);
         $this->qtiTestService = $this->createMock(QtiTestService::class);
-        $this->itemMediaResolver = $this->createMock(ItemMediaResolver::class);
-
         $this->item1 = $this->createMock(core_kernel_classes_Resource::class);
         $this->item2 = $this->createMock(core_kernel_classes_Resource::class);
         $this->resource = $this->createMock(core_kernel_classes_Resource::class);
-        $this->qtiItem = $this->createMock(QtiItem::class);
 
-        $this->qtiItemBodyMock = $this->createMock(ContainerItemBody::class);
+        $this->resource
+            ->method('getUri')
+            ->willReturn('http://resource/id');
+
+        $this->mediaRelationRepository = $this->createMock(
+            RdfMediaRelationRepository::class
+        );
 
         $this->sut = new ResourceReferencesService(
             $this->createMock(LoggerService::class),
-            $this->qtiItemService,
             $this->qtiTestService,
-            $this->itemMediaResolver
+            $this->mediaRelationRepository
         );
 
         $this->itemType = $this->createMock(core_kernel_classes_Class::class);
@@ -130,79 +120,45 @@ class ResourceReferenceServiceTest extends TestCase
 
     public function testGetReferencesForItemAssets(): void
     {
+        $relation1 = $this->createMock(ResourceRelation::class);
+        $relation1
+            ->expects($this->once())
+            ->method('getSourceId')
+            ->willReturn('http://taomedia/asset1');
+
+        $relation2 = $this->createMock(ResourceRelation::class);
+        $relation2
+            ->expects($this->once())
+            ->method('getSourceId')
+            ->willReturn('http://taomedia/asset2');
+
+        $collection = $this->createMock(
+            MediaRelationCollection::class
+        );
+        $collection->expects($this->once())
+            ->method('getIterator')
+            ->willReturn(new \ArrayIterator([$relation1, $relation2]));
+
+        $this->mediaRelationRepository
+            ->expects($this->once())
+            ->method('findAllByTarget')
+            ->willReturnCallback(
+                function (FindAllByTargetQuery $query) use ($collection) {
+                    $this->assertEquals(
+                        'http://resource/id',
+                        $query->getTargetId()
+                    );
+                    $this->assertEquals(
+                        MediaRelation::ITEM_TYPE,
+                        $query->getType()
+                    );
+
+                    return $collection;
+            });
+
         $this->qtiTestService
             ->expects($this->never())
             ->method('getItems');
-
-        $this->qtiItemService
-            ->expects($this->once())
-            ->method('getDataItemByRdfItem')
-            ->with($this->resource)
-            ->willReturn($this->qtiItem);
-
-        $this->qtiItem
-            ->expects($this->once())
-            ->method('getBody')
-            ->willReturn($this->qtiItemBodyMock);
-
-        $object1 = $this->createMock(ObjectInteraction::class);
-        $object1
-            ->expects($this->once())
-            ->method('getAttributeValue')
-            ->willReturnMap([
-                ['data', 'http://resources/referenced/1']
-            ]);
-
-        $object2 = $this->createMock(ObjectInteraction::class);
-        $object2
-            ->expects($this->once())
-            ->method('getAttributeValue')
-            ->willReturnMap([
-                ['data', 'http://resources/referenced/2']
-            ]);
-
-        $interaction1 = $this->createMock(MediaInteraction::class);
-        $interaction1
-            ->expects($this->once())
-            ->method('getObject')
-            ->willReturn($object1);
-
-        $interaction2 = $this->createMock(MediaInteraction::class);
-        $interaction2
-            ->expects($this->once())
-            ->method('getObject')
-            ->willReturn($object2);
-
-        $this->qtiItemBodyMock
-            ->expects($this->once())
-            ->method('getElements')
-            ->willReturn([
-                $interaction1,
-                $interaction2
-            ]);
-
-        $asset1 = $this->createMock(MediaAsset::class);
-        $asset1
-            ->method('getMediaIdentifier')
-            ->willReturn('http://taomedia/asset1');
-
-        $asset2 = $this->createMock(MediaAsset::class);
-        $asset2
-            ->method('getMediaIdentifier')
-            ->willReturn('http://taomedia/asset2');
-
-        $this->itemMediaResolver
-            ->method('resolve')
-            ->willReturnCallback(function ($data) use ($asset1, $asset2) {
-                switch ($data) {
-                    case 'http://resources/referenced/1':
-                        return $asset1;
-                    case 'http://resources/referenced/2':
-                        return $asset2;
-                }
-
-                $this->fail('Unexpected Object URI: ' . $data);
-            });
 
         $ontologyMock = $this->createMock(Ontology::class);
         $ontologyMock
@@ -230,10 +186,6 @@ class ResourceReferenceServiceTest extends TestCase
 
     public function testGetReferencesForTestItems(): void
     {
-        $this->qtiItemService
-            ->expects($this->never())
-            ->method('getDataItemByRdfItem');
-
         $this->qtiTestService
             ->expects($this->once())
             ->method('getItems')
@@ -244,10 +196,6 @@ class ResourceReferenceServiceTest extends TestCase
             ->expects($this->once())
             ->method('getUri')
             ->willReturn('http://resources/referenced/1');
-
-        $this->qtiItem
-            ->expects($this->never())
-            ->method('getBody');
 
         $ontologyMock = $this->createMock(Ontology::class);
         $ontologyMock
@@ -276,10 +224,6 @@ class ResourceReferenceServiceTest extends TestCase
 
     public function testTestItemReferencesAreUnique(): void
     {
-        $this->qtiItemService
-            ->expects($this->never())
-            ->method('getDataItemByRdfItem');
-
         $this->qtiTestService
             ->expects($this->once())
             ->method('getItems')
@@ -299,10 +243,6 @@ class ResourceReferenceServiceTest extends TestCase
             ->expects($this->once())
             ->method('getUri')
             ->willReturn('http://resources/referenced/2');
-
-        $this->qtiItem
-            ->expects($this->never())
-            ->method('getBody');
 
         $ontologyMock = $this->createMock(Ontology::class);
         $ontologyMock

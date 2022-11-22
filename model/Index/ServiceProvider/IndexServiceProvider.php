@@ -35,7 +35,7 @@ use oat\taoAdvancedSearch\model\Index\Handler\TestUpdatedHandler;
 use oat\taoAdvancedSearch\model\Index\Listener\AgnosticEventListener;
 use oat\taoAdvancedSearch\model\Index\Service\ResourceReferencesService;
 use oat\taoAdvancedSearch\model\Index\Specification\ItemResourceSpecification;
-use oat\taoQtiItem\model\qti\Service as QtiItemService;
+use oat\taoMediaManager\model\relation\repository\rdf\RdfMediaRelationRepository;
 use taoQtiTest_models_classes_QtiTestService as QtiTestService;
 use oat\taoQtiTest\models\event\QtiTestImportEvent;
 use oat\taoTests\models\event\TestUpdatedEvent;
@@ -56,8 +56,8 @@ class IndexServiceProvider implements ContainerServiceProviderInterface
         $services->set(ResourceReferencesService::class, ResourceReferencesService::class)
             ->args([
                 service(LoggerService::SERVICE_ID),
-                service(QtiItemService::class),
                 service(QtiTestService::class),
+                service(RdfMediaRelationRepository::class)->nullOnInvalid(),
             ])->public();
 
         $services->set(ResourceDeletedHandler::class, ResourceDeletedHandler::class)

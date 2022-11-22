@@ -21,14 +21,14 @@
 namespace oat\taoAdvancedSearch\model\Index\Service;
 
 use core_kernel_classes_Resource;
+use oat\tao\model\resources\relation\ResourceRelation;
 use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\TaoOntology;
-use oat\taoItems\model\media\ItemMediaResolver;
-use oat\taoQtiItem\model\qti\interaction\MediaInteraction;
-use oat\taoQtiItem\model\qti\Service as QtiItemService;
+use oat\taoMediaManager\model\relation\MediaRelation;
+use oat\taoMediaManager\model\relation\repository\query\FindAllByTargetQuery;
+use oat\taoMediaManager\model\relation\repository\rdf\RdfMediaRelationRepository;
 use taoQtiTest_models_classes_QtiTestService as QtiTestService;
 use Psr\Log\LoggerInterface;
-use tao_helpers_Uri;
 use Exception;
 
 /**
@@ -42,25 +42,20 @@ class ResourceReferencesService
     /** @var LoggerInterface */
     private $logger;
 
-    /** @var QtiItemService */
-    private $qtiItemService;
-
     /** @var QtiTestService */
     private $qtiTestService;
 
-    /** @var ItemMediaResolver|null */
-    private $mediaResolver;
+    /** @var RdfMediaRelationRepository|null */
+    private $mediaRelationRepository;
 
     public function __construct(
         LoggerInterface $logger,
-        QtiItemService $qtiItemService,
         QtiTestService $qtiTestService,
-        ItemMediaResolver $mediaResolver = null
+        RdfMediaRelationRepository $mediaRelationRepository = null
     ) {
         $this->logger = $logger;
-        $this->qtiItemService = $qtiItemService;
         $this->qtiTestService = $qtiTestService;
-        $this->mediaResolver = $mediaResolver;
+        $this->mediaRelationRepository = $mediaRelationRepository;
     }
 
     /**
@@ -124,22 +119,23 @@ class ResourceReferencesService
     private function getResourceURIsForItemAssets(
         core_kernel_classes_Resource $resource
     ): array {
-        $resolver = $this->mediaResolver ?? $this->getResolverForResource($resource);
-        if ($resolver === null) {
+        if ($this->mediaRelationRepository === null) {
+            $this->logger->warning('MediaRelationRepository not available');
             return [];
         }
 
-        $mediaURIs = [];
-        $qtiItem = $this->qtiItemService->getDataItemByRdfItem($resource);
+        $mediaRelations = $this->mediaRelationRepository->findAllByTarget(
+            new FindAllByTargetQuery(
+                $resource->getUri(),
+                MediaRelation::ITEM_TYPE
+            )
+        );
 
-        foreach ($qtiItem->getBody()->getElements() as $element) {
-            if ($element instanceof MediaInteraction) {
-                try {
-                    $mediaURIs[] = $this->extractMediaURI($resolver, $element);
-                } catch (Throwable $e) {
-                    $this->logger->warning('Unable to extract media URI');
-                }
-            }
+        $mediaURIs = [];
+
+        foreach ($mediaRelations as $mediaRelation) {
+            assert($mediaRelation instanceof ResourceRelation);
+            $mediaURIs[] = $mediaRelation->getSourceId();
         }
 
         return $mediaURIs;
@@ -160,34 +156,6 @@ class ResourceReferencesService
         }
 
         return $itemURIs;
-    }
-
-    /**
-     * @throws Exception if the associated media URI is malformed
-     */
-    private function extractMediaURI(
-        ItemMediaResolver $resolver,
-        MediaInteraction $interaction
-    ): ?string {
-        $data = trim($interaction->getObject()->getAttributeValue('data'));
-        if (empty($data)) {
-            return null;
-        }
-
-        return tao_helpers_Uri::decode(
-            $resolver->resolve($data)->getMediaIdentifier()
-        );
-    }
-
-    private function getResolverForResource(
-        core_kernel_classes_Resource $resource
-    ): ?ItemMediaResolver {
-        if (!class_exists(ItemMediaResolver::class)) {
-            $this->logger->debug('ItemMediaResolver not available');
-            return null;
-        }
-
-        return new ItemMediaResolver($resource, '');
     }
 
     private function isA(
