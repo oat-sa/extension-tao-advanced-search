@@ -51,11 +51,14 @@ class ResourceServiceProvider implements ContainerServiceProviderInterface
                 ]
             )->public();
 
-        $services->set(IndexDocumentBuilder::class, IndexDocumentBuilder::class)
+        $services->set(IndexDocumentBuilderFactory::class, IndexDocumentBuilderFactory::class)
+            ->private();
+
+        $services->set(IndexDocumentBuilder::class)
             ->factory(
                 [
-                    IndexDocumentBuilderFactory::class,
-                    'getIndexDocumentBuilder'
+                    service(IndexDocumentBuilderFactory::class),
+                    'create'
                 ]
             )->private();
 

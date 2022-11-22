@@ -31,8 +31,7 @@ use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
  */
 class IndexDocumentBuilderFactory
 {
-    public static function getIndexDocumentBuilder()
-                                                : IndexDocumentBuilderInterface
+    public function create(): IndexDocumentBuilderInterface
     {
         $builder = new IndexDocumentBuilder();
         $builder->setServiceManager(ServiceManager::getServiceManager());
