@@ -66,7 +66,7 @@ class ResourceReferencesService
      * @param core_kernel_classes_Resource $resource
      * @return bool
      */
-    public function isSupportedType(
+    public function hasSupportedType(
         core_kernel_classes_Resource $resource
     ): bool {
         if ($this->isA(TaoOntology::CLASS_URI_ITEM, $resource)) {
@@ -89,7 +89,7 @@ class ResourceReferencesService
     ): array {
         $body = $document->getBody();
 
-        if ($this->isSupportedType($resource)) {
+        if ($this->hasSupportedType($resource)) {
             $body[self::REFERENCES_KEY] = $this->getReferences($resource);
         }
 
@@ -162,7 +162,7 @@ class ResourceReferencesService
         string $type,
         core_kernel_classes_Resource $resource
     ): bool {
-        $rootClass = $resource->getModel()->getClass($type);
+        $rootClass = $resource->getClass($type);
 
         foreach ($resource->getTypes() as $type) {
             if ($type->equals($rootClass) || $type->isSubClassOf($rootClass)) {

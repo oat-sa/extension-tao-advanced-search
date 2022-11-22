@@ -24,7 +24,6 @@ namespace oat\taoAdvancedSearch\tests\Unit\Index\Service;
 
 use core_kernel_classes_Class;
 use core_kernel_classes_Resource;
-use oat\generis\model\data\Ontology;
 use oat\oatbox\log\LoggerService;
 use oat\tao\model\resources\relation\ResourceRelation;
 use oat\tao\model\TaoOntology;
@@ -63,6 +62,9 @@ class ResourceReferenceServiceTest extends TestCase
     /** @var core_kernel_classes_Class|MockObject */
     private $testType;
 
+    /** @var core_kernel_classes_Class|MockObject */
+    private $genericType;
+
     /** @var RdfMediaRelationRepository|MockObject */
     private $mediaRelationRepository;
 
@@ -83,10 +85,6 @@ class ResourceReferenceServiceTest extends TestCase
         $this->item2 = $this->createMock(core_kernel_classes_Resource::class);
         $this->resource = $this->createMock(core_kernel_classes_Resource::class);
 
-        $this->resource
-            ->method('getUri')
-            ->willReturn('http://resource/id');
-
         $this->mediaRelationRepository = $this->createMock(
             RdfMediaRelationRepository::class
         );
@@ -97,25 +95,91 @@ class ResourceReferenceServiceTest extends TestCase
             $this->mediaRelationRepository
         );
 
-        $this->itemType = $this->createMock(core_kernel_classes_Class::class);
-        $this->itemType
+        $this->itemType = $this->mockRDFClass(TaoOntology::CLASS_URI_ITEM);
+        $this->testType = $this->mockRDFClass(TaoOntology::CLASS_URI_TEST);
+        $this->genericType = $this->mockRDFClass(TaoOntology::CLASS_URI_OBJECT);
+
+        $this->resource
             ->method('getUri')
-            ->willReturn(TaoOntology::CLASS_URI_ITEM);
-        $this->itemType
-            ->method('equals')
+            ->willReturn('http://resource/id');
+
+        $this->resource
+            ->method('getClass')
+            ->willReturnMap([
+                [TaoOntology::CLASS_URI_ITEM, $this->itemType],
+                [TaoOntology::CLASS_URI_TEST, $this->testType],
+                [TaoOntology::CLASS_URI_OBJECT, $this->genericType],
+            ]);
+    }
+
+    /**
+     * @dataProvider hasSupportedTypeDataProvider
+     */
+    public function testHasSupportedType(
+        bool $expected,
+        core_kernel_classes_Resource $resource
+    ): void {
+        $resource
+            ->method('getClass')
+            ->willReturnMap([
+                [TaoOntology::CLASS_URI_ITEM, $this->itemType],
+                [TaoOntology::CLASS_URI_TEST, $this->testType],
+                [TaoOntology::CLASS_URI_OBJECT, $this->genericType],
+            ]);
+
+        $this->assertEquals(
+            $expected,
+            $this->sut->hasSupportedType($resource)
+        );
+    }
+
+    public function hasSupportedTypeDataProvider(): array
+    {
+        $anItem = $this->createMock(core_kernel_classes_Resource::class);
+        $anItem
+            ->expects($this->once())
+            ->method('getTypes')
+            ->willReturn([
+                $this->mockRDFClass(TaoOntology::CLASS_URI_ITEM)
+            ]);
+
+        $aTest = $this->createMock(core_kernel_classes_Resource::class);
+        $aTest
+            ->expects($this->exactly(2))
+            ->method('getTypes')
+            ->willReturn([
+                $this->mockRDFClass(TaoOntology::CLASS_URI_TEST)
+            ]);
+
+        $anObject = $this->createMock(core_kernel_classes_Resource::class);
+        $anObject
+            ->expects($this->exactly(2))
+            ->method('getTypes')
+            ->willReturn([
+                $this->mockRDFClass(TaoOntology::CLASS_URI_OBJECT)
+            ]);
+
+        $itemSubclass = $this->mockRDFClass('http://ontology/item/subtype');
+        $itemSubclass
+            ->method('isSubClassOf')
             ->willReturnCallback(function (core_kernel_classes_Resource $res) {
-                return $res->getUri() == TaoOntology::CLASS_URI_ITEM;
+                return $res->getUri() === TaoOntology::CLASS_URI_ITEM;
             });
 
-        $this->testType = $this->createMock(core_kernel_classes_Class::class);
-        $this->testType
-            ->method('getUri')
-            ->willReturn(TaoOntology::CLASS_URI_TEST);
-        $this->testType
-            ->method('equals')
-            ->willReturnCallback(function (core_kernel_classes_Resource $res) {
-                return $res->getUri() == TaoOntology::CLASS_URI_TEST;
-            });
+        $aSubtype = $this->createMock(core_kernel_classes_Resource::class);
+        $aSubtype
+            ->expects($this->exactly(1))
+            ->method('getTypes')
+            ->willReturn([
+                $itemSubclass
+            ]);
+
+        return [
+            'Item type' => [true, $anItem],
+            'Test type' => [true, $aTest],
+            'Other type' => [false, $anObject],
+            'Item subclass' => [true, $aSubtype],
+        ];
     }
 
     public function testGetReferencesForItemAssets(): void
@@ -132,12 +196,13 @@ class ResourceReferenceServiceTest extends TestCase
             ->method('getSourceId')
             ->willReturn('http://taomedia/asset2');
 
-        $collection = $this->createMock(
-            MediaRelationCollection::class
-        );
-        $collection->expects($this->once())
+        $collection = $this->createMock(MediaRelationCollection::class);
+        $collection
+            ->expects($this->once())
             ->method('getIterator')
-            ->willReturn(new ArrayIterator([$relation1, $relation2]));
+            ->willReturn(
+                new ArrayIterator([$relation1, $relation2])
+            );
 
         $this->mediaRelationRepository
             ->expects($this->once())
@@ -160,20 +225,9 @@ class ResourceReferenceServiceTest extends TestCase
             ->expects($this->never())
             ->method('getItems');
 
-        $ontologyMock = $this->createMock(Ontology::class);
-        $ontologyMock
-            ->expects($this->atLeastOnce())
-            ->method('getClass')
-            ->with(TaoOntology::CLASS_URI_ITEM)
-            ->willReturn($this->itemType);
-
         $this->resource
             ->method('getTypes')
             ->willReturn([$this->itemType]);
-
-        $this->resource
-            ->method('getModel')
-            ->willReturn($ontologyMock);
 
         $this->assertEquals(
             [
@@ -197,22 +251,9 @@ class ResourceReferenceServiceTest extends TestCase
             ->method('getUri')
             ->willReturn('http://resources/referenced/1');
 
-        $ontologyMock = $this->createMock(Ontology::class);
-        $ontologyMock
-            ->expects($this->exactly(2))
-            ->method('getClass')
-            ->willReturnMap([
-                [TaoOntology::CLASS_URI_ITEM, $this->itemType],
-                [TaoOntology::CLASS_URI_TEST, $this->testType],
-            ]);
-
         $this->resource
             ->method('getTypes')
             ->willReturn([$this->testType]);
-
-        $this->resource
-            ->method('getModel')
-            ->willReturn($ontologyMock);
 
         $this->assertEquals(
             [
@@ -244,22 +285,20 @@ class ResourceReferenceServiceTest extends TestCase
             ->method('getUri')
             ->willReturn('http://resources/referenced/2');
 
-        $ontologyMock = $this->createMock(Ontology::class);
-        $ontologyMock
-            ->expects($this->exactly(2))
-            ->method('getClass')
-            ->willReturnMap([
-                [TaoOntology::CLASS_URI_ITEM, $this->itemType],
-                [TaoOntology::CLASS_URI_TEST, $this->testType],
-            ]);
-
         $this->resource
             ->method('getTypes')
             ->willReturn([$this->testType]);
 
         $this->resource
-            ->method('getModel')
-            ->willReturn($ontologyMock);
+            ->method('getClass')
+            ->willReturnMap([
+                [TaoOntology::CLASS_URI_ITEM, $this->itemType],
+                [TaoOntology::CLASS_URI_TEST, $this->testType],
+                [TaoOntology::CLASS_URI_OBJECT, $this->genericType],
+            ]);
+            /*->willReturnCallback(function (string $type) {
+                return $this->getClassMethodMock($type);
+            });*/
 
         $this->assertEquals(
             [
@@ -268,5 +307,36 @@ class ResourceReferenceServiceTest extends TestCase
             ],
             $this->sut->getReferences($this->resource)
         );
+    }
+
+    public function getClassMethodMock($type): core_kernel_classes_Class
+    {
+        switch ($type) {
+            case TaoOntology::CLASS_URI_ITEM:
+                return $this->mockRDFClass(TaoOntology::CLASS_URI_ITEM);
+            case TaoOntology::CLASS_URI_TEST:
+                return $this->mockRDFClass(TaoOntology::CLASS_URI_TEST);
+            case TaoOntology::CLASS_URI_OBJECT:
+                return $this->mockRDFClass(TaoOntology::CLASS_URI_OBJECT);
+        }
+
+        $this->fail("Unexpected type requested: " . $type);
+    }
+
+    private function mockRDFClass(string $classUri): core_kernel_classes_Class
+    {
+        $type = $this->createMock(core_kernel_classes_Class::class);
+        $type
+            ->method('getUri')
+            ->willReturn($classUri);
+        $type
+            ->method('equals')
+            ->willReturnCallback(
+                function (core_kernel_classes_Resource $res) use ($classUri) {
+                    return $res->getUri() === $classUri;
+                }
+            );
+
+        return $type;
     }
 }
