@@ -30,7 +30,6 @@ use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\search\SearchInterface;
 use oat\taoAdvancedSearch\model\Index\Handler\ResourceUpdatedHandler;
 use oat\taoAdvancedSearch\model\Index\Service\ResourceReferencesService;
-use oat\taoAdvancedSearch\model\Index\Specification\ItemResourceSpecification;
 use oat\taoAdvancedSearch\model\Metadata\Listener\UnsupportedEventException;
 use oat\taoItems\model\media\ItemMediaResolver;
 use core_kernel_classes_Resource;

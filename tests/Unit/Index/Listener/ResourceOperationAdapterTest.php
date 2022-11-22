@@ -24,36 +24,16 @@ namespace oat\taoAdvancedSearch\tests\Unit\Index\Listener;
 
 use oat\generis\model\data\event\ResourceUpdated;
 use oat\generis\test\TestCase;
-use oat\oatbox\log\LoggerService;
-use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
-use oat\tao\model\search\index\IndexDocument;
-use oat\tao\model\search\index\IndexService;
-use oat\tao\model\search\SearchInterface;
-use oat\tao\model\search\SearchProxy;
 use oat\tao\model\TaoOntology;
 use oat\taoAdvancedSearch\model\Index\Listener\AgnosticEventListener;
 use oat\taoAdvancedSearch\model\Index\Listener\ResourceOperationAdapter;
-use oat\taoAdvancedSearch\model\Resource\Service\SyncResourceResultIndexer;
 use oat\taoTests\models\event\TestUpdatedEvent;
 use PHPUnit\Framework\MockObject\MockObject;
 use core_kernel_classes_Resource;
 
 class ResourceOperationAdapterTest extends TestCase
 {
-    /** @var SyncResourceResultIndexer */
-    private $indexer;
-
-    /** @var IndexService|MockObject */
-    private $indexerService;
-
-    /** @var SearchInterface|MockObject */
-    private $search;
-
-    /** @var SearchInterface|MockObject */
-    private $indexDocumentBuilder;
-    /**
-     * @var AgnosticEventListener|MockObject
-     */
+    /** @var AgnosticEventListener|MockObject */
     private $listener;
 
     /** @var ResourceOperationAdapter */
@@ -61,16 +41,8 @@ class ResourceOperationAdapterTest extends TestCase
 
     public function setUp(): void
     {
-        /*$this->indexerService = $this->createMock(IndexService::class);
-        $this->search = $this->createMock(SearchInterface::class);
-        $this->indexDocumentBuilder = $this->createMock(IndexDocumentBuilderInterface::class);*/
-
         $this->listener = $this->createMock(AgnosticEventListener::class);
         $this->sut = new ResourceOperationAdapter($this->listener);
-
-        /*$this->indexerService
-            ->method('getDocumentBuilder')
-            ->willReturn($this->indexDocumentBuilder);*/
     }
 
     public function testDispatchTestUpdatedEvent(): void

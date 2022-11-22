@@ -23,7 +23,6 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\tests\Unit\Index\Listener;
 
 use Exception;
-use oat\generis\test\TestCase;
 use oat\oatbox\event\Event;
 use oat\taoAdvancedSearch\model\Index\Handler\EventHandlerInterface;
 use oat\taoAdvancedSearch\model\Index\Listener\AgnosticEventListener;
@@ -32,8 +31,8 @@ use oat\taoAdvancedSearch\model\Metadata\Listener\UnsupportedEventException;
 use PHPUnit\Framework\MockObject\Builder\InvocationMocker;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Log\LoggerInterface;
+use PHPUnit\Framework\TestCase;
 
-// @todo We may be able to extend the std base test instead of Generis class now
 class AgnosticEventListenerTest extends TestCase
 {
     private const EVENT1_NAME = 'Event1';

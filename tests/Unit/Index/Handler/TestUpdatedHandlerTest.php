@@ -55,9 +55,6 @@ class TestUpdatedHandlerTest extends TestCase
     /** @var SearchInterface|MockObject */
     private $indexDocumentBuilder;
 
-    /** @var QtiTestService|MockObject */
-    private $qtiTestService;
-
     /** @var ResourceReferencesService|MockObject */
     private $referencesService;
 
@@ -66,7 +63,6 @@ class TestUpdatedHandlerTest extends TestCase
         $this->search = $this->createMock(SearchInterface::class);
         $this->document = $this->createMock(IndexDocument::class);
         $this->event = $this->createMock(TestUpdatedEvent::class);
-        $this->qtiTestService = $this->createMock(QtiTestService::class);
 
         $this->indexDocumentBuilder = $this->createMock(
             IndexDocumentBuilderInterface::class
@@ -79,7 +75,6 @@ class TestUpdatedHandlerTest extends TestCase
             $this->createMock(LoggerService::class),
             $this->indexDocumentBuilder,
             $this->search,
-            $this->qtiTestService,
             $this->referencesService
         );
     }
@@ -197,10 +192,6 @@ class TestUpdatedHandlerTest extends TestCase
         $this->indexDocumentBuilder
             ->expects($this->never())
             ->method('createDocumentFromResource');
-
-        $this->qtiTestService
-              ->expects($this->never())
-              ->method('getItems');
 
         $this->search
             ->expects($this->never())

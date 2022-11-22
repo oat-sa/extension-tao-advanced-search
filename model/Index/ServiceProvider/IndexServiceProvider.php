@@ -77,7 +77,6 @@ class IndexServiceProvider implements ContainerServiceProviderInterface
                 service(LoggerService::SERVICE_ID),
                 service(IndexDocumentBuilder::class),
                 service(SearchProxy::SERVICE_ID),
-                service(taoQtiTest_models_classes_QtiTestService::class),
                 service(ResourceReferencesService::class),
             ]);
 

@@ -85,6 +85,9 @@ class ResourceReferencesService
         return false;
     }
 
+    /**
+     * @throws Exception
+     */
     public function getBodyWithReferences(
         core_kernel_classes_Resource $resource,
         IndexDocument $document

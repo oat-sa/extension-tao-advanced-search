@@ -22,9 +22,11 @@ declare(strict_types = 1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\Index\Service;
 
+use core_kernel_classes_Class;
+use oat\generis\model\data\Ontology;
 use oat\oatbox\log\LoggerService;
 use oat\tao\model\media\MediaAsset;
-use oat\tao\model\search\SearchInterface;
+use oat\tao\model\TaoOntology;
 use oat\taoAdvancedSearch\model\Index\Handler\ResourceUpdatedHandler;
 use oat\taoAdvancedSearch\model\Index\Service\ResourceReferencesService;
 use oat\taoAdvancedSearch\model\Index\Specification\ItemResourceSpecification;
@@ -47,8 +49,11 @@ class ResourceReferenceServiceTest extends TestCase
     /** @var core_kernel_classes_Resource|MockObject  */
     private $resource;
 
-    /** @var SearchInterface|MockObject */
-    private $search;
+    /** @var core_kernel_classes_Resource|MockObject */
+    private $item1;
+
+    /** @var core_kernel_classes_Resource|MockObject */
+    private $item2;
 
     /** @var QtiService|MockObject */
     private $qtiItemService;
@@ -65,6 +70,13 @@ class ResourceReferenceServiceTest extends TestCase
     /** @var ItemMediaResolver|MockObject */
     private $itemMediaResolver;
 
+    /** @var core_kernel_classes_Class|MockObject */
+    private $itemType;
+
+    /** @var core_kernel_classes_Class|MockObject */
+    private $testType;
+
+
     public function setUp(): void
     {
         if (!class_exists(ItemMediaResolver::class)) {
@@ -79,11 +91,12 @@ class ResourceReferenceServiceTest extends TestCase
 
         $this->qtiItemService = $this->createMock(QtiItemService::class);
         $this->qtiTestService = $this->createMock(QtiTestService::class);
-        $this->qtiItem = $this->createMock(QtiItem::class);
-
         $this->itemMediaResolver = $this->createMock(ItemMediaResolver::class);
-        $this->search = $this->createMock(SearchInterface::class);
+
+        $this->item1 = $this->createMock(core_kernel_classes_Resource::class);
+        $this->item2 = $this->createMock(core_kernel_classes_Resource::class);
         $this->resource = $this->createMock(core_kernel_classes_Resource::class);
+        $this->qtiItem = $this->createMock(QtiItem::class);
 
         $this->qtiItemBodyMock = $this->createMock(ContainerItemBody::class);
 
@@ -93,10 +106,34 @@ class ResourceReferenceServiceTest extends TestCase
             $this->qtiTestService,
             $this->itemMediaResolver
         );
+
+        $this->itemType = $this->createMock(core_kernel_classes_Class::class);
+        $this->itemType
+            ->method('getUri')
+            ->willReturn(TaoOntology::CLASS_URI_ITEM);
+        $this->itemType
+            ->method('equals')
+            ->willReturnCallback(function (core_kernel_classes_Resource $res) {
+                return $res->getUri() == TaoOntology::CLASS_URI_ITEM;
+            });
+
+        $this->testType = $this->createMock(core_kernel_classes_Class::class);
+        $this->testType
+            ->method('getUri')
+            ->willReturn(TaoOntology::CLASS_URI_TEST);
+        $this->testType
+            ->method('equals')
+            ->willReturnCallback(function (core_kernel_classes_Resource $res) {
+                return $res->getUri() == TaoOntology::CLASS_URI_TEST;
+            });
     }
 
     public function testGetReferencesForItemAssets(): void
     {
+        $this->qtiTestService
+            ->expects($this->never())
+            ->method('getItems');
+
         $this->qtiItemService
             ->expects($this->once())
             ->method('getDataItemByRdfItem')
@@ -158,45 +195,138 @@ class ResourceReferenceServiceTest extends TestCase
             ->method('resolve')
             ->willReturnCallback(function ($data) use ($asset1, $asset2) {
                 switch ($data) {
-                    case 'http://object1/data':
+                    case 'http://resources/referenced/1':
                         return $asset1;
-                    case 'http://object2/data':
+                    case 'http://resources/referenced/2':
                         return $asset2;
                 }
 
                 $this->fail('Unexpected Object URI: ' . $data);
             });
 
+        $ontologyMock = $this->createMock(Ontology::class);
+        $ontologyMock
+            ->expects($this->atLeastOnce())
+            ->method('getClass')
+            ->with(TaoOntology::CLASS_URI_ITEM)
+            ->willReturn($this->itemType);
 
-        // @todo Complete this test: This is migrated from a previous one that
-        //       tested a bigger service holding the logic that is now in this
-        //       one
-        $this->markTestIncomplete('Not fully implemented');
+        $this->resource
+            ->method('getTypes')
+            ->willReturn([$this->itemType]);
 
-        /*$this->search
-            ->expects($this->once())
-            ->method('index')
-            ->willReturnCallback(function (array $documents) {
-                /** @var $documents IndexDocument[] * /
+        $this->resource
+            ->method('getModel')
+            ->willReturn($ontologyMock);
 
-                $this->assertCount(1, $documents);
-                $this->assertEquals(
-                    'resource-type',
-                    $documents[0]->getBody()['type']
-                );
-                $this->assertEquals(
-                    [
-                        'http://resources/referenced/1',
-                        'http://resources/referenced/2',
-                    ],
-                    $documents[0]->getBody()['referenced_resources']
-                );
-
-                return 1;
-            });*/
-
-
+        $this->assertEquals(
+            [
+                'http://taomedia/asset1',
+                'http://taomedia/asset2'
+            ],
+            $this->sut->getReferences($this->resource)
+        );
     }
 
-    // @todo More tests ...
+    public function testGetReferencesForTestItems(): void
+    {
+        $this->qtiItemService
+            ->expects($this->never())
+            ->method('getDataItemByRdfItem');
+
+        $this->qtiTestService
+            ->expects($this->once())
+            ->method('getItems')
+            ->with($this->resource)
+            ->willReturn([$this->item1]);
+
+        $this->item1
+            ->expects($this->once())
+            ->method('getUri')
+            ->willReturn('http://resources/referenced/1');
+
+        $this->qtiItem
+            ->expects($this->never())
+            ->method('getBody');
+
+        $ontologyMock = $this->createMock(Ontology::class);
+        $ontologyMock
+            ->expects($this->exactly(2))
+            ->method('getClass')
+            ->willReturnMap([
+                [TaoOntology::CLASS_URI_ITEM, $this->itemType],
+                [TaoOntology::CLASS_URI_TEST, $this->testType],
+            ]);
+
+        $this->resource
+            ->method('getTypes')
+            ->willReturn([$this->testType]);
+
+        $this->resource
+            ->method('getModel')
+            ->willReturn($ontologyMock);
+
+        $this->assertEquals(
+            [
+                'http://resources/referenced/1',
+            ],
+            $this->sut->getReferences($this->resource)
+        );
+    }
+
+    public function testTestItemReferencesAreUnique(): void
+    {
+        $this->qtiItemService
+            ->expects($this->never())
+            ->method('getDataItemByRdfItem');
+
+        $this->qtiTestService
+            ->expects($this->once())
+            ->method('getItems')
+            ->with($this->resource)
+            ->willReturn([
+                $this->item1,
+                $this->item2,
+                $this->item1,
+            ]);
+
+        $this->item1
+            ->expects($this->exactly(2))
+            ->method('getUri')
+            ->willReturn('http://resources/referenced/1');
+
+        $this->item2
+            ->expects($this->once())
+            ->method('getUri')
+            ->willReturn('http://resources/referenced/2');
+
+        $this->qtiItem
+            ->expects($this->never())
+            ->method('getBody');
+
+        $ontologyMock = $this->createMock(Ontology::class);
+        $ontologyMock
+            ->expects($this->exactly(2))
+            ->method('getClass')
+            ->willReturnMap([
+                [TaoOntology::CLASS_URI_ITEM, $this->itemType],
+                [TaoOntology::CLASS_URI_TEST, $this->testType],
+            ]);
+
+        $this->resource
+            ->method('getTypes')
+            ->willReturn([$this->testType]);
+
+        $this->resource
+            ->method('getModel')
+            ->willReturn($ontologyMock);
+
+        $this->assertEquals(
+            [
+                'http://resources/referenced/1',
+                'http://resources/referenced/2',
+            ],
+            $this->sut->getReferences($this->resource)
+        );
+    }
 }

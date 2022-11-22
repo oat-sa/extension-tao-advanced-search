@@ -32,15 +32,12 @@ use oat\taoQtiTest\models\event\QtiTestImportEvent;
 use oat\taoTests\models\event\TestImportEvent;
 use oat\taoTests\models\event\TestUpdatedEvent;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
-use taoQtiTest_models_classes_QtiTestService;
 use taoQtiTest_models_classes_QtiTestServiceException;
+use RuntimeException;
+use Exception;
 
 class TestUpdatedHandler extends AbstractEventHandler
 {
-    /** @var taoQtiTest_models_classes_QtiTestService */
-    private $qtiTestService;
-
     /** @var ResourceReferencesService */
     private $referencesService;
 
@@ -48,7 +45,6 @@ class TestUpdatedHandler extends AbstractEventHandler
         LoggerInterface $logger,
         IndexDocumentBuilderInterface $indexDocumentBuilder,
         SearchInterface $searchService,
-        taoQtiTest_models_classes_QtiTestService $qtiTestService,
         ResourceReferencesService $referencesService
     ) {
         parent::__construct(
@@ -61,7 +57,6 @@ class TestUpdatedHandler extends AbstractEventHandler
             ]
         );
 
-        $this->qtiTestService = $qtiTestService;
         $this->referencesService = $referencesService;
     }
 
@@ -88,15 +83,10 @@ class TestUpdatedHandler extends AbstractEventHandler
         Event $event,
         core_kernel_classes_Resource $resource
     ): void {
-        $doc = $this->getDocumentFor($resource);
-        $totalIndexed = $this->searchService->index([$doc]);
-
-        $this->logger->critical(
-            sprintf(
-                "Indexed document for test %s: %s",
-                $resource->getUri(),
-                var_export($doc,true)
-            )
+        $totalIndexed = $this->searchService->index(
+            [
+                $this->getDocument($resource)
+            ]
         );
 
         if ($totalIndexed < 1) {
@@ -107,20 +97,16 @@ class TestUpdatedHandler extends AbstractEventHandler
     /**
      * @throws common_Exception
      * @throws taoQtiTest_models_classes_QtiTestServiceException
+     * @throws Exception
      */
-    private function getDocumentFor(
+    private function getDocument(
         core_kernel_classes_Resource $resource
     ): IndexDocument {
-        $document = $this->documentBuilder->createDocumentFromResource(
-            $resource
-        );
+        $document = $this->documentBuilder->createDocumentFromResource($resource);
 
         return new IndexDocument(
             $document->getId(),
-            $this->referencesService->getBodyWithReferences(
-                $resource,
-                $document
-            ),
+            $this->referencesService->getBodyWithReferences($resource, $document),
             $document->getIndexProperties(),
             $document->getDynamicProperties(),
             $document->getAccessProperties()
