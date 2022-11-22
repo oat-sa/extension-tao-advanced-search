@@ -33,7 +33,7 @@ use Exception;
 
 /**
  * Used by UpdateResourceInIndex and ResourceUpdatedHandler to get information
- * about resources across RDF resources.
+ * about RDF resources.
  */
 class ResourceReferencesService
 {
