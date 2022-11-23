@@ -30,7 +30,7 @@ use oat\tao\model\search\SearchProxy;
 use oat\taoAdvancedSearch\model\Index\Handler\ResourceUpdatedHandler;
 use oat\taoAdvancedSearch\model\Index\Handler\TestUpdatedHandler;
 use oat\taoAdvancedSearch\model\Index\Listener\AgnosticEventListener;
-use oat\taoAdvancedSearch\model\Index\Listener\ResourceOperationAdapter;
+use oat\taoAdvancedSearch\model\Index\Listener\ResourceOperationMediator;
 use oat\taoAdvancedSearch\model\Index\Service\ResourceReferencesService;
 use oat\taoMediaManager\model\relation\repository\rdf\RdfMediaRelationRepository;
 use taoQtiTest_models_classes_QtiTestService as QtiTestService;
@@ -99,7 +99,7 @@ class IndexServiceProvider implements ContainerServiceProviderInterface
                 ]
             )->public();
 
-        $services->set(ResourceOperationAdapter::class, ResourceOperationAdapter::class)
+        $services->set(ResourceOperationMediator::class, ResourceOperationMediator::class)
             ->args([
                 service(AgnosticEventListener::class)
             ]);

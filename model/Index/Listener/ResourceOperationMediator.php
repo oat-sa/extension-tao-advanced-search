@@ -29,7 +29,7 @@ use oat\taoTests\models\event\TestUpdatedEvent;
  * This service receives resource instances and triggers an event though the
  * provided event listener matching the called method and resource type.
  */
-class ResourceOperationAdapter
+class ResourceOperationMediator
 {
     /** @var AgnosticEventListener */
     private $eventListener;

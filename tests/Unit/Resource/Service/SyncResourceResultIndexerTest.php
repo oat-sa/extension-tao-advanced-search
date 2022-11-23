@@ -25,7 +25,7 @@ namespace oat\taoAdvancedSearch\tests\Unit\Resource\Service;
 use core_kernel_classes_Resource;
 use oat\generis\test\TestCase;
 use oat\oatbox\log\LoggerService;
-use oat\taoAdvancedSearch\model\Index\Listener\ResourceOperationAdapter;
+use oat\taoAdvancedSearch\model\Index\Listener\ResourceOperationMediator;
 use oat\taoAdvancedSearch\model\Resource\Service\SyncResourceResultIndexer;
 use PHPUnit\Framework\MockObject\MockObject;
 
@@ -34,18 +34,18 @@ class SyncResourceResultIndexerTest extends TestCase
     /** @var SyncResourceResultIndexer */
     private $indexer;
 
-    /** @var ResourceOperationAdapter|MockObject */
-    private $adapter;
+    /** @var ResourceOperationMediator|MockObject */
+    private $mediator;
 
     public function setUp(): void
     {
-        $this->adapter = $this->createMock(ResourceOperationAdapter::class);
+        $this->mediator = $this->createMock(ResourceOperationMediator::class);
 
         $this->indexer = new SyncResourceResultIndexer();
         $this->indexer->setServiceLocator(
             $this->getServiceLocatorMock(
                 [
-                    ResourceOperationAdapter::class => $this->adapter,
+                    ResourceOperationMediator::class => $this->mediator,
                     LoggerService::SERVICE_ID => $this->createMock(
                         LoggerService::class
                     ),
@@ -58,7 +58,7 @@ class SyncResourceResultIndexerTest extends TestCase
     {
         $resource = $this->createMock(core_kernel_classes_Resource::class);
 
-        $this->adapter
+        $this->mediator
             ->expects($this->once())
             ->method('handleAddIndex')
             ->with($resource);

@@ -26,23 +26,23 @@ use oat\generis\model\data\event\ResourceUpdated;
 use oat\generis\test\TestCase;
 use oat\tao\model\TaoOntology;
 use oat\taoAdvancedSearch\model\Index\Listener\AgnosticEventListener;
-use oat\taoAdvancedSearch\model\Index\Listener\ResourceOperationAdapter;
+use oat\taoAdvancedSearch\model\Index\Listener\ResourceOperationMediator;
 use oat\taoTests\models\event\TestUpdatedEvent;
 use PHPUnit\Framework\MockObject\MockObject;
 use core_kernel_classes_Resource;
 
-class ResourceOperationAdapterTest extends TestCase
+class ResourceOperationMediatorTest extends TestCase
 {
     /** @var AgnosticEventListener|MockObject */
     private $listener;
 
-    /** @var ResourceOperationAdapter */
+    /** @var ResourceOperationMediator */
     private $sut;
 
     public function setUp(): void
     {
         $this->listener = $this->createMock(AgnosticEventListener::class);
-        $this->sut = new ResourceOperationAdapter($this->listener);
+        $this->sut = new ResourceOperationMediator($this->listener);
     }
 
     public function testDispatchTestUpdatedEvent(): void

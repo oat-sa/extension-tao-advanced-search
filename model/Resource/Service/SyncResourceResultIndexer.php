@@ -25,7 +25,7 @@ namespace oat\taoAdvancedSearch\model\Resource\Service;
 use core_kernel_classes_Resource;
 use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\service\ConfigurableService;
-use oat\taoAdvancedSearch\model\Index\Listener\ResourceOperationAdapter;
+use oat\taoAdvancedSearch\model\Index\Listener\ResourceOperationMediator;
 use oat\taoAdvancedSearch\model\Index\Service\IndexerInterface;
 
 /**
@@ -42,14 +42,14 @@ class SyncResourceResultIndexer extends ConfigurableService implements IndexerIn
         // container config
         //
         if ($resource instanceof core_kernel_classes_Resource) {
-            $this->getAdapter()->handleAddIndex($resource);
+            $this->getMediator()->handleAddIndex($resource);
         }
     }
 
-    private function getAdapter(): ResourceOperationAdapter
+    private function getMediator(): ResourceOperationMediator
     {
         return $this->getServiceManager()->getContainer()->get(
-            ResourceOperationAdapter::class
+            ResourceOperationMediator::class
         );
     }
 }
