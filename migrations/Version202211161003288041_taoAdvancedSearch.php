@@ -5,14 +5,12 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\migrations;
 
 use Doctrine\DBAL\Schema\Schema;
-use oat\generis\model\data\event\ResourceDeleted;
 use oat\generis\model\data\event\ResourceUpdated;
 use oat\oatbox\event\EventManager;
 use oat\oatbox\event\EventManagerAwareTrait;
 use oat\tao\scripts\tools\migrations\AbstractMigration;
 use oat\taoAdvancedSearch\model\Index\Listener\AgnosticEventListener;
 use oat\taoQtiTest\models\event\QtiTestImportEvent;
-use oat\taoTests\models\event\TestImportEvent;
 use oat\taoTests\models\event\TestUpdatedEvent;
 
 final class Version202211161003288041_taoAdvancedSearch extends AbstractMigration
@@ -22,7 +20,6 @@ final class Version202211161003288041_taoAdvancedSearch extends AbstractMigratio
     const CALLBACK = [AgnosticEventListener::class, 'listen'];
     const HANDLED_EVENTS = [
         ResourceUpdated::class,
-        ResourceDeleted::class,
         TestUpdatedEvent::class,
         QtiTestImportEvent::class,
     ];

@@ -22,13 +22,11 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\Index\ServiceProvider;
 
-use oat\generis\model\data\event\ResourceDeleted;
 use oat\generis\model\data\event\ResourceUpdated;
 use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
 use oat\oatbox\log\LoggerService;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilder;
 use oat\tao\model\search\SearchProxy;
-use oat\taoAdvancedSearch\model\Index\Handler\ResourceDeletedHandler;
 use oat\taoAdvancedSearch\model\Index\Handler\ResourceUpdatedHandler;
 use oat\taoAdvancedSearch\model\Index\Handler\TestImportHandler;
 use oat\taoAdvancedSearch\model\Index\Handler\TestUpdatedHandler;
@@ -58,11 +56,6 @@ class IndexServiceProvider implements ContainerServiceProviderInterface
                 service(QtiTestService::class),
                 service(RdfMediaRelationRepository::class)->nullOnInvalid(),
             ])->public();
-
-        $services->set(ResourceDeletedHandler::class, ResourceDeletedHandler::class)
-            ->args([
-                service(LoggerService::SERVICE_ID),
-            ]);
 
         $services->set(ResourceUpdatedHandler::class, ResourceUpdatedHandler::class)
             ->args([
@@ -95,9 +88,6 @@ class IndexServiceProvider implements ContainerServiceProviderInterface
                     [
                         ResourceUpdated::class => [
                             service(ResourceUpdatedHandler::class)
-                        ],
-                        ResourceDeleted::class => [
-                            service(ResourceDeletedHandler::class)
                         ],
                         TestUpdatedEvent::class => [
                             service(TestUpdatedHandler::class)
