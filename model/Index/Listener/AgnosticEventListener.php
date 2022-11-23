@@ -50,7 +50,10 @@ class AgnosticEventListener implements ListenerInterface
     {
         $eventClass = get_class($event);
 
-        $this->assertIsSupportedEvent($eventClass);
+        if (!isset($this->handlers[$eventClass])) {
+            $this->logger->debug("No handler set for {$eventClass}");
+            return;
+        }
 
         foreach ($this->handlers[$eventClass] as $handler) {
             try {
@@ -58,21 +61,6 @@ class AgnosticEventListener implements ListenerInterface
             } catch (Throwable $e) {
                 $this->logException(get_class($handler), $e);
             }
-        }
-    }
-
-    /**
-     * @throws UnsupportedEventException
-     */
-    private function assertIsSupportedEvent(string $eventClass): void
-    {
-        if (!isset($this->handlers[$eventClass])) {
-            throw new UnsupportedEventException(
-                sprintf(
-                    'one of [%s]',
-                    implode(', ', array_keys($this->handlers))
-                )
-            );
         }
     }
 

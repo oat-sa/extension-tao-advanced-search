@@ -10,7 +10,6 @@ use oat\oatbox\event\EventManager;
 use oat\oatbox\event\EventManagerAwareTrait;
 use oat\tao\scripts\tools\migrations\AbstractMigration;
 use oat\taoAdvancedSearch\model\Index\Listener\AgnosticEventListener;
-use oat\taoQtiTest\models\event\QtiTestImportEvent;
 use oat\taoTests\models\event\TestUpdatedEvent;
 
 final class Version202211161003288041_taoAdvancedSearch extends AbstractMigration
@@ -56,6 +55,9 @@ final class Version202211161003288041_taoAdvancedSearch extends AbstractMigratio
 
     private function updateEventManagerConfig(EventManager $manager): void
     {
-        $this->getServiceManager()->register(EventManager::SERVICE_ID, $manager);
+        $this->getServiceManager()->register(
+            EventManager::SERVICE_ID,
+            $manager
+        );
     }
 }

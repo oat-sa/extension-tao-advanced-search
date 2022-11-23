@@ -108,7 +108,11 @@ class AgnosticEventListenerTest extends TestCase
         $listener->listen($this->event1);
     }
 
-    public function testNonConfiguredEventThrowsException(): void
+    /**
+     * The agnostic listener can be configured for a given event even if
+     * no handlers are then set in the DI container config for it.
+     */
+    public function testNonConfiguredEventDoesNotThrowException(): void
     {
         $this->event1Handler
             ->expects($this->never())
@@ -120,8 +124,6 @@ class AgnosticEventListenerTest extends TestCase
                 $this->event1Class => [$this->event1Handler],
             ]
         );
-
-        $this->expectException(UnsupportedEventException::class);
 
         $listener->listen($this->event2);
     }

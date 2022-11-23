@@ -38,7 +38,7 @@ use oat\taoAdvancedSearch\model\Metadata\Listener\MetadataChangedListener;
 use oat\taoAdvancedSearch\model\Metadata\Listener\MetadataInheritanceListener;
 use oat\taoAdvancedSearch\model\Metadata\Listener\MetadataListener;
 use oat\taoAdvancedSearch\model\Metadata\Service\ListSavedEventListener;
-use oat\taoTests\models\event\TestUpdatedEvent;
+use oat\taoQtiTest\models\event\QtiTestImportEvent;
 
 class RegisterEvents extends InstallAction
 {
@@ -109,15 +109,7 @@ class RegisterEvents extends InstallAction
         );
 
         $eventManager->attach(
-            ResourceDeleted::class,
-            [
-                AgnosticEventListener::class,
-                'listen'
-            ]
-        );
-
-        $eventManager->attach(
-            TestUpdatedEvent::class,
+            QtiTestImportEvent::class,
             [
                 AgnosticEventListener::class,
                 'listen'
