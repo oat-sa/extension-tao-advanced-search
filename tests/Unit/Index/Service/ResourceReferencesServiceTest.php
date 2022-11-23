@@ -26,6 +26,7 @@ use core_kernel_classes_Class;
 use core_kernel_classes_Resource;
 use oat\oatbox\log\LoggerService;
 use oat\tao\model\resources\relation\ResourceRelation;
+use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\TaoOntology;
 use oat\taoAdvancedSearch\model\Index\Handler\ResourceUpdatedHandler;
 use oat\taoAdvancedSearch\model\Index\Service\ResourceReferencesService;
@@ -39,7 +40,7 @@ use ArrayIterator;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
-class ResourceReferenceServiceTest extends TestCase
+class ResourceReferencesServiceTest extends TestCase
 {
     /** @var ResourceReferencesService */
     private $sut;
@@ -68,6 +69,9 @@ class ResourceReferenceServiceTest extends TestCase
     /** @var RdfMediaRelationRepository|MockObject */
     private $mediaRelationRepository;
 
+    /** @var IndexDocument|MockObject */
+    private $indexDocument;
+
     public function setUp(): void
     {
         if (!class_exists(ItemMediaResolver::class)) {
@@ -84,6 +88,7 @@ class ResourceReferenceServiceTest extends TestCase
         $this->item1 = $this->createMock(core_kernel_classes_Resource::class);
         $this->item2 = $this->createMock(core_kernel_classes_Resource::class);
         $this->resource = $this->createMock(core_kernel_classes_Resource::class);
+        $this->indexDocument = $this->createMock(IndexDocument::class);
 
         $this->mediaRelationRepository = $this->createMock(
             RdfMediaRelationRepository::class
@@ -303,6 +308,68 @@ class ResourceReferenceServiceTest extends TestCase
                 'http://resources/referenced/2',
             ],
             $this->sut->getReferences($this->resource)
+        );
+    }
+
+    public function testCollectsTestIdentifier(): void
+    {
+        $jsonTest = (object) [
+            "qti-type" => "assessmentTest",
+            "identifier" => "ABCD1234",
+            "title" => "Test 1",
+            "toolName" => "tao",
+            "toolVersion" => "2022.09",
+            "outcomeDeclarations" => [],
+            "timeLimits" => [
+                "qti-type" => "timeLimits",
+                "allowLateSubmission" => false
+            ],
+            "testParts" => [],
+            "outcomeProcessing" => [
+                "qti-type" => "outcomeProcessing",
+                "outcomeRules" => []
+            ],
+            "testFeedbacks" => [],
+            "observers" => (object) [],
+        ];
+
+        $this->qtiTestService
+            ->expects($this->once())
+            ->method('getJsonTest')
+            ->with($this->resource)
+            ->willReturn(json_encode($jsonTest));
+
+        $this->qtiTestService
+            ->expects($this->once())
+            ->method('getItems')
+            ->with($this->resource)
+            ->willReturn([]);
+
+        $this->resource
+            ->method('getTypes')
+            ->willReturn([$this->testType]);
+
+        $this->resource
+            ->method('getClass')
+            ->willReturnMap([
+                [TaoOntology::CLASS_URI_ITEM, $this->itemType],
+                [TaoOntology::CLASS_URI_TEST, $this->testType],
+                [TaoOntology::CLASS_URI_OBJECT, $this->genericType],
+            ]);
+
+        $this->indexDocument
+            ->method('getBody')
+            ->willReturn([]);
+
+        $this->assertEquals(
+            [
+                ResourceReferencesService::REFERENCES_KEY => [],
+                ResourceReferencesService::IDENTIFIER_KEY => 'ABCD1234',
+            ],
+            $this->sut->getBodyWithReferences(
+                $this->resource,
+                $this->indexDocument
+            )
         );
     }
 

@@ -30,6 +30,7 @@ use oat\taoMediaManager\model\relation\repository\rdf\RdfMediaRelationRepository
 use taoQtiTest_models_classes_QtiTestService as QtiTestService;
 use Psr\Log\LoggerInterface;
 use Exception;
+use taoQtiTest_models_classes_QtiTestServiceException;
 
 /**
  * Used by UpdateResourceInIndex and ResourceUpdatedHandler to get information
@@ -37,6 +38,7 @@ use Exception;
  */
 class ResourceReferencesService
 {
+    public const IDENTIFIER_KEY = 'identifier';
     public const REFERENCES_KEY = 'referenced_resources';
 
     /** @var LoggerInterface */
@@ -91,6 +93,12 @@ class ResourceReferencesService
 
         if ($this->hasSupportedType($resource)) {
             $body[self::REFERENCES_KEY] = $this->getReferences($resource);
+
+            $id = $this->getIdentifier($resource);
+
+            if (!empty($id)) {
+                $body[self::IDENTIFIER_KEY] = $id;
+            }
         }
 
         return $body;
@@ -111,6 +119,25 @@ class ResourceReferencesService
 
         // Remove duplicates *and* reindex the array to have sequential offsets
         return array_values(array_unique($mediaURIs));
+    }
+
+    /**
+     * @throws taoQtiTest_models_classes_QtiTestServiceException
+     */
+    private function getIdentifier(
+        core_kernel_classes_Resource $resource
+    ): ?string {
+        if ($this->isA(TaoOntology::CLASS_URI_TEST, $resource)) {
+            $jsonData = json_decode(
+                $this->qtiTestService->getJsonTest($resource)
+            );
+
+            if (isset($jsonData->identifier)) {
+                return (string) $jsonData->identifier;
+            }
+        }
+
+        return null;
     }
 
     /**
