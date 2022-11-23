@@ -234,7 +234,8 @@ class ResourceReferencesServiceTest extends TestCase
                     );
 
                     return $collection;
-            });
+                }
+            );
 
         $this->qtiTestService
             ->expects($this->never())

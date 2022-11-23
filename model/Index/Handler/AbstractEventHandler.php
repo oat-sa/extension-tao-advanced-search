@@ -72,7 +72,7 @@ abstract class AbstractEventHandler implements EventHandlerInterface
         Event $event
     ): core_kernel_classes_Resource;
 
-    protected abstract function doHandle(
+    abstract protected function doHandle(
         Event $event,
         core_kernel_classes_Resource $resource
     ): void;
