@@ -25,6 +25,10 @@ return [
     'body' => [
         'mappings' => [
             'properties' => [
+                'identifier' => [
+                    'type' => 'keyword',
+                    'ignore_above' => 256,
+                ],
                 'class' => [
                     'type' => 'text',
                     'fields' => [
