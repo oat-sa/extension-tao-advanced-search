@@ -35,6 +35,8 @@ use taoQtiTest_models_classes_QtiTestServiceException;
 /**
  * Used by UpdateResourceInIndex and ResourceUpdatedHandler to get information
  * about RDF resources.
+ *
+ * @deprecated Temporary solution, this centralised service should be replaced
  */
 class ResourceReferencesService
 {
