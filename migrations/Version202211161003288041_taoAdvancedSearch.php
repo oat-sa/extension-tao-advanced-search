@@ -16,8 +16,8 @@ final class Version202211161003288041_taoAdvancedSearch extends AbstractMigratio
 {
     use EventManagerAwareTrait;
 
-    const CALLBACK = [AgnosticEventListener::class, 'listen'];
-    const HANDLED_EVENTS = [
+    private const CALLBACK = [AgnosticEventListener::class, 'listen'];
+    private const HANDLED_EVENTS = [
         ResourceUpdated::class,
         TestUpdatedEvent::class,
         QtiTestImportEvent::class,
