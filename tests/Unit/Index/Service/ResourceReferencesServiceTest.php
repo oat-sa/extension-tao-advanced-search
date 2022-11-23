@@ -74,12 +74,22 @@ class ResourceReferencesServiceTest extends TestCase
 
     public function setUp(): void
     {
-        if (!class_exists(ItemMediaResolver::class)) {
+        if (!class_exists(QtiTestService::class)) {
             $this->markTestSkipped(
                 sprintf(
-                    '%s needs %s from MediaManager',
+                    '%s needs %s from TAO Qti Test',
                     ResourceUpdatedHandler::class,
-                    ItemMediaResolver::class
+                    QtiTestService::class
+                )
+            );
+        }
+
+        if (!class_exists(RdfMediaRelationRepository::class)) {
+            $this->markTestSkipped(
+                sprintf(
+                    '%s needs %s from TAO Media Manager',
+                    ResourceUpdatedHandler::class,
+                    RdfMediaRelationRepository::class
                 )
             );
         }
