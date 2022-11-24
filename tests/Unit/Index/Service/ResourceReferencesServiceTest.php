@@ -29,7 +29,7 @@ use oat\tao\model\resources\relation\ResourceRelation;
 use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\TaoOntology;
 use oat\taoAdvancedSearch\model\Index\Handler\ResourceUpdatedHandler;
-use oat\taoAdvancedSearch\model\Index\Service\ResourceReferencesService;
+use oat\taoAdvancedSearch\model\Index\Service\AdvancedSearchIndexDocumentBuilder;
 use oat\taoItems\model\media\ItemMediaResolver;
 use oat\taoMediaManager\model\relation\MediaRelation;
 use oat\taoMediaManager\model\relation\MediaRelationCollection;
@@ -42,7 +42,7 @@ use PHPUnit\Framework\TestCase;
 
 class ResourceReferencesServiceTest extends TestCase
 {
-    /** @var ResourceReferencesService */
+    /** @var AdvancedSearchIndexDocumentBuilder */
     private $sut;
 
     /** @var core_kernel_classes_Resource|MockObject  */
@@ -104,7 +104,7 @@ class ResourceReferencesServiceTest extends TestCase
             RdfMediaRelationRepository::class
         );
 
-        $this->sut = new ResourceReferencesService(
+        $this->sut = new AdvancedSearchIndexDocumentBuilder(
             $this->createMock(LoggerService::class),
             $this->qtiTestService,
             $this->mediaRelationRepository
@@ -125,27 +125,6 @@ class ResourceReferencesServiceTest extends TestCase
                 [TaoOntology::CLASS_URI_TEST, $this->testType],
                 [TaoOntology::CLASS_URI_OBJECT, $this->genericType],
             ]);
-    }
-
-    /**
-     * @dataProvider hasSupportedTypeDataProvider
-     */
-    public function testHasSupportedType(
-        bool $expected,
-        core_kernel_classes_Resource $resource
-    ): void {
-        $resource
-            ->method('getClass')
-            ->willReturnMap([
-                [TaoOntology::CLASS_URI_ITEM, $this->itemType],
-                [TaoOntology::CLASS_URI_TEST, $this->testType],
-                [TaoOntology::CLASS_URI_OBJECT, $this->genericType],
-            ]);
-
-        $this->assertEquals(
-            $expected,
-            $this->sut->hasSupportedType($resource)
-        );
     }
 
     public function hasSupportedTypeDataProvider(): array
@@ -374,8 +353,8 @@ class ResourceReferencesServiceTest extends TestCase
 
         $this->assertEquals(
             [
-                ResourceReferencesService::REFERENCES_KEY => [],
-                ResourceReferencesService::IDENTIFIER_KEY => 'ABCD1234',
+                AdvancedSearchIndexDocumentBuilder::REFERENCES_KEY => [],
+                AdvancedSearchIndexDocumentBuilder::QTI_IDENTIFIER_KEY => 'ABCD1234',
             ],
             $this->sut->getBodyWithReferences(
                 $this->resource,
