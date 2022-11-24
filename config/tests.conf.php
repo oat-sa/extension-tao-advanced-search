@@ -25,7 +25,7 @@ return [
     'body' => [
         'mappings' => [
             'properties' => [
-                'identifier' => [
+                'qti_identifier' => [
                     'type' => 'keyword',
                     'ignore_above' => 256,
                 ],
