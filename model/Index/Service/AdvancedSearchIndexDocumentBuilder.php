@@ -34,6 +34,7 @@ use oat\taoQtiItem\model\qti\parser\ElementReferencesExtractor;
 use oat\taoQtiItem\model\qti\QtiObject;
 use oat\taoQtiItem\model\qti\Service as QtiItemService;
 use oat\taoQtiItem\model\qti\XInclude;
+use Psr\Container\ContainerInterface;
 use ReflectionProperty;
 use taoQtiTest_models_classes_QtiTestService as QtiTestService;
 use Exception;
@@ -49,20 +50,22 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
     private QtiTestService $qtiTestService;
     private ElementReferencesExtractor $itemElementReferencesExtractor;
     private QtiItemService $qtiItemService;
+    private IndexService $indexService;
     private ?IdDiscoverService $idDiscoverService;
-    private ?IndexService $indexService;
 
     public function __construct(
         QtiTestService $qtiTestService,
         ElementReferencesExtractor $itemElementReferencesExtractor,
         IndexService $indexService,
-        IdDiscoverService $idDiscoverService = null
+        ContainerInterface $container
     ) {
         $this->qtiTestService = $qtiTestService;
         $this->itemElementReferencesExtractor = $itemElementReferencesExtractor;
         $this->indexService = $indexService;
         $this->qtiItemService = QtiItemService::singleton();
-        $this->idDiscoverService = $idDiscoverService;
+        $this->idDiscoverService = $container->has(IdDiscoverService::class)
+            ? $container->get(IdDiscoverService::class)
+            : null;
     }
 
     /**
@@ -89,8 +92,8 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
      */
     private function populateReferences(core_kernel_classes_Resource $resource, IndexDocument $document): void
     {
-        $newDocument = new ReflectionProperty($document, 'body');
-        $newDocument->setAccessible(true);
+        $reflector = new ReflectionProperty($document, 'body');
+        $reflector->setAccessible(true);
 
         $body = $document->getBody();
 
@@ -103,7 +106,7 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
             $body[self::QTI_IDENTIFIER_KEY] = $this->getIdentifier($resource);
         }
 
-        $newDocument->setValue($body);
+        $reflector->setValue($document, $body);
     }
 
     /**
@@ -183,7 +186,7 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
         return false;
     }
 
-    private function getDocumentBuilder(): AdvancedSearchIndexDocumentBuilder
+    private function getDocumentBuilder(): IndexDocumentBuilderInterface
     {
         //@TODO Check if we can add this in the IndexService::getDocumentBuilder method
         $service = $this->indexService->getDocumentBuilder();

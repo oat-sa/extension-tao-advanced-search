@@ -46,7 +46,7 @@ class IndexServiceProvider implements ContainerServiceProviderInterface
                 service(QtiTestService::class),
                 service(ElementReferencesExtractor::class),
                 service(IndexService::class),
-                service(IdDiscoverService::class)->nullOnInvalid(),
+                service(self::CONTAINER_SERVICE_ID),
             ])->public();
     }
 }
