@@ -37,7 +37,7 @@ class SyncResourceResultIndexer extends ConfigurableService implements IndexerIn
 
     public function addIndex($resource): void
     {
-        // Use the adapter to forward an event to the AgnosticEventListener
+        // Use the mediator to forward an event to the AgnosticEventListener
         // and let it decide how to (re)index the resource based on the
         // container config
         //
