@@ -22,21 +22,12 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\Index\ServiceProvider;
 
-use oat\generis\model\data\event\ResourceUpdated;
 use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
 use oat\oatbox\log\LoggerService;
-use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilder;
-use oat\tao\model\search\SearchProxy;
-use oat\taoAdvancedSearch\model\Index\Handler\ResourceUpdatedHandler;
-use oat\taoAdvancedSearch\model\Index\Handler\TestUpdatedHandler;
-use oat\taoAdvancedSearch\model\Index\Listener\AgnosticEventListener;
-use oat\taoAdvancedSearch\model\Index\Listener\ResourceOperationMediator;
 use oat\taoAdvancedSearch\model\Index\Service\ResourceReferencesService;
 use oat\taoMediaManager\model\relation\repository\rdf\RdfMediaRelationRepository;
+use oat\taoQtiItem\model\qti\parser\ElementReferencesExtractor;
 use taoQtiTest_models_classes_QtiTestService as QtiTestService;
-use oat\taoQtiTest\models\event\QtiTestImportEvent;
-use oat\taoTests\models\event\TestUpdatedEvent;
-use taoQtiTest_models_classes_QtiTestService;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
@@ -54,54 +45,7 @@ class IndexServiceProvider implements ContainerServiceProviderInterface
             ->args([
                 service(LoggerService::SERVICE_ID),
                 service(QtiTestService::class),
-                service(RdfMediaRelationRepository::class)->nullOnInvalid(),
+                service(ElementReferencesExtractor::class)->nullOnInvalid(),
             ])->public();
-
-        $services->set(ResourceUpdatedHandler::class, ResourceUpdatedHandler::class)
-            ->args([
-                service(LoggerService::SERVICE_ID),
-                service(IndexDocumentBuilder::class),
-                service(SearchProxy::SERVICE_ID),
-                service(ResourceReferencesService::class),
-            ]);
-
-        $services->set(TestUpdatedHandler::class, TestUpdatedHandler::class)
-            ->args([
-                service(LoggerService::SERVICE_ID),
-                service(IndexDocumentBuilder::class),
-                service(SearchProxy::SERVICE_ID),
-                service(ResourceReferencesService::class),
-            ]);
-
-        $services->set(TestImportHandler::class, TestImportHandler::class)
-            ->args([
-                service(LoggerService::SERVICE_ID),
-                service(IndexDocumentBuilder::class),
-                service(SearchProxy::SERVICE_ID),
-                service(taoQtiTest_models_classes_QtiTestService::class),
-            ]);
-
-        $services->set(AgnosticEventListener::class, AgnosticEventListener::class)
-            ->args(
-                [
-                    service(LoggerService::SERVICE_ID),
-                    [
-                        ResourceUpdated::class => [
-                            service(ResourceUpdatedHandler::class)
-                        ],
-                        TestUpdatedEvent::class => [
-                            service(TestUpdatedHandler::class)
-                        ],
-                        QtiTestImportEvent::class => [
-                            service(TestUpdatedHandler::class)
-                        ]
-                    ]
-                ]
-            )->public();
-
-        $services->set(ResourceOperationMediator::class, ResourceOperationMediator::class)
-            ->args([
-                service(AgnosticEventListener::class)
-            ]);
     }
 }

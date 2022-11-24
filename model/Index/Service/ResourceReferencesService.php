@@ -21,12 +21,16 @@
 namespace oat\taoAdvancedSearch\model\Index\Service;
 
 use core_kernel_classes_Resource;
-use oat\tao\model\resources\relation\ResourceRelation;
+use oat\oatbox\service\ServiceManager;
 use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\TaoOntology;
-use oat\taoMediaManager\model\relation\MediaRelation;
-use oat\taoMediaManager\model\relation\repository\query\FindAllByTargetQuery;
 use oat\taoMediaManager\model\relation\repository\rdf\RdfMediaRelationRepository;
+use oat\taoMediaManager\model\relation\service\IdDiscoverService;
+use oat\taoQtiItem\model\qti\Img;
+use oat\taoQtiItem\model\qti\parser\ElementReferencesExtractor;
+use oat\taoQtiItem\model\qti\QtiObject;
+use oat\taoQtiItem\model\qti\Service as QtiItemService;
+use oat\taoQtiItem\model\qti\XInclude;
 use taoQtiTest_models_classes_QtiTestService as QtiTestService;
 use Psr\Log\LoggerInterface;
 use Exception;
@@ -49,17 +53,21 @@ class ResourceReferencesService
     /** @var QtiTestService */
     private $qtiTestService;
 
-    /** @var RdfMediaRelationRepository|null */
-    private $mediaRelationRepository;
+    /** @var ElementReferencesExtractor */
+    private $itemElementReferencesExtractor;
+
+    /** @var QtiItemService */
+    private $qtiItemService;
 
     public function __construct(
         LoggerInterface $logger,
         QtiTestService $qtiTestService,
-        RdfMediaRelationRepository $mediaRelationRepository = null
+        ElementReferencesExtractor $itemElementReferencesExtractor = null
     ) {
         $this->logger = $logger;
         $this->qtiTestService = $qtiTestService;
-        $this->mediaRelationRepository = $mediaRelationRepository;
+        $this->itemElementReferencesExtractor = $itemElementReferencesExtractor;
+        $this->qtiItemService = QtiItemService::singleton();
     }
 
     /**
@@ -148,26 +156,34 @@ class ResourceReferencesService
     private function getResourceURIsForItemAssets(
         core_kernel_classes_Resource $resource
     ): array {
-        if ($this->mediaRelationRepository === null) {
-            $this->logger->warning('MediaRelationRepository not available');
-            return [];
-        }
+        $idDiscoverService = ServiceManager::getServiceManager()
+            ->getContainer()->get(IdDiscoverService::class);
 
-        $mediaRelations = $this->mediaRelationRepository->findAllByTarget(
-            new FindAllByTargetQuery(
-                $resource->getUri(),
-                MediaRelation::ITEM_TYPE
+        /** @var IdDiscoverService $idDiscoverService */
+
+
+        /** @var Service $itemService */
+        $qtiItem = $this->qtiItemService->getDataItemByRdfItem($resource);
+
+        $ret = array_merge(
+            $this->itemElementReferencesExtractor->extract(
+                $qtiItem,
+                XInclude::class,
+                'href'
+            ),
+            $this->itemElementReferencesExtractor->extract(
+                $qtiItem,
+                QtiObject::class,
+                'data'
+            ),
+            $this->itemElementReferencesExtractor->extract(
+                $qtiItem,
+                Img::class,
+                'src'
             )
         );
 
-        $mediaURIs = [];
-
-        foreach ($mediaRelations as $mediaRelation) {
-            assert($mediaRelation instanceof ResourceRelation);
-            $mediaURIs[] = $mediaRelation->getSourceId();
-        }
-
-        return $mediaURIs;
+        return $idDiscoverService->discover($ret);
     }
 
     /**
