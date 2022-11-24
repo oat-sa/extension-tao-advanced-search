@@ -77,7 +77,7 @@ return [
                     'type' => 'keyword',
                     'ignore_above' => 256,
                 ],
-                'referenced_resources' => [
+                'asset_uris' => [
                     'type' => 'keyword',
                 ],
             ],

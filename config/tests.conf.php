@@ -69,7 +69,7 @@ return [
                     'type' => 'keyword',
                     'ignore_above' => 256,
                 ],
-                'referenced_resources' => [
+                'item_uris' => [
                     'type' => 'keyword',
                 ],
             ],
