@@ -25,12 +25,8 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\Resource\ServiceProvider;
 
 use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
-use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilder;
 use oat\tao\model\taskQueue\QueueDispatcherInterface;
-use oat\taoAdvancedSearch\model\Resource\Factory\IndexDocumentBuilderFactory;
-use oat\taoAdvancedSearch\model\Resource\Factory\RdfMediaRelationRepositoryFactory;
 use oat\taoAdvancedSearch\model\Resource\Service\ResourceIndexer;
-use oat\taoMediaManager\model\relation\repository\rdf\RdfMediaRelationRepository;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
@@ -50,24 +46,5 @@ class ResourceServiceProvider implements ContainerServiceProviderInterface
                     service(QueueDispatcherInterface::SERVICE_ID),
                 ]
             )->public();
-
-        $services->set(IndexDocumentBuilderFactory::class, IndexDocumentBuilderFactory::class)
-            ->private();
-
-        $services->set(IndexDocumentBuilder::class)
-            ->factory(
-                [
-                    service(IndexDocumentBuilderFactory::class),
-                    'create'
-                ]
-            )->private();
-
-        $services->set(RdfMediaRelationRepository::class, RdfMediaRelationRepository::class)
-            ->factory(
-                [
-                    RdfMediaRelationRepositoryFactory::class,
-                    'getRdfMediaRelationRepository'
-                ]
-            )->private();
     }
 }
