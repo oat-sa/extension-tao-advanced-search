@@ -30,7 +30,7 @@
     "oat-sa/tao-core": ">=v50.25",
     "oat-sa/extension-tao-delivery": ">=14.10.1",
     "oat-sa/extension-tao-outcomeui": ">=10.4.0",
-    "oat-sa/extension-tao-test": ">=2.21.0",
+    "oat-sa/extension-tao-test": ">=15.15.1",
     "oat-sa/lib-tao-elasticsearch": ">=2.5.2"
   },
   "autoload": {
