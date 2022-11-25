@@ -22,11 +22,14 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\Resource\Service;
 
-use core_kernel_classes_Resource;
 use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\service\ConfigurableService;
-use oat\taoAdvancedSearch\model\Index\Listener\ResourceOperationMediator;
+use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
+use oat\tao\model\search\SearchInterface;
+use oat\tao\model\search\SearchProxy;
+use oat\taoAdvancedSearch\model\Index\Service\AdvancedSearchIndexDocumentBuilder;
 use oat\taoAdvancedSearch\model\Index\Service\IndexerInterface;
+use Throwable;
 
 /**
  * This service is used by tasks and command line tools.
@@ -37,19 +40,44 @@ class SyncResourceResultIndexer extends ConfigurableService implements IndexerIn
 
     public function addIndex($resource): void
     {
-        // Use the mediator to forward an event to the AgnosticEventListener
-        // and let it decide how to (re)index the resource based on the
-        // container config
-        //
-        if ($resource instanceof core_kernel_classes_Resource) {
-            $this->getMediator()->handleAddIndex($resource);
+        try {
+            $document = $this->getDocumentBuilder()->createDocumentFromResource($resource);
+
+            $totalIndexed = $this->getSearch()->index(
+                [
+                    $document,
+                ]
+            );
+
+            if ($totalIndexed < 1) {
+                $this->logWarning(
+                    sprintf(
+                        'Could not index resource %s (%s): totalIndexed=%d',
+                        $resource->getLabel(),
+                        $resource->getUri(),
+                        $totalIndexed
+                    )
+                );
+            }
+        } catch (Throwable $exception) {
+            $this->logError(
+                sprintf(
+                    'Could not index resource %s (%s). Error: %s',
+                    $resource->getLabel(),
+                    $resource->getUri(),
+                    $exception->getMessage()
+                )
+            );
         }
     }
 
-    private function getMediator(): ResourceOperationMediator
+    private function getSearch(): SearchInterface
     {
-        return $this->getServiceManager()->getContainer()->get(
-            ResourceOperationMediator::class
-        );
+        return $this->getServiceLocator()->get(SearchProxy::SERVICE_ID);
+    }
+
+    private function getDocumentBuilder(): IndexDocumentBuilderInterface
+    {
+        return $this->getServiceManager()->getContainer()->get(AdvancedSearchIndexDocumentBuilder::class);
     }
 }
