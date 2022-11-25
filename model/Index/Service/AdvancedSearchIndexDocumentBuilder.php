@@ -28,22 +28,20 @@ use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\search\index\IndexService;
 use oat\tao\model\TaoOntology;
-use oat\taoMediaManager\model\relation\service\IdDiscoverService;
-use oat\taoQtiItem\model\qti\Img;
+use oat\taoItems\model\media\ItemMediaResolver;
+use oat\taoQtiItem\model\qti\interaction\MediaInteraction;
 use oat\taoQtiItem\model\qti\parser\ElementReferencesExtractor;
-use oat\taoQtiItem\model\qti\QtiObject;
 use oat\taoQtiItem\model\qti\Service as QtiItemService;
-use oat\taoQtiItem\model\qti\XInclude;
+use taoQtiTest_models_classes_QtiTestService as QtiTestService;
+use taoQtiTest_models_classes_QtiTestServiceException;
 use Psr\Container\ContainerInterface;
 use ReflectionProperty;
-use taoQtiTest_models_classes_QtiTestService as QtiTestService;
+use tao_helpers_Uri;
 use Exception;
-use taoQtiTest_models_classes_QtiTestServiceException;
 
 class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterface
 {
     public const QTI_IDENTIFIER_KEY = 'qit_identifier';
-    public const REFERENCES_KEY = 'referenced_resources';
     public const ASSETS_KEY = 'asset_uris';
     public const ITEMS_KEY = 'item_uris';
 
@@ -51,21 +49,17 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
     private ElementReferencesExtractor $itemElementReferencesExtractor;
     private QtiItemService $qtiItemService;
     private IndexService $indexService;
-    private ?IdDiscoverService $idDiscoverService;
 
     public function __construct(
-        QtiTestService $qtiTestService,
+        QtiTestService             $qtiTestService,
         ElementReferencesExtractor $itemElementReferencesExtractor,
-        IndexService $indexService,
-        ContainerInterface $container
+        IndexService               $indexService,
+        ContainerInterface         $container
     ) {
         $this->qtiTestService = $qtiTestService;
         $this->itemElementReferencesExtractor = $itemElementReferencesExtractor;
         $this->indexService = $indexService;
         $this->qtiItemService = QtiItemService::singleton();
-        $this->idDiscoverService = $container->has(IdDiscoverService::class)
-            ? $container->get(IdDiscoverService::class)
-            : null;
     }
 
     /**
@@ -125,35 +119,54 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
         return null;
     }
 
-    /**
-     * @throws common_Exception
-     */
-    private function getResourceURIsForItemAssets(core_kernel_classes_Resource $resource): array
-    {
-        if ($this->idDiscoverService === null) {
+    private function getResourceURIsForItemAssets(
+        core_kernel_classes_Resource $resource
+    ): array {
+        $resolver = $this->mediaResolver ?? $this->getResolverForResource($resource);
+        if ($resolver === null) {
             return [];
         }
 
+        $mediaURIs = [];
         $qtiItem = $this->qtiItemService->getDataItemByRdfItem($resource);
 
-        return $this->idDiscoverService->discover(
-            array_merge(
-                $this->itemElementReferencesExtractor->extract(
-                    $qtiItem,
-                    XInclude::class,
-                    'href'
-                ),
-                $this->itemElementReferencesExtractor->extract(
-                    $qtiItem,
-                    QtiObject::class,
-                    'data'
-                ),
-                $this->itemElementReferencesExtractor->extract(
-                    $qtiItem,
-                    Img::class,
-                    'src'
-                )
-            )
+        foreach ($qtiItem->getBody()->getElements() as $element) {
+            if ($element instanceof MediaInteraction) {
+                try {
+                    $mediaURIs[] = $this->extractMediaURI($resolver, $element);
+                } catch (Throwable $e) {
+                    $this->logger->warning('Unable to extract media URI');
+                }
+            }
+        }
+
+        return $mediaURIs;
+    }
+
+    private function getResolverForResource(
+        core_kernel_classes_Resource $resource
+    ): ?ItemMediaResolver {
+        if (!class_exists(ItemMediaResolver::class)) {
+            return null;
+        }
+
+        return new ItemMediaResolver($resource, '');
+    }
+
+    /**
+     * @throws Exception if the associated media URI is malformed
+     */
+    private function extractMediaURI(
+        ItemMediaResolver $resolver,
+        MediaInteraction $interaction
+    ): ?string {
+        $data = trim($interaction->getObject()->getAttributeValue('data'));
+        if (empty($data)) {
+            return null;
+        }
+
+        return tao_helpers_Uri::decode(
+            $resolver->resolve($data)->getMediaIdentifier()
         );
     }
 
