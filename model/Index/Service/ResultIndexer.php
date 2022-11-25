@@ -51,6 +51,7 @@ class ResultIndexer extends ConfigurableService implements IndexerInterface, Nor
 
             return;
         }
+
         $normalizedResource = $this->normalizer->normalize($resource);
 
         $this->getQueueDispatcher()->createTask(
