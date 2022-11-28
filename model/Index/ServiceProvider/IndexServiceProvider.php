@@ -25,6 +25,7 @@ namespace oat\taoAdvancedSearch\model\Index\ServiceProvider;
 use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
 use oat\tao\model\search\index\IndexService;
 use oat\taoAdvancedSearch\model\Index\Service\AdvancedSearchIndexDocumentBuilder;
+use oat\taoMediaManager\model\relation\service\IdDiscoverService;
 use oat\taoQtiItem\model\qti\parser\ElementReferencesExtractor;
 use taoQtiTest_models_classes_QtiTestService as QtiTestService;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -45,7 +46,7 @@ class IndexServiceProvider implements ContainerServiceProviderInterface
                 service(QtiTestService::class),
                 service(ElementReferencesExtractor::class),
                 service(IndexService::class),
-                service(self::CONTAINER_SERVICE_ID),
+                service(IdDiscoverService::class),
             ])->public();
     }
 }
