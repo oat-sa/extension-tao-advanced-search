@@ -22,12 +22,14 @@ namespace oat\taoAdvancedSearch\model\Index\Service;
 
 use common_Exception;
 use common_exception_InconsistentData;
+use core_kernel_classes_Property;
 use core_kernel_classes_Resource;
 use oat\oatbox\service\ServiceManager;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\search\index\IndexService;
 use oat\tao\model\TaoOntology;
+use oat\taoDeliveryRdf\model\DeliveryAssemblyService;
 use oat\taoItems\model\media\ItemMediaResolver;
 use oat\taoMediaManager\model\relation\service\IdDiscoverService;
 use oat\taoQtiItem\model\qti\Img;
@@ -44,6 +46,7 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
 {
     private const QTI_IDENTIFIER_KEY = 'qit_identifier';
     private const ASSETS_KEY = 'asset_uris';
+    private const TEST_KEY = 'test_uri';
     private const ITEMS_KEY = 'item_uris';
 
     private QtiTestService $qtiTestService;
@@ -104,7 +107,24 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
             $body[self::QTI_IDENTIFIER_KEY] = $this->getIdentifier($resource);
         }
 
+        if ($this->isA(TaoOntology::CLASS_URI_DELIVERY, $resource)) {
+            $body[self::TEST_KEY] = $this->getDeliveryTestId($resource);
+        }
+
         $reflector->setValue($document, $body);
+    }
+
+    private function getDeliveryTestId(core_kernel_classes_Resource $resource): ?string
+    {
+        try {
+            return (string) $resource->getUniquePropertyValue(
+                new core_kernel_classes_Property(
+                    DeliveryAssemblyService::PROPERTY_ORIGIN
+                )
+            );
+        } catch (Exception $e) {
+            return null;
+        }
     }
 
     /**
