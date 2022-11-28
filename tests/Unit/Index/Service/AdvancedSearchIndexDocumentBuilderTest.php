@@ -26,6 +26,7 @@ use oat\tao\model\search\index\IndexService;
 use oat\taoAdvancedSearch\model\Index\Service\AdvancedSearchIndexDocumentBuilder;
 use oat\taoMediaManager\model\relation\service\IdDiscoverService;
 use oat\taoQtiItem\model\qti\parser\ElementReferencesExtractor;
+use oat\taoQtiItem\model\qti\Service as QtiItemService;
 use Psr\Container\ContainerInterface;
 use taoQtiTest_models_classes_QtiTestService as QtiTestService;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -48,27 +49,20 @@ class AdvancedSearchIndexDocumentBuilderTest extends TestCase
     /** @var IndexService|MockObject */
     private $indexService;
 
-    /** @var MockObject|ContainerInterface */
-    private $container;
-
     public function setUp(): void
     {
         $this->qtiTestService = $this->createMock(QtiTestService::class);
         $this->elementReferencesExtractor = $this->createMock(ElementReferencesExtractor::class);
         $this->idDiscoverService = $this->createMock(IdDiscoverService::class);
         $this->indexService = $this->createMock(IndexService::class);
-        $this->container = $this->createMock(ContainerInterface::class);
-
-        $this->container
-            ->expects($this->once())
-            ->method('get')
-            ->willReturn($this->idDiscoverService);
+        $this->itemService = $this->createMock(QtiItemService::class);
 
         $this->sut = new AdvancedSearchIndexDocumentBuilder(
             $this->qtiTestService,
             $this->elementReferencesExtractor,
             $this->indexService,
-            $this->container,
+            $this->idDiscoverService,
+            $this->itemService
         );
     }
 
