@@ -42,9 +42,9 @@ use Exception;
 
 class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterface
 {
-    public const QTI_IDENTIFIER_KEY = 'qit_identifier';
-    public const ASSETS_KEY = 'asset_uris';
-    public const ITEMS_KEY = 'item_uris';
+    private const QTI_IDENTIFIER_KEY = 'qit_identifier';
+    private const ASSETS_KEY = 'asset_uris';
+    private const ITEMS_KEY = 'item_uris';
 
     private QtiTestService $qtiTestService;
     private ElementReferencesExtractor $itemElementReferencesExtractor;
