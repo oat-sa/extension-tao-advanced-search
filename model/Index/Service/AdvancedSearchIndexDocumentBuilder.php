@@ -116,15 +116,15 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
 
     private function getDeliveryTestId(core_kernel_classes_Resource $resource): ?string
     {
-        try {
-            return (string) $resource->getUniquePropertyValue(
-                new core_kernel_classes_Property(
-                    DeliveryAssemblyService::PROPERTY_ORIGIN
-                )
-            );
-        } catch (Exception $e) {
-            return null;
-        }
+        $values = $resource->getPropertyValues(
+            new core_kernel_classes_Property(
+                DeliveryAssemblyService::PROPERTY_ORIGIN
+            )
+        );
+
+        $value = current($values);
+
+        return $value ? (string) $value : null;
     }
 
     /**
