@@ -31,7 +31,6 @@ use oat\tao\model\TaoOntology;
 use oat\taoItems\model\media\ItemMediaResolver;
 use oat\taoMediaManager\model\relation\service\IdDiscoverService;
 use oat\taoQtiItem\model\qti\Img;
-use oat\taoQtiItem\model\qti\interaction\MediaInteraction;
 use oat\taoQtiItem\model\qti\parser\ElementReferencesExtractor;
 use oat\taoQtiItem\model\qti\QtiObject;
 use oat\taoQtiItem\model\qti\Service as QtiItemService;
@@ -39,7 +38,6 @@ use oat\taoQtiItem\model\qti\XInclude;
 use taoQtiTest_models_classes_QtiTestService as QtiTestService;
 use taoQtiTest_models_classes_QtiTestServiceException;
 use ReflectionProperty;
-use tao_helpers_Uri;
 use Exception;
 
 class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterface
@@ -55,16 +53,17 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
     private IdDiscoverService $idDiscoverService;
 
     public function __construct(
-        QtiTestService             $qtiTestService,
+        QtiTestService $qtiTestService,
         ElementReferencesExtractor $itemElementReferencesExtractor,
-        IndexService               $indexService,
-        IdDiscoverService          $idDiscoverService
+        IndexService $indexService,
+        IdDiscoverService $idDiscoverService,
+        QtiItemService $qtiItemService = null
     ) {
         $this->qtiTestService = $qtiTestService;
         $this->itemElementReferencesExtractor = $itemElementReferencesExtractor;
         $this->indexService = $indexService;
         $this->idDiscoverService = $idDiscoverService;
-        $this->qtiItemService = QtiItemService::singleton();
+        $this->qtiItemService = $qtiItemService ?? QtiItemService::singleton();
     }
 
     /**
