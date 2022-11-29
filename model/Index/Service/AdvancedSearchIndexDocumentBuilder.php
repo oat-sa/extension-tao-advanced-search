@@ -25,6 +25,7 @@ use common_exception_InconsistentData;
 use core_kernel_classes_Property;
 use core_kernel_classes_Resource;
 use oat\oatbox\service\ServiceManager;
+use oat\tao\model\media\TaoMediaResolver;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\search\index\IndexService;
@@ -39,7 +40,6 @@ use oat\taoQtiItem\model\qti\Service as QtiItemService;
 use oat\taoQtiItem\model\qti\XInclude;
 use taoQtiTest_models_classes_QtiTestService as QtiTestService;
 use taoQtiTest_models_classes_QtiTestServiceException;
-use ReflectionProperty;
 use Exception;
 
 class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterface
@@ -54,19 +54,22 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
     private QtiItemService $qtiItemService;
     private IndexService $indexService;
     private IdDiscoverService $idDiscoverService;
+    private ?TaoMediaResolver $itemMediaResolver;
 
     public function __construct(
         QtiTestService $qtiTestService,
         ElementReferencesExtractor $itemElementReferencesExtractor,
         IndexService $indexService,
         IdDiscoverService $idDiscoverService,
-        QtiItemService $qtiItemService = null
+        QtiItemService $qtiItemService = null,
+        TaoMediaResolver $itemMediaResolver = null
     ) {
         $this->qtiTestService = $qtiTestService;
         $this->itemElementReferencesExtractor = $itemElementReferencesExtractor;
         $this->indexService = $indexService;
         $this->idDiscoverService = $idDiscoverService;
         $this->qtiItemService = $qtiItemService ?? QtiItemService::singleton();
+        $this->itemMediaResolver = $itemMediaResolver;
     }
 
     /**
@@ -78,7 +81,7 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
     {
         $document = $this->getDocumentBuilder()->createDocumentFromResource($resource);
 
-        $this->populateReferences($resource, $document);
+        $document = $this->populateReferences($resource, $document);
 
         return $document;
     }
@@ -91,11 +94,8 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
     /**
      * @throws Exception
      */
-    private function populateReferences(core_kernel_classes_Resource $resource, IndexDocument $document): void
+    private function populateReferences(core_kernel_classes_Resource $resource, IndexDocument $document): IndexDocument
     {
-        $reflector = new ReflectionProperty($document, 'body');
-        $reflector->setAccessible(true);
-
         $body = $document->getBody();
 
         if ($this->isA(TaoOntology::CLASS_URI_ITEM, $resource)) {
@@ -111,7 +111,13 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
             $body[self::TEST_KEY] = $this->getDeliveryTestId($resource);
         }
 
-        $reflector->setValue($document, $body);
+        return new IndexDocument(
+            $document->getId(),
+            $body,
+            $document->getIndexProperties(),
+            $document->getDynamicProperties(),
+            $document->getAccessProperties()
+        );
     }
 
     private function getDeliveryTestId(core_kernel_classes_Resource $resource): ?string
@@ -176,7 +182,11 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
 
     private function getResolverForResource(
         core_kernel_classes_Resource $resource
-    ): ?ItemMediaResolver {
+    ): ?TaoMediaResolver {
+        if ($this->itemMediaResolver instanceof TaoMediaResolver) {
+            return $this->itemMediaResolver;
+        }
+
         if (!class_exists(ItemMediaResolver::class)) {
             return null;
         }
