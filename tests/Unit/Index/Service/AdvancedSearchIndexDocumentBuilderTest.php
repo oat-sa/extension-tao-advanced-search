@@ -167,7 +167,8 @@ class AdvancedSearchIndexDocumentBuilderTest extends TestCase
                     'reference://XInclude/href',
                     'reference://QtiObject/data',
                     'reference://Img/src',
-                ])
+                ]
+            )
             ->willReturn(['asset://1', 'asset://2', 'asset://3']);
 
         $document = $this->sut->createDocumentFromResource($anItem);
