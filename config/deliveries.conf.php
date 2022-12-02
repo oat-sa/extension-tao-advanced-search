@@ -61,6 +61,9 @@ return [
                     'type' => 'keyword',
                     'ignore_above' => 256,
                 ],
+                'test_uri' => [
+                    'type' => 'keyword',
+                ],
             ],
         ],
         'settings' => [

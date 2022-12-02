@@ -18,6 +18,7 @@
  * Copyright (c) 2021-2022 (original work) Open Assessment Technologies SA;
  */
 
+use oat\taoAdvancedSearch\model\Index\ServiceProvider\IndexServiceProvider;
 use oat\taoAdvancedSearch\model\Metadata\ServiceProvider\MetadataServiceProvider;
 use oat\taoAdvancedSearch\model\Resource\ServiceProvider\ResourceServiceProvider;
 use oat\taoAdvancedSearch\model\SearchEngine\ServiceProvider\SearchEngineProvider;
@@ -57,6 +58,7 @@ return [
         'BASE_URL' => ROOT_URL . 'taoAdvancedSearch/',
     ],
     'containerServiceProviders' => [
+        IndexServiceProvider::class,
         MetadataServiceProvider::class,
         SearchEngineProvider::class,
         ResourceServiceProvider::class,

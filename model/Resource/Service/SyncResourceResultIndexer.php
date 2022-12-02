@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2021 (original work) Open Assessment Technologies SA;
+ * Copyright (c) 2021-2022 (original work) Open Assessment Technologies SA;
  */
 
 declare(strict_types=1);
@@ -24,12 +24,16 @@ namespace oat\taoAdvancedSearch\model\Resource\Service;
 
 use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\service\ConfigurableService;
-use oat\tao\model\search\index\IndexService;
+use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\SearchInterface;
 use oat\tao\model\search\SearchProxy;
+use oat\taoAdvancedSearch\model\Index\Service\AdvancedSearchIndexDocumentBuilder;
 use oat\taoAdvancedSearch\model\Index\Service\IndexerInterface;
 use Throwable;
 
+/**
+ * This service is used by tasks and command line tools.
+ */
 class SyncResourceResultIndexer extends ConfigurableService implements IndexerInterface
 {
     use OntologyAwareTrait;
@@ -37,10 +41,7 @@ class SyncResourceResultIndexer extends ConfigurableService implements IndexerIn
     public function addIndex($resource): void
     {
         try {
-            $documentBuilder = $this->getIndexerService()->getDocumentBuilder();
-            $this->propagate($documentBuilder);
-
-            $document = $documentBuilder->createDocumentFromResource($resource);
+            $document = $this->getDocumentBuilder()->createDocumentFromResource($resource);
 
             $totalIndexed = $this->getSearch()->index(
                 [
@@ -75,8 +76,8 @@ class SyncResourceResultIndexer extends ConfigurableService implements IndexerIn
         return $this->getServiceLocator()->get(SearchProxy::SERVICE_ID);
     }
 
-    private function getIndexerService(): IndexService
+    private function getDocumentBuilder(): IndexDocumentBuilderInterface
     {
-        return $this->getServiceLocator()->get(IndexService::SERVICE_ID);
+        return $this->getServiceManager()->getContainer()->get(AdvancedSearchIndexDocumentBuilder::class);
     }
 }

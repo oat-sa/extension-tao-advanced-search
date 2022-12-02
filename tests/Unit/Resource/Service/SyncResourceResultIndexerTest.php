@@ -23,51 +23,44 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\tests\Unit\Resource\Service;
 
 use core_kernel_classes_Resource;
-use oat\generis\test\TestCase;
+use oat\generis\test\ServiceManagerMockTrait;
 use oat\oatbox\log\LoggerService;
-use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
-use oat\tao\model\search\index\IndexService;
 use oat\tao\model\search\SearchInterface;
 use oat\tao\model\search\SearchProxy;
+use oat\taoAdvancedSearch\model\Index\Service\AdvancedSearchIndexDocumentBuilder;
 use oat\taoAdvancedSearch\model\Resource\Service\SyncResourceResultIndexer;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 class SyncResourceResultIndexerTest extends TestCase
 {
+    use ServiceManagerMockTrait;
+
     /** @var SyncResourceResultIndexer */
     private $indexer;
-
-    /** @var IndexService|MockObject */
-    private $indexerService;
 
     /** @var SearchInterface|MockObject */
     private $search;
 
-    /** @var SearchInterface|MockObject */
+    /** @var AdvancedSearchIndexDocumentBuilder|MockObject */
     private $indexDocumentBuilder;
 
     public function setUp(): void
     {
-        $this->indexerService = $this->createMock(IndexService::class);
         $this->search = $this->createMock(SearchInterface::class);
-        $this->indexDocumentBuilder = $this->createMock(IndexDocumentBuilderInterface::class);
+        $this->indexDocumentBuilder = $this->createMock(AdvancedSearchIndexDocumentBuilder::class);
 
         $this->indexer = new SyncResourceResultIndexer();
         $this->indexer->setServiceLocator(
-            $this->getServiceLocatorMock(
+            $this->getServiceManagerMock(
                 [
-                    IndexService::SERVICE_ID => $this->indexerService,
                     SearchProxy::SERVICE_ID => $this->search,
-                    IndexDocumentBuilderInterface::class => $this->indexDocumentBuilder,
+                    AdvancedSearchIndexDocumentBuilder::class => $this->indexDocumentBuilder,
                     LoggerService::SERVICE_ID => $this->createMock(LoggerService::class),
                 ]
             )
         );
-
-        $this->indexerService
-            ->method('getDocumentBuilder')
-            ->willReturn($this->indexDocumentBuilder);
     }
 
     public function testAddIndex(): void
