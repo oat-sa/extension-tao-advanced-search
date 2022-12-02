@@ -25,6 +25,10 @@ return [
     'body' => [
         'mappings' => [
             'properties' => [
+                'qti_identifier' => [
+                    'type' => 'keyword',
+                    'ignore_above' => 256,
+                ],
                 'class' => [
                     'type' => 'text',
                     'fields' => [
@@ -64,6 +68,9 @@ return [
                 'read_access' => [
                     'type' => 'keyword',
                     'ignore_above' => 256,
+                ],
+                'item_uris' => [
+                    'type' => 'keyword',
                 ],
             ],
             'dynamic_templates' => require __DIR__ . '/dynamic-templates.conf.php',
