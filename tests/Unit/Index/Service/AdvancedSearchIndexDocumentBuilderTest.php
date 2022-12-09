@@ -234,7 +234,7 @@ class AdvancedSearchIndexDocumentBuilderTest extends TestCase
                     'item://1',
                     'item://2'
                 ],
-                'qit_identifier' => 'test_id'
+                'qti_identifier' => 'test_id'
             ],
             $document->getBody()
         );
