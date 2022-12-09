@@ -44,7 +44,7 @@ use Exception;
 
 class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterface
 {
-    private const QTI_IDENTIFIER_KEY = 'qit_identifier';
+    private const QTI_IDENTIFIER_KEY = 'qti_identifier';
     private const ASSETS_KEY = 'asset_uris';
     private const TEST_KEY = 'test_uri';
     private const ITEMS_KEY = 'item_uris';
