@@ -43,7 +43,14 @@ class IndexUpdater extends ConfigurableService implements IndexUpdaterInterface
         $queryNewProperty = [];
         $queryRemoveOldProperty = [];
         foreach ($properties as $propertyData) {
-            if (!isset($propertyData['type'], $propertyData['parentClasses'], $propertyData['oldName'], $propertyData['newName'])) {
+            if (
+                !isset(
+                    $propertyData['type'],
+                    $propertyData['parentClasses'],
+                    $propertyData['oldName'],
+                    $propertyData['newName']
+                )
+            ) {
                 continue;
             }
 
@@ -114,8 +121,12 @@ class IndexUpdater extends ConfigurableService implements IndexUpdaterInterface
     /**
      * @throws FailToUpdatePropertiesException
      */
-    public function updatePropertyValue(string $typeOrId, array $parentClasses, string $propertyName, array $value): void
-    {
+    public function updatePropertyValue(
+        string $typeOrId,
+        array $parentClasses,
+        string $propertyName,
+        array $value
+    ): void {
         $index = $this->findIndex($parentClasses, $typeOrId);
 
         if ($index === IndexerInterface::UNCLASSIFIEDS_DOCUMENTS_INDEX) {
