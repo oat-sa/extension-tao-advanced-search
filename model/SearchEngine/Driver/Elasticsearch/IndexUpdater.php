@@ -244,11 +244,11 @@ class IndexUpdater extends ConfigurableService implements IndexUpdaterInterface
 
     private function getPrefixer(): IndexPrefixer
     {
-        return $this->getServiceManager()->get(IndexPrefixer::class);
+        return $this->getServiceManager()->getContainer()->get(IndexPrefixer::class);
     }
 
     private function getClient(): Client
     {
-        return $this->getServiceManager()->get(Client::class);
+        return $this->getServiceManager()->getContainer()->get(Client::class);
     }
 }
