@@ -159,6 +159,10 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
 
         $qtiItem = $this->qtiItemService->getDataItemByRdfItem($resource);
 
+        if ($qtiItem === null) {
+            return [];
+        }
+
         return $this->idDiscoverService->discover(
             array_merge(
                 $this->itemElementReferencesExtractor->extract(
