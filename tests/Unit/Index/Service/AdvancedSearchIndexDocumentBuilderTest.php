@@ -182,6 +182,46 @@ class AdvancedSearchIndexDocumentBuilderTest extends TestCase
         );
     }
 
+    public function testCreateDocumentFromResourceItemWithNoQtiItem(): void
+    {
+        $anItem = $this->mockResource([TaoOntology::CLASS_URI_ITEM]);
+
+        $this->document
+            ->method('getBody')
+            ->willReturn([
+                'type' => ['document type'],
+            ]);
+
+        $this->parentBuilder
+            ->expects($this->once())
+            ->method('createDocumentFromResource')
+            ->with($anItem)
+            ->willReturn($this->document);
+
+        $this->itemService
+            ->expects($this->once())
+            ->method('getDataItemByRdfItem')
+            ->willReturn(null);
+
+        $this->elementReferencesExtractor
+            ->expects($this->never())
+            ->method('extract');
+
+        $this->idDiscoverService
+            ->expects($this->never())
+            ->method('discover');
+
+        $document = $this->sut->createDocumentFromResource($anItem);
+
+        $this->assertEquals(
+            [
+                'type' => ['document type'],
+                'asset_uris' => [],
+            ],
+            $document->getBody()
+        );
+    }
+
     public function testCreateDocumentFromResourceTest(): void
     {
         $item1 = $this->mockResource([TaoOntology::CLASS_URI_ITEM]);
