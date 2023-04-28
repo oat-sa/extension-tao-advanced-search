@@ -28,7 +28,7 @@
     "ext-json": "*",
     "oat-sa/generis": ">=15.22",
     "oat-sa/tao-core": ">=50.29",
-    "oat-sa/extension-tao-delivery": ">=14.10.1",
+    "oat-sa/extension-tao-delivery": "dev-feature/AUT-2995",
     "oat-sa/extension-tao-outcomeui": ">=10.4.0",
     "oat-sa/extension-tao-test": ">=15.15.1",
     "oat-sa/extension-tao-mediamanager": "dev-feature/AUT-2995",
