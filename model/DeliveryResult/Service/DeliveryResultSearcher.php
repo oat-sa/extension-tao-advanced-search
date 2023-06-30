@@ -29,8 +29,9 @@ use oat\tao\model\task\migration\ResultUnitCollection;
 use oat\tao\model\task\migration\service\ResultFilter;
 use oat\tao\model\task\migration\service\ResultSearcherInterface;
 use oat\taoDelivery\model\execution\DeliveryExecutionService;
-use oat\taoOutcomeUi\model\Builder\ResultsServiceBuilder;
-use oat\taoOutcomeUi\model\ResultsService;
+//use oat\taoOutcomeUi\model\Builder\ResultsServiceBuilder;
+//use oat\taoOutcomeUi\model\ResultsService;
+use oat\taoResultServer\models\classes\ResultServerService;
 
 class DeliveryResultSearcher extends ConfigurableService implements ResultSearcherInterface
 {
@@ -38,8 +39,8 @@ class DeliveryResultSearcher extends ConfigurableService implements ResultSearch
 
     public function search(ResultFilter $filter): ResultUnitCollection
     {
-        $results = $this->getResultsService()
-            ->getImplementation()
+        $resultStorage = $this->getResultServerService()->getResultStorage();
+        $results = $resultStorage
             ->getResultByDelivery(
                 [],
                 [
@@ -61,15 +62,21 @@ class DeliveryResultSearcher extends ConfigurableService implements ResultSearch
         return $collection;
     }
 
-    private function getResultsService(): ResultsService
+    private function getResultServerService(): ResultServerService
     {
-        return $this->getResultServiceBuilder()->build();
+        return $this->getServiceLocator()
+            ->get(ResultServerService::SERVICE_ID);
     }
 
-    private function getResultServiceBuilder(): ResultsServiceBuilder
-    {
-        return $this->getServiceLocator()->get(ResultsServiceBuilder::class);
-    }
+//    private function getResultsService(): ResultsService
+//    {
+//        return $this->getResultServiceBuilder()->build();
+//    }
+//
+//    private function getResultServiceBuilder(): ResultsServiceBuilder
+//    {
+//        return $this->getServiceLocator()->get(ResultsServiceBuilder::class);
+//    }
 
     private function getDeliveryExecutionService(): DeliveryExecutionService
     {

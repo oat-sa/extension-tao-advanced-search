@@ -26,8 +26,9 @@ use core_kernel_classes_Resource;
 use oat\generis\model\kernel\persistence\smoothsql\search\ResourceSearchService;
 use oat\tao\model\TaoOntology;
 use oat\tao\model\task\migration\service\ResultFilterFactory;
-use oat\taoOutcomeUi\model\Builder\ResultsServiceBuilder;
-use oat\taoOutcomeUi\model\ResultsService;
+//use oat\taoOutcomeUi\model\Builder\ResultsServiceBuilder;
+//use oat\taoOutcomeUi\model\ResultsService;
+use oat\taoResultServer\models\classes\ResultServerService;
 
 class DeliveryResultRepository extends ResultFilterFactory implements DeliveryResultRepositoryInterface
 {
@@ -43,20 +44,27 @@ class DeliveryResultRepository extends ResultFilterFactory implements DeliveryRe
             $deliveryIds[] = $result->getUri();
         }
 
-        return (int) $this->getResultsService()
-            ->getImplementation()
+        $resultStorage = $this->getResultServerService()->getResultStorage();
+
+        return $resultStorage
             ->countResultByDelivery($deliveryIds);
     }
 
-    private function getResultsService(): ResultsService
+    private function getResultServerService(): ResultServerService
     {
-        return $this->getResultServiceBuilder()->build();
+        return $this->getServiceLocator()
+            ->get(ResultServerService::SERVICE_ID);
     }
 
-    private function getResultServiceBuilder(): ResultsServiceBuilder
-    {
-        return $this->getServiceLocator()->get(ResultsServiceBuilder::class);
-    }
+//    private function getResultsService(): ResultsService
+//    {
+//        return $this->getResultServiceBuilder()->build();
+//    }
+//
+//    private function getResultServiceBuilder(): ResultsServiceBuilder
+//    {
+//        return $this->getServiceLocator()->get(ResultsServiceBuilder::class);
+//    }
 
     private function getResourceSearchService(): ResourceSearchService
     {

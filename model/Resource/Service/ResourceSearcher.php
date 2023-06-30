@@ -31,8 +31,8 @@ use oat\tao\model\task\migration\service\ResultSearcherInterface;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableResourceRepository;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableResourceRepositoryInterface;
 use oat\taoDelivery\model\execution\DeliveryExecutionService;
-use oat\taoOutcomeUi\model\Builder\ResultsServiceBuilder;
-use oat\taoOutcomeUi\model\ResultsService;
+//use oat\taoOutcomeUi\model\Builder\ResultsServiceBuilder;
+//use oat\taoOutcomeUi\model\ResultsService;
 
 class ResourceSearcher extends ConfigurableService implements ResultSearcherInterface
 {
