@@ -29,9 +29,8 @@ use oat\tao\test\unit\helpers\NoPrivacyTrait;
 use oat\taoAdvancedSearch\model\DeliveryResult\Service\DeliveryResultSearcher;
 use oat\taoDelivery\model\execution\DeliveryExecutionInterface;
 use oat\taoDelivery\model\execution\DeliveryExecutionService;
-use oat\taoOutcomeUi\model\Builder\ResultsServiceBuilder;
-use oat\taoOutcomeUi\model\ResultsService;
 use oat\taoResultServer\models\classes\ResultManagement;
+use oat\taoResultServer\models\classes\ResultServerService;
 use PHPUnit\Framework\MockObject\MockObject;
 
 class DeliveryResultSearcherTest extends TestCase
@@ -41,38 +40,30 @@ class DeliveryResultSearcherTest extends TestCase
     /** @var DeliveryResultSearcher */
     private $subject;
 
-    /** @var ResultsService|MockObject */
-    private $resultsService;
-
-    /** @var ResultsServiceBuilder|MockObject */
-    private $resultsServiceBuilder;
-
     /** @var ResourceSearchService|MockObject */
     private $deliveryExecutionService;
 
     /** @var ResultManagement|MockObject */
     private $resultManagement;
 
+    /** @var ResultServerService|MockObject */
+    private $resultServerService;
+
     public function setUp(): void
     {
-        $this->resultsService = $this->createMock(ResultsService::class);
         $this->resultManagement = $this->createMock(ResultManagement::class);
-        $this->resultsServiceBuilder = $this->createMock(ResultsServiceBuilder::class);
         $this->deliveryExecutionService = $this->createMock(DeliveryExecutionService::class);
+        $this->resultServerService = $this->createMock(ResultServerService::class);
 
-        $this->resultsServiceBuilder
-            ->method('build')
-            ->willReturn($this->resultsService);
-
-        $this->resultsService
-            ->method('getImplementation')
+        $this->resultServerService
+            ->method('getResultStorage')
             ->willReturn($this->resultManagement);
 
         $this->subject = new DeliveryResultSearcher();
         $this->subject->setServiceLocator(
             $this->getServiceLocatorMock(
                 [
-                    ResultsServiceBuilder::class => $this->resultsServiceBuilder,
+                    ResultServerService::SERVICE_ID => $this->resultServerService,
                     DeliveryExecutionService::SERVICE_ID => $this->deliveryExecutionService,
                 ]
             )

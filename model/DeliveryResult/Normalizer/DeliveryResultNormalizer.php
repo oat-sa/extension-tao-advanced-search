@@ -29,7 +29,6 @@ use oat\tao\helpers\UserHelper;
 use oat\taoAdvancedSearch\model\Index\IndexResource;
 use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
 use oat\taoDelivery\model\execution\DeliveryExecutionInterface;
-use oat\taoOutcomeUi\model\search\ResultCustomFieldsService;
 use oat\taoResultServer\models\classes\ResultService;
 
 class DeliveryResultNormalizer extends ConfigurableService implements NormalizerInterface
@@ -54,29 +53,23 @@ class DeliveryResultNormalizer extends ConfigurableService implements Normalizer
         $deliveryExecutionId = $deliveryExecution->getIdentifier();
         $user = UserHelper::getUser($deliveryExecution->getUserIdentifier());
 
-        $customFieldService = $this->getResultCustomFieldsService();
-        $customBody = $customFieldService->getCustomFields($deliveryExecution);
-
         return new IndexResource(
             $deliveryExecutionId,
             $deliveryExecution->getLabel(),
-            array_merge(
-                [
-                    'label' => $deliveryExecution->getLabel(),
-                    self::INDEX_DELIVERY => $deliveryExecution->getDelivery()->getUri(),
-                    'type' => ResultService::DELIVERY_RESULT_CLASS_URI,
-                    self::INDEX_TEST_TAKER => $user->getIdentifier(),
-                    self::INDEX_TEST_TAKER_FIRST_NAME => UserHelper::getUserFirstName($user, true),
-                    self::INDEX_TEST_TAKER_LAST_NAME => UserHelper::getUserLastName($user, true),
-                    self::INDEX_TEST_TAKER_NAME => UserHelper::getUserName($user, true),
-                    self::INDEX_TEST_TAKER_LABEL => UserHelper::getUserLabel($user),
-                    self::INDEX_DELIVERY_EXECUTION => $deliveryExecutionId,
-                    self::INDEX_DELIVERY_EXECUTION_START_TIME => $this->transformDateTime(
-                        $deliveryExecution->getStartTime()
-                    )
-                ],
-                $customBody
-            )
+            [
+                'label' => $deliveryExecution->getLabel(),
+                self::INDEX_DELIVERY => $deliveryExecution->getDelivery()->getUri(),
+                'type' => ResultService::DELIVERY_RESULT_CLASS_URI,
+                self::INDEX_TEST_TAKER => $user->getIdentifier(),
+                self::INDEX_TEST_TAKER_FIRST_NAME => UserHelper::getUserFirstName($user, true),
+                self::INDEX_TEST_TAKER_LAST_NAME => UserHelper::getUserLastName($user, true),
+                self::INDEX_TEST_TAKER_NAME => UserHelper::getUserName($user, true),
+                self::INDEX_TEST_TAKER_LABEL => UserHelper::getUserLabel($user),
+                self::INDEX_DELIVERY_EXECUTION => $deliveryExecutionId,
+                self::INDEX_DELIVERY_EXECUTION_START_TIME => $this->transformDateTime(
+                    $deliveryExecution->getStartTime()
+                )
+            ]
         );
     }
 
@@ -97,10 +90,5 @@ class DeliveryResultNormalizer extends ConfigurableService implements Normalizer
         }
 
         return $date->format('m/d/Y H:i:s');
-    }
-
-    private function getResultCustomFieldsService(): ResultCustomFieldsService
-    {
-        return $this->getServiceLocator()->get(ResultCustomFieldsService::SERVICE_ID);
     }
 }
