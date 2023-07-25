@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2022 (original work) Open Assessment Technologies SA.
+ * Copyright (c) 2022-2023 (original work) Open Assessment Technologies SA.
  */
 
 namespace oat\taoAdvancedSearch\model\Index\Service;
@@ -30,6 +30,7 @@ use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\search\index\IndexService;
 use oat\tao\model\TaoOntology;
+use oat\taoAdvancedSearch\model\Test\Normalizer\TestNormalizer;
 use oat\taoDeliveryRdf\model\DeliveryAssemblyService;
 use oat\taoItems\model\media\ItemMediaResolver;
 use oat\taoMediaManager\model\relation\service\IdDiscoverService;
@@ -38,36 +39,32 @@ use oat\taoQtiItem\model\qti\parser\ElementReferencesExtractor;
 use oat\taoQtiItem\model\qti\QtiObject;
 use oat\taoQtiItem\model\qti\Service as QtiItemService;
 use oat\taoQtiItem\model\qti\XInclude;
-use taoQtiTest_models_classes_QtiTestService as QtiTestService;
-use taoQtiTest_models_classes_QtiTestServiceException;
 use Exception;
 
 class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterface
 {
-    private const QTI_IDENTIFIER_KEY = 'qti_identifier';
     private const ASSETS_KEY = 'asset_uris';
     private const TEST_KEY = 'test_uri';
-    private const ITEMS_KEY = 'item_uris';
 
-    private QtiTestService $qtiTestService;
     private ElementReferencesExtractor $itemElementReferencesExtractor;
     private QtiItemService $qtiItemService;
     private IndexService $indexService;
     private IdDiscoverService $idDiscoverService;
     private ?TaoMediaResolver $itemMediaResolver;
+    private TestNormalizer $testNormalizer;
 
     public function __construct(
-        QtiTestService $qtiTestService,
         ElementReferencesExtractor $itemElementReferencesExtractor,
         IndexService $indexService,
         IdDiscoverService $idDiscoverService,
+        TestNormalizer $testNormalizer,
         QtiItemService $qtiItemService = null,
         TaoMediaResolver $itemMediaResolver = null
     ) {
-        $this->qtiTestService = $qtiTestService;
         $this->itemElementReferencesExtractor = $itemElementReferencesExtractor;
         $this->indexService = $indexService;
         $this->idDiscoverService = $idDiscoverService;
+        $this->testNormalizer = $testNormalizer;
         $this->qtiItemService = $qtiItemService ?? QtiItemService::singleton();
         $this->itemMediaResolver = $itemMediaResolver;
     }
@@ -79,11 +76,14 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
      */
     public function createDocumentFromResource(core_kernel_classes_Resource $resource): IndexDocument
     {
-        $document = $this->getDocumentBuilder()->createDocumentFromResource($resource);
+        if ($this->isA(TaoOntology::CLASS_URI_TEST, $resource)) {
+            return $this->testNormalizer->normalize($resource);
+        }
 
-        $document = $this->populateReferences($resource, $document);
-
-        return $document;
+        return $this->populateReferences(
+            $resource,
+            $this->getDocumentBuilder()->createDocumentFromResource($resource)
+        );
     }
 
     public function createDocumentFromArray(array $resourceData = []): IndexDocument
@@ -100,11 +100,6 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
 
         if ($this->isA(TaoOntology::CLASS_URI_ITEM, $resource)) {
             $body[self::ASSETS_KEY] = $this->getResourceURIsForItemAssets($resource);
-        }
-
-        if ($this->isA(TaoOntology::CLASS_URI_TEST, $resource)) {
-            $body[self::ITEMS_KEY] = $this->getResourceURIsForTestItems($resource);
-            $body[self::QTI_IDENTIFIER_KEY] = $this->getIdentifier($resource);
         }
 
         if ($this->isA(TaoOntology::CLASS_URI_DELIVERY, $resource)) {
@@ -131,22 +126,6 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
         $value = current($values);
 
         return $value ? (string) $value : null;
-    }
-
-    /**
-     * @throws taoQtiTest_models_classes_QtiTestServiceException
-     */
-    private function getIdentifier(core_kernel_classes_Resource $resource): ?string
-    {
-        if ($this->isA(TaoOntology::CLASS_URI_TEST, $resource)) {
-            $jsonData = json_decode($this->qtiTestService->getJsonTest($resource));
-
-            if (isset($jsonData->identifier)) {
-                return (string)$jsonData->identifier;
-            }
-        }
-
-        return null;
     }
 
     private function getResourceURIsForItemAssets(
@@ -196,22 +175,6 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
         }
 
         return new ItemMediaResolver($resource, '');
-    }
-
-    /**
-     * @throws Exception
-     */
-    private function getResourceURIsForTestItems(core_kernel_classes_Resource $resource): array
-    {
-        $itemURIs = [];
-
-        foreach ($this->qtiTestService->getItems($resource) as $item) {
-            assert($item instanceof core_kernel_classes_Resource);
-
-            $itemURIs[$item->getUri()] = $item->getUri();
-        }
-
-        return array_values($itemURIs);
     }
 
     private function isA(string $type, core_kernel_classes_Resource $resource): bool

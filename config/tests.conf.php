@@ -29,6 +29,10 @@ return [
                     'type' => 'keyword',
                     'ignore_above' => 256,
                 ],
+                'test_qti_structure' => [
+                    'type' => 'object',
+                    'enabled' => false,
+                ],
                 'class' => [
                     'type' => 'text',
                     'fields' => [
