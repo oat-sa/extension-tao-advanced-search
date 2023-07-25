@@ -74,7 +74,7 @@ class TestNormalizer
     }
 
     /**
-     * IMPORTANT: Please, do not modify the original QTI structure, except by removing unnecessary keys
+     * IMPORTANT: Do not modify the original QTI structure, except by removing unnecessary keys
      */
     private function cleanUpOriginalQtiStructure(array $data): array
     {
