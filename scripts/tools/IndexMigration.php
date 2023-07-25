@@ -36,7 +36,7 @@ use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 /**
  * Usage:
  *
- * php index.php 'oat\taoAdvancedSearch\scripts\tools\IndexMigration' -i tests -q '{"properties": {"test_qti_structure": {"type": "object","enabled": false}}}'
+ * php index.php 'oat\taoAdvancedSearch\scripts\tools\IndexMigration' -i tests -q '{"properties": {}}'
  */
 class IndexMigration extends ScriptAction
 {
