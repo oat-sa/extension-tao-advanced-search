@@ -97,6 +97,59 @@ This is necessary to optimize indexation:
 ./taoAdvancedSearch/scripts/tools/IndexDeliveryResults.sh --help
 ```
 
+## Index Migration
+
+To avoid having to delete and recreate all the indices, it is possible to migrate index mapping by executing the following: 
+
+```shell
+php index.php 'oat\taoAdvancedSearch\scripts\tools\IndexMigration' -i tests -q '{"properties": {"test_qti_structure": {"type": "object","enabled": false}}}'
+```
+
+And also by creating [migrations](./migrations/) that can perform the update.
+
+```php
+declare(strict_types=1);
+
+namespace oat\taoAdvancedSearch\migrations;
+
+use Doctrine\DBAL\Schema\Schema;
+use oat\tao\scripts\tools\migrations\AbstractMigration;
+use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
+use oat\taoAdvancedSearch\scripts\tools\IndexMigration;
+
+final class Version202307251344000000_taoAdvancedSearch extends AbstractMigration
+{
+    private const INDEX_UPDATE_BODY = '{"properties": {"test_qti_structure": {"type": "object","enabled": false}}}';
+
+    public function getDescription(): string
+    {
+        return sprintf(
+            'Migrate index "%s" with "%s"',
+            IndexerInterface::TESTS_INDEX,
+            self::INDEX_UPDATE_BODY
+        );
+    }
+
+    public function up(Schema $schema): void
+    {
+        $this->runAction(
+            new IndexMigration(),
+            [
+                '-i',
+                IndexerInterface::TESTS_INDEX,
+                '-q',
+                self::INDEX_UPDATE_BODY,
+            ]
+        );
+    }
+
+    public function down(Schema $schema): void
+    {
+        $this->throwIrreversibleMigrationException();
+    }
+}
+```
+
 ## Garbage collection
 
 To clean old documents in the indexes:
