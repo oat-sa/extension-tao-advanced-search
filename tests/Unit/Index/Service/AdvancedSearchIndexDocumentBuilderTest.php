@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2022 (original work) Open Assessment Technologies SA.
+ * Copyright (c) 2022-2023 (original work) Open Assessment Technologies SA.
  */
 
 declare(strict_types=1);
@@ -24,6 +24,7 @@ namespace oat\taoAdvancedSearch\tests\Unit\Index\Service;
 
 use core_kernel_classes_Class;
 use core_kernel_classes_Resource;
+use oat\generis\test\ServiceManagerMockTrait;
 use oat\oatbox\service\ServiceManager;
 use oat\tao\model\media\TaoMediaResolver;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilder;
@@ -32,6 +33,7 @@ use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\search\index\IndexService;
 use oat\tao\model\TaoOntology;
 use oat\taoAdvancedSearch\model\Index\Service\AdvancedSearchIndexDocumentBuilder;
+use oat\taoAdvancedSearch\model\Test\Normalizer\TestNormalizer;
 use oat\taoDeliveryRdf\model\DeliveryAssemblyService;
 use oat\taoMediaManager\model\relation\service\IdDiscoverService;
 use oat\taoQtiItem\model\qti\Img;
@@ -40,17 +42,15 @@ use oat\taoQtiItem\model\qti\parser\ElementReferencesExtractor;
 use oat\taoQtiItem\model\qti\QtiObject;
 use oat\taoQtiItem\model\qti\Service as QtiItemService;
 use oat\taoQtiItem\model\qti\XInclude;
-use taoQtiTest_models_classes_QtiTestService as QtiTestService;
 use PHPUnit\Framework\MockObject\MockObject;
-use oat\generis\test\TestCase;
+use PHPUnit\Framework\TestCase;
 
 class AdvancedSearchIndexDocumentBuilderTest extends TestCase
 {
+    use ServiceManagerMockTrait;
+
     /** @var AdvancedSearchIndexDocumentBuilder */
     private $sut;
-
-    /** @var QtiTestService|MockObject */
-    private $qtiTestService;
 
     /** @var IdDiscoverService|MockObject */
     private $idDiscoverService;
@@ -82,10 +82,12 @@ class AdvancedSearchIndexDocumentBuilderTest extends TestCase
     /** @var Item|MockObject */
     private $qtiItem;
 
+    /** @var Item|MockObject */
+    private $testNormalizer;
+
     public function setUp(): void
     {
         $this->document = $this->createMock(IndexDocument::class);
-        $this->qtiTestService = $this->createMock(QtiTestService::class);
         $this->elementReferencesExtractor = $this->createMock(ElementReferencesExtractor::class);
         $this->idDiscoverService = $this->createMock(IdDiscoverService::class);
         $this->indexService = $this->createMock(IndexService::class);
@@ -93,6 +95,7 @@ class AdvancedSearchIndexDocumentBuilderTest extends TestCase
         $this->parentBuilder = $this->createMock(IndexDocumentBuilder::class);
         $this->qtiItem = $this->createMock(Item::class);
         $this->resolver = $this->createMock(TaoMediaResolver::class);
+        $this->testNormalizer = $this->createMock(TestNormalizer::class);
 
         $this->deliveryType = $this->mockRDFClass(TaoOntology::CLASS_URI_DELIVERY);
         $this->itemType = $this->mockRDFClass(TaoOntology::CLASS_URI_ITEM);
@@ -103,13 +106,13 @@ class AdvancedSearchIndexDocumentBuilderTest extends TestCase
             ->method('getDocumentBuilder')
             ->willReturn($this->parentBuilder);
 
-        ServiceManager::setServiceManager($this->getServiceLocatorMock());
+        ServiceManager::setServiceManager($this->getServiceManagerMock());
 
         $this->sut = new AdvancedSearchIndexDocumentBuilder(
-            $this->qtiTestService,
             $this->elementReferencesExtractor,
             $this->indexService,
             $this->idDiscoverService,
+            $this->testNormalizer,
             $this->itemService,
             $this->resolver
         );
@@ -224,19 +227,7 @@ class AdvancedSearchIndexDocumentBuilderTest extends TestCase
 
     public function testCreateDocumentFromResourceTest(): void
     {
-        $item1 = $this->mockResource([TaoOntology::CLASS_URI_ITEM]);
-        $item2 = $this->mockResource([TaoOntology::CLASS_URI_ITEM]);
         $aTest = $this->mockResource([TaoOntology::CLASS_URI_TEST]);
-
-        $item1
-            ->expects($this->exactly(2))
-            ->method('getUri')
-            ->willReturn('item://1');
-
-        $item2
-            ->expects($this->exactly(2))
-            ->method('getUri')
-            ->willReturn('item://2');
 
         $this->document
             ->method('getBody')
@@ -244,37 +235,17 @@ class AdvancedSearchIndexDocumentBuilderTest extends TestCase
                 'type' => ['document type'],
             ]);
 
-        $this->parentBuilder
+        $this->testNormalizer
             ->expects($this->once())
-            ->method('createDocumentFromResource')
+            ->method('normalize')
             ->with($aTest)
             ->willReturn($this->document);
 
-        $this->itemService
-            ->expects($this->never())
-            ->method('getDataItemByRdfItem');
-
-        $this->qtiTestService
-            ->expects($this->once())
-            ->method('getItems')
-            ->with($aTest)
-            ->willReturn([$item1, $item2]);
-
-        $this->qtiTestService
-            ->expects($this->once())
-            ->method('getJsonTest')
-            ->with($aTest)
-            ->willReturn('{"identifier": "test_id"}');
-
         $document = $this->sut->createDocumentFromResource($aTest);
+
         $this->assertEquals(
             [
                 'type' => ['document type'],
-                'item_uris' => [
-                    'item://1',
-                    'item://2'
-                ],
-                'qti_identifier' => 'test_id'
             ],
             $document->getBody()
         );
@@ -318,14 +289,6 @@ class AdvancedSearchIndexDocumentBuilderTest extends TestCase
         $this->itemService
             ->expects($this->never())
             ->method('getDataItemByRdfItem');
-
-        $this->qtiTestService
-            ->expects($this->never())
-            ->method('getItems');
-
-        $this->qtiTestService
-            ->expects($this->never())
-            ->method('getJsonTest');
 
         $document = $this->sut->createDocumentFromResource($delivery);
         $this->assertEquals(
