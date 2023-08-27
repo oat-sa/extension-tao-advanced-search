@@ -53,23 +53,32 @@ class DeliveryResultNormalizer extends ConfigurableService implements Normalizer
         $deliveryExecutionId = $deliveryExecution->getIdentifier();
         $user = UserHelper::getUser($deliveryExecution->getUserIdentifier());
 
+        $customBody = [];
+        if (class_exists('oat\taoOutcomeUi\model\search\ResultCustomFieldsService')) {
+            $customFieldService = $this->getServiceLocator()->get(oat\taoOutcomeUi\model\search\ResultCustomFieldsService::SERVICE_ID);
+            $customBody = $customFieldService->getCustomFields($deliveryExecution);
+        }
+
         return new IndexResource(
             $deliveryExecutionId,
             $deliveryExecution->getLabel(),
-            [
-                'label' => $deliveryExecution->getLabel(),
-                self::INDEX_DELIVERY => $deliveryExecution->getDelivery()->getUri(),
-                'type' => ResultService::DELIVERY_RESULT_CLASS_URI,
-                self::INDEX_TEST_TAKER => $user->getIdentifier(),
-                self::INDEX_TEST_TAKER_FIRST_NAME => UserHelper::getUserFirstName($user, true),
-                self::INDEX_TEST_TAKER_LAST_NAME => UserHelper::getUserLastName($user, true),
-                self::INDEX_TEST_TAKER_NAME => UserHelper::getUserName($user, true),
-                self::INDEX_TEST_TAKER_LABEL => UserHelper::getUserLabel($user),
-                self::INDEX_DELIVERY_EXECUTION => $deliveryExecutionId,
-                self::INDEX_DELIVERY_EXECUTION_START_TIME => $this->transformDateTime(
-                    $deliveryExecution->getStartTime()
-                )
-            ]
+            array_merge(
+                [
+                    'label' => $deliveryExecution->getLabel(),
+                    self::INDEX_DELIVERY => $deliveryExecution->getDelivery()->getUri(),
+                    'type' => ResultService::DELIVERY_RESULT_CLASS_URI,
+                    self::INDEX_TEST_TAKER => $user->getIdentifier(),
+                    self::INDEX_TEST_TAKER_FIRST_NAME => UserHelper::getUserFirstName($user, true),
+                    self::INDEX_TEST_TAKER_LAST_NAME => UserHelper::getUserLastName($user, true),
+                    self::INDEX_TEST_TAKER_NAME => UserHelper::getUserName($user, true),
+                    self::INDEX_TEST_TAKER_LABEL => UserHelper::getUserLabel($user),
+                    self::INDEX_DELIVERY_EXECUTION => $deliveryExecutionId,
+                    self::INDEX_DELIVERY_EXECUTION_START_TIME => $this->transformDateTime(
+                        $deliveryExecution->getStartTime()
+                    )
+                ],
+                $customBody
+            )
         );
     }
 
