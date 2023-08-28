@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\DeliveryResult\Normalizer;
 
+use common_ext_ExtensionsManager;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use oat\oatbox\service\ConfigurableService;
@@ -54,8 +55,10 @@ class DeliveryResultNormalizer extends ConfigurableService implements Normalizer
         $user = UserHelper::getUser($deliveryExecution->getUserIdentifier());
 
         $customBody = [];
-        if (class_exists('oat\taoOutcomeUi\model\search\ResultCustomFieldsService')) {
-            $customFieldService = $this->getServiceLocator()->get(oat\taoOutcomeUi\model\search\ResultCustomFieldsService::SERVICE_ID);
+        if ($this->getExtensionsManagerService()->isInstalled('taoOutcomeUi')) {
+            $customFieldService = $this
+                ->getServiceLocator()
+                ->get(oat\taoOutcomeUi\model\search\ResultCustomFieldsService::SERVICE_ID);
             $customBody = $customFieldService->getCustomFields($deliveryExecution);
         }
 
@@ -80,6 +83,15 @@ class DeliveryResultNormalizer extends ConfigurableService implements Normalizer
                 $customBody
             )
         );
+    }
+
+    /**
+     * @return common_ext_ExtensionsManager
+     */
+    protected function getExtensionsManagerService(): common_ext_ExtensionsManager
+    {
+        /** @noinspection PhpIncompatibleReturnTypeInspection */
+        return $this->getServiceLocator()->get(common_ext_ExtensionsManager::SERVICE_ID);
     }
 
     private function transformDateTime(string $getStartTime): string
