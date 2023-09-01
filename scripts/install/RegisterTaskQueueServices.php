@@ -46,7 +46,8 @@ class RegisterTaskQueueServices extends InstallAction
         $newAssociations = $this->getNewAssociations($this->getQueueName());
 
         try {
-            $this->getAssociationService()->associateBulk($newQueueName, $newAssociations);
+            $newQueue = $this->getAssociationService()->associateBulk($newQueueName, $newAssociations);
+            $this->propagate($newQueue);
         } catch (Exception $exception) {
             return new Report(Report::TYPE_ERROR, $exception->getMessage());
         }
@@ -82,7 +83,8 @@ class RegisterTaskQueueServices extends InstallAction
         return self::QUEUE_NAME;
     }
 
-    private function getAssociationService(): QueueAssociationService{
+    private function getAssociationService(): QueueAssociationService
+    {
         return $this->getServiceManager()->get(QueueAssociationService::class);
     }
 
