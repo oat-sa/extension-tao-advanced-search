@@ -192,10 +192,6 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
 
     private function getDocumentBuilder(): IndexDocumentBuilderInterface
     {
-        //@TODO Check if we can add this in the IndexService::getDocumentBuilder method
-        $service = $this->indexService->getDocumentBuilder();
-        $service->setServiceLocator(ServiceManager::getServiceManager());
-
-        return $service;
+        return $this->indexService->getDocumentBuilder();
     }
 }
