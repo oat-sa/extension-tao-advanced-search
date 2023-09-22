@@ -30,7 +30,6 @@ use oat\tao\model\media\TaoMediaResolver;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilder;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
-use oat\tao\model\search\index\IndexService;
 use oat\tao\model\TaoOntology;
 use oat\taoAdvancedSearch\model\Index\Service\AdvancedSearchIndexDocumentBuilder;
 use oat\taoAdvancedSearch\model\Test\Normalizer\TestNormalizer;
@@ -57,9 +56,6 @@ class AdvancedSearchIndexDocumentBuilderTest extends TestCase
 
     /** @var ElementReferencesExtractor|MockObject */
     private $elementReferencesExtractor;
-
-    /** @var IndexService|MockObject */
-    private $indexService;
 
     /** @var IndexDocumentBuilderInterface|MockObject */
     private $parentBuilder;
@@ -90,7 +86,6 @@ class AdvancedSearchIndexDocumentBuilderTest extends TestCase
         $this->document = $this->createMock(IndexDocument::class);
         $this->elementReferencesExtractor = $this->createMock(ElementReferencesExtractor::class);
         $this->idDiscoverService = $this->createMock(IdDiscoverService::class);
-        $this->indexService = $this->createMock(IndexService::class);
         $this->itemService = $this->createMock(QtiItemService::class);
         $this->parentBuilder = $this->createMock(IndexDocumentBuilder::class);
         $this->qtiItem = $this->createMock(Item::class);
@@ -102,15 +97,9 @@ class AdvancedSearchIndexDocumentBuilderTest extends TestCase
         $this->testType = $this->mockRDFClass(TaoOntology::CLASS_URI_TEST);
         $this->genericType = $this->mockRDFClass(TaoOntology::CLASS_URI_OBJECT);
 
-        $this->indexService
-            ->method('getDocumentBuilder')
-            ->willReturn($this->parentBuilder);
-
-        ServiceManager::setServiceManager($this->getServiceManagerMock());
-
         $this->sut = new AdvancedSearchIndexDocumentBuilder(
             $this->elementReferencesExtractor,
-            $this->indexService,
+            $this->parentBuilder,
             $this->idDiscoverService,
             $this->testNormalizer,
             $this->itemService,

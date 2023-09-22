@@ -24,7 +24,7 @@ namespace oat\taoAdvancedSearch\model\Index\Service;
 
 use common_Exception;
 use oat\oatbox\service\ConfigurableService;
-use oat\tao\model\search\index\IndexService;
+use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\SearchInterface;
 use oat\tao\model\search\SearchProxy;
 use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
@@ -49,7 +49,7 @@ class SyncResultIndexer extends ConfigurableService implements IndexerInterface,
         $normalizedResource = $this->normalizer->normalize($resource);
 
         try {
-            $document = $this->getIndexerService()->getDocumentBuilder()->createDocumentFromArray(
+            $document = $this->getLegacyIndexDocumentBuilder()->createDocumentFromArray(
                 [
                     'id' => $normalizedResource->getId(),
                     'body' => $normalizedResource->getData()
@@ -82,11 +82,8 @@ class SyncResultIndexer extends ConfigurableService implements IndexerInterface,
         return $this->getServiceLocator()->get(SearchProxy::SERVICE_ID);
     }
 
-    private function getIndexerService(): IndexService
+    private function getLegacyIndexDocumentBuilder(): IndexDocumentBuilderInterface
     {
-        $service = $this->getServiceLocator()->get(IndexService::SERVICE_ID);
-        $service->setServiceLocator($this->getServiceManager());
-
-        return $service;
+        return $this->getServiceLocator()->getContainer()->get(IndexDocumentBuilderInterface::class);
     }
 }
