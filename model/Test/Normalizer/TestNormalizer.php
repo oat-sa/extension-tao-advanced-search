@@ -110,7 +110,6 @@ class TestNormalizer
     private function getDocumentBuilder(): IndexDocumentBuilderInterface
     {
         $service = $this->indexService->getDocumentBuilder();
-        $service->setServiceLocator(ServiceManager::getServiceManager());
 
         return $service;
     }
