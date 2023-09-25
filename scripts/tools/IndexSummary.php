@@ -89,7 +89,7 @@ class IndexSummary extends ScriptAction implements ServiceLocatorAwareInterface
 
     private function getPercentageReportTypeBy(float $percentage, int $missingIndex): string
     {
-        if ($missingIndex === 0) {
+        if ($missingIndex === 0 && $percentage == 0) {
             return Report::TYPE_WARNING;
         }
 
