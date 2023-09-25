@@ -68,8 +68,14 @@ class IndexSummary extends ScriptAction implements ServiceLocatorAwareInterface
             $report = Report::createInfo($data['label']);
             $report->add(Report::createSuccess('Total in DB: ' . $data['totalInDb']));
             $report->add(Report::createSuccess('Total indexed "' . $data['index'] . '": ' . $totalIndexed));
-            $report->add(new Report($this->getPercentageReportTypeBy($percentage, $totalIndexed), 'Percentage indexed: ' . $percentage . '%'));
-            $report->add(new Report($missingIndex > 0 ? Report::TYPE_ERROR : Report::TYPE_SUCCESS, 'Missing items: ' . $missingIndex));
+            $report->add(new Report(
+                $this->getPercentageReportTypeBy($percentage, $totalIndexed),
+                'Percentage indexed: ' . $percentage . '%')
+            );
+            $report->add(new Report(
+                $missingIndex > 0 ? Report::TYPE_ERROR : Report::TYPE_SUCCESS,
+                'Missing items: ' . $missingIndex
+            ));
 
             $mainReport->add($report);
         }
