@@ -43,7 +43,7 @@ class TestServiceProvider implements ContainerServiceProviderInterface
             ->args(
                 [
                     service(taoQtiTest_models_classes_QtiTestService::class),
-                    service(IndexDocumentBuilderInterface::class)  // \oat\tao\model\search\ServiceProvider
+                    service(IndexDocumentBuilderInterface::class)
                 ]
             )->public();
     }
