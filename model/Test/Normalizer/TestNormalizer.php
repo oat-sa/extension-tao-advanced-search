@@ -24,7 +24,6 @@ namespace oat\taoAdvancedSearch\model\Test\Normalizer;
 
 use core_kernel_classes_Resource;
 use Exception;
-use oat\oatbox\service\ServiceManager;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
 use taoQtiTest_models_classes_QtiTestService as QtiTestService;
