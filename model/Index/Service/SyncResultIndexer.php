@@ -49,7 +49,7 @@ class SyncResultIndexer extends ConfigurableService implements IndexerInterface,
         $normalizedResource = $this->normalizer->normalize($resource);
 
         try {
-            $document = $this->getLegacyIndexDocumentBuilder()->createDocumentFromArray(
+            $document = $this->getIndexDocumentBuilder()->createDocumentFromArray(
                 [
                     'id' => $normalizedResource->getId(),
                     'body' => $normalizedResource->getData()
@@ -82,8 +82,8 @@ class SyncResultIndexer extends ConfigurableService implements IndexerInterface,
         return $this->getServiceLocator()->get(SearchProxy::SERVICE_ID);
     }
 
-    private function getLegacyIndexDocumentBuilder(): IndexDocumentBuilderInterface
+    private function getIndexDocumentBuilder(): IndexDocumentBuilderInterface
     {
-        return $this->getServiceLocator()->getContainer()->get(IndexDocumentBuilderInterface::class);
+        return $this->getServiceLocator()->getContainer()->get(AdvancedSearchIndexDocumentBuilder::class);
     }
 }
