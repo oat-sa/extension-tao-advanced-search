@@ -70,7 +70,7 @@ class IndexSummary extends ScriptAction implements ServiceLocatorAwareInterface
             $report->add(Report::createSuccess('Total indexed "' . $data['index'] . '": ' . $totalIndexed));
             $report->add(
                 new Report(
-                    $this->getPercentageReportTypeBy($percentage, $missingIndex),
+                    $this->getPercentageReportTypeBy($percentage, (int)$data['totalInDb']),
                     'Percentage indexed: ' . $percentage . '%'
                 )
             );
@@ -87,9 +87,9 @@ class IndexSummary extends ScriptAction implements ServiceLocatorAwareInterface
         return $mainReport;
     }
 
-    private function getPercentageReportTypeBy(float $percentage, int $missingIndex): string
+    private function getPercentageReportTypeBy(float $percentage, int $totalInDB): string
     {
-        if ($missingIndex === 0 && $percentage == 0) {
+        if ($totalInDB === 0) {
             return Report::TYPE_WARNING;
         }
 
