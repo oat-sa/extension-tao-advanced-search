@@ -30,7 +30,7 @@ use oat\tao\model\search\SearchProxy;
 use oat\tao\model\task\migration\ResultUnit;
 use oat\taoAdvancedSearch\model\Index\IndexResource;
 use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
-use oat\taoAdvancedSearch\model\Index\Service\ResultIndexer;
+use oat\taoAdvancedSearch\model\Index\Service\AdvancedSearchIndexDocumentBuilder;
 use oat\taoAdvancedSearch\model\Index\Service\SyncResultIndexer;
 use PHPUnit\Framework\MockObject\MockObject;
 
@@ -60,7 +60,7 @@ class SyncResultIndexerTest extends TestCase
             $this->getServiceLocatorMock(
                 [
                     SearchProxy::SERVICE_ID => $this->search,
-                    IndexDocumentBuilderInterface::class => $this->indexDocumentBuilder,
+                    AdvancedSearchIndexDocumentBuilder::class => $this->indexDocumentBuilder,
                 ]
             )
         );
