@@ -27,7 +27,7 @@
     "oat-sa/oatbox-extension-installer": "~1.1||dev-master",
     "ext-json": "*",
     "oat-sa/generis": ">=15.22",
-    "oat-sa/tao-core": ">=50.29",
+    "oat-sa/tao-core": ">=53.7.1",
     "oat-sa/extension-tao-delivery": ">=14.10.1",
     "oat-sa/extension-tao-outcome": ">=13.0.0",
     "oat-sa/extension-tao-test": ">=15.15.1",

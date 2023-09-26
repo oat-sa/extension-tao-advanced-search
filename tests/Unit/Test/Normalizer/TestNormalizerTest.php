@@ -28,7 +28,6 @@ use oat\oatbox\service\ServiceManager;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilder;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
-use oat\tao\model\search\index\IndexService;
 use oat\taoAdvancedSearch\model\Test\Normalizer\TestNormalizer;
 use PHPUnit\Framework\TestCase;
 use taoQtiTest_models_classes_QtiTestService as QtiTestService;
@@ -44,9 +43,6 @@ class TestNormalizerTest extends TestCase
     /** @var QtiTestService|MockObject */
     private $qtiTestService;
 
-    /** @var IndexService|MockObject */
-    private $indexService;
-
     /** @var IndexDocumentBuilderInterface|MockObject */
     private $documentBuilder;
 
@@ -57,16 +53,9 @@ class TestNormalizerTest extends TestCase
     {
         $this->document = $this->createMock(IndexDocument::class);
         $this->qtiTestService = $this->createMock(QtiTestService::class);
-        $this->indexService = $this->createMock(IndexService::class);
         $this->documentBuilder = $this->createMock(IndexDocumentBuilder::class);
 
-        $this->indexService
-            ->method('getDocumentBuilder')
-            ->willReturn($this->documentBuilder);
-
-        ServiceManager::setServiceManager($this->getServiceManagerMock());
-
-        $this->sut = new TestNormalizer($this->qtiTestService, $this->indexService);
+        $this->sut = new TestNormalizer($this->qtiTestService, $this->documentBuilder);
     }
 
     public function testNormalize(): void

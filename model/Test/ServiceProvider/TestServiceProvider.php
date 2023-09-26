@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\Test\ServiceProvider;
 
 use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
-use oat\tao\model\search\index\IndexService;
+use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\taoAdvancedSearch\model\Test\Normalizer\TestNormalizer;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use taoQtiTest_models_classes_QtiTestService;
@@ -43,7 +43,7 @@ class TestServiceProvider implements ContainerServiceProviderInterface
             ->args(
                 [
                     service(taoQtiTest_models_classes_QtiTestService::class),
-                    service(IndexService::class)
+                    service(IndexDocumentBuilderInterface::class)
                 ]
             )->public();
     }
