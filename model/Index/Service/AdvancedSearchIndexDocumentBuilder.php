@@ -28,7 +28,6 @@ use oat\oatbox\service\ServiceManager;
 use oat\tao\model\media\TaoMediaResolver;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
-use oat\tao\model\search\index\IndexService;
 use oat\tao\model\TaoOntology;
 use oat\taoAdvancedSearch\model\Test\Normalizer\TestNormalizer;
 use oat\taoDeliveryRdf\model\DeliveryAssemblyService;
@@ -48,21 +47,21 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
 
     private ElementReferencesExtractor $itemElementReferencesExtractor;
     private QtiItemService $qtiItemService;
-    private IndexService $indexService;
+    private IndexDocumentBuilderInterface $legacyDocumentBuilder;
     private IdDiscoverService $idDiscoverService;
     private ?TaoMediaResolver $itemMediaResolver;
     private TestNormalizer $testNormalizer;
 
     public function __construct(
         ElementReferencesExtractor $itemElementReferencesExtractor,
-        IndexService $indexService,
+        IndexDocumentBuilderInterface $legacyDocumentBuilder,
         IdDiscoverService $idDiscoverService,
         TestNormalizer $testNormalizer,
         QtiItemService $qtiItemService = null,
         TaoMediaResolver $itemMediaResolver = null
     ) {
         $this->itemElementReferencesExtractor = $itemElementReferencesExtractor;
-        $this->indexService = $indexService;
+        $this->legacyDocumentBuilder = $legacyDocumentBuilder;
         $this->idDiscoverService = $idDiscoverService;
         $this->testNormalizer = $testNormalizer;
         $this->qtiItemService = $qtiItemService ?? QtiItemService::singleton();
@@ -82,13 +81,13 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
 
         return $this->populateReferences(
             $resource,
-            $this->getDocumentBuilder()->createDocumentFromResource($resource)
+            $this->legacyDocumentBuilder->createDocumentFromResource($resource)
         );
     }
 
     public function createDocumentFromArray(array $resourceData = []): IndexDocument
     {
-        return $this->getDocumentBuilder()->createDocumentFromArray($resourceData);
+        return $this->legacyDocumentBuilder->createDocumentFromArray($resourceData);
     }
 
     /**
@@ -188,14 +187,5 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
         }
 
         return false;
-    }
-
-    private function getDocumentBuilder(): IndexDocumentBuilderInterface
-    {
-        //@TODO Check if we can add this in the IndexService::getDocumentBuilder method
-        $service = $this->indexService->getDocumentBuilder();
-        $service->setServiceLocator(ServiceManager::getServiceManager());
-
-        return $service;
     }
 }
