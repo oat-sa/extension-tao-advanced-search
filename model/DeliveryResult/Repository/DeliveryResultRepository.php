@@ -44,7 +44,7 @@ class DeliveryResultRepository extends ResultFilterFactory implements DeliveryRe
 
         $resultStorage = $this->getResultServerService()->getResultStorage();
 
-        return $resultStorage->countResultByDelivery($deliveryIds);
+        return (int)$resultStorage->countResultByDelivery($deliveryIds);
     }
 
     private function getResultServerService(): ResultServerService
