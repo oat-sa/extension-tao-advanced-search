@@ -25,13 +25,12 @@ namespace oat\taoAdvancedSearch\tests\Unit\Index\Service;
 use oat\generis\test\TestCase;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
-use oat\tao\model\search\index\IndexService;
 use oat\tao\model\search\SearchInterface;
 use oat\tao\model\search\SearchProxy;
 use oat\tao\model\task\migration\ResultUnit;
 use oat\taoAdvancedSearch\model\Index\IndexResource;
 use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
-use oat\taoAdvancedSearch\model\Index\Service\ResultIndexer;
+use oat\taoAdvancedSearch\model\Index\Service\AdvancedSearchIndexDocumentBuilder;
 use oat\taoAdvancedSearch\model\Index\Service\SyncResultIndexer;
 use PHPUnit\Framework\MockObject\MockObject;
 
@@ -43,9 +42,6 @@ class SyncResultIndexerTest extends TestCase
     /** @var SyncResultIndexer */
     private $indexer;
 
-    /** @var IndexService|MockObject */
-    private $indexerService;
-
     /** @var SearchInterface|MockObject */
     private $search;
 
@@ -55,7 +51,6 @@ class SyncResultIndexerTest extends TestCase
     public function setUp(): void
     {
         $this->normalizer = $this->createMock(NormalizerInterface::class);
-        $this->indexerService = $this->createMock(IndexService::class);
         $this->search = $this->createMock(SearchInterface::class);
         $this->indexDocumentBuilder = $this->createMock(IndexDocumentBuilderInterface::class);
 
@@ -64,16 +59,11 @@ class SyncResultIndexerTest extends TestCase
         $this->indexer->setServiceLocator(
             $this->getServiceLocatorMock(
                 [
-                    IndexService::SERVICE_ID => $this->indexerService,
                     SearchProxy::SERVICE_ID => $this->search,
-                    IndexDocumentBuilderInterface::class => $this->indexDocumentBuilder,
+                    AdvancedSearchIndexDocumentBuilder::class => $this->indexDocumentBuilder,
                 ]
             )
         );
-
-        $this->indexerService
-            ->method('getDocumentBuilder')
-            ->willReturn($this->indexDocumentBuilder);
     }
 
     public function testAddIndex(): void

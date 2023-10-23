@@ -24,10 +24,8 @@ namespace oat\taoAdvancedSearch\model\Test\Normalizer;
 
 use core_kernel_classes_Resource;
 use Exception;
-use oat\oatbox\service\ServiceManager;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
-use oat\tao\model\search\index\IndexService;
 use taoQtiTest_models_classes_QtiTestService as QtiTestService;
 
 class TestNormalizer
@@ -46,17 +44,17 @@ class TestNormalizer
     ];
 
     private QtiTestService $qtiTestService;
-    private IndexService $indexService;
+    private IndexDocumentBuilderInterface $legacyDocumentBuilder;
 
-    public function __construct(QtiTestService $qtiTestService, IndexService $indexService)
+    public function __construct(QtiTestService $qtiTestService, IndexDocumentBuilderInterface $legacyDocumentBuilder)
     {
         $this->qtiTestService = $qtiTestService;
-        $this->indexService = $indexService;
+        $this->legacyDocumentBuilder = $legacyDocumentBuilder;
     }
 
     public function normalize(core_kernel_classes_Resource $resource): IndexDocument
     {
-        $document = $this->getDocumentBuilder()->createDocumentFromResource($resource);
+        $document = $this->legacyDocumentBuilder->createDocumentFromResource($resource);
         $jsonData = json_decode($this->qtiTestService->getJsonTest($resource), true);
 
         $body = $document->getBody();
@@ -105,13 +103,5 @@ class TestNormalizer
         }
 
         return array_values($itemURIs);
-    }
-
-    private function getDocumentBuilder(): IndexDocumentBuilderInterface
-    {
-        $service = $this->indexService->getDocumentBuilder();
-        $service->setServiceLocator(ServiceManager::getServiceManager());
-
-        return $service;
     }
 }
