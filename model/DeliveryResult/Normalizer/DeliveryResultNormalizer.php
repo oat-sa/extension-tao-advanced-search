@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\DeliveryResult\Normalizer;
 
+use common_ext_ExtensionsManager;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use oat\oatbox\service\ConfigurableService;
@@ -29,7 +30,6 @@ use oat\tao\helpers\UserHelper;
 use oat\taoAdvancedSearch\model\Index\IndexResource;
 use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
 use oat\taoDelivery\model\execution\DeliveryExecutionInterface;
-use oat\taoOutcomeUi\model\search\ResultCustomFieldsService;
 use oat\taoResultServer\models\classes\ResultService;
 
 class DeliveryResultNormalizer extends ConfigurableService implements NormalizerInterface
@@ -54,8 +54,13 @@ class DeliveryResultNormalizer extends ConfigurableService implements Normalizer
         $deliveryExecutionId = $deliveryExecution->getIdentifier();
         $user = UserHelper::getUser($deliveryExecution->getUserIdentifier());
 
-        $customFieldService = $this->getResultCustomFieldsService();
-        $customBody = $customFieldService->getCustomFields($deliveryExecution);
+        $customBody = [];
+        if ($this->getExtensionsManagerService()->isInstalled('taoOutcomeUi')) {
+            $customFieldService = $this
+                ->getServiceLocator()
+                ->get(oat\taoOutcomeUi\model\search\ResultCustomFieldsService::SERVICE_ID);
+            $customBody = $customFieldService->getCustomFields($deliveryExecution);
+        }
 
         return new IndexResource(
             $deliveryExecutionId,
@@ -80,6 +85,15 @@ class DeliveryResultNormalizer extends ConfigurableService implements Normalizer
         );
     }
 
+    /**
+     * @return common_ext_ExtensionsManager
+     */
+    protected function getExtensionsManagerService(): common_ext_ExtensionsManager
+    {
+        /** @noinspection PhpIncompatibleReturnTypeInspection */
+        return $this->getServiceLocator()->get(common_ext_ExtensionsManager::SERVICE_ID);
+    }
+
     private function transformDateTime(string $getStartTime): string
     {
         $timeArray = explode(" ", $getStartTime);
@@ -97,10 +111,5 @@ class DeliveryResultNormalizer extends ConfigurableService implements Normalizer
         }
 
         return $date->format('m/d/Y H:i:s');
-    }
-
-    private function getResultCustomFieldsService(): ResultCustomFieldsService
-    {
-        return $this->getServiceLocator()->get(ResultCustomFieldsService::SERVICE_ID);
     }
 }
