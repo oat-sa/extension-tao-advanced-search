@@ -24,7 +24,6 @@ namespace oat\taoAdvancedSearch\tests\Unit\Test\Normalizer;
 
 use core_kernel_classes_Resource;
 use oat\generis\test\ServiceManagerMockTrait;
-use oat\oatbox\service\ServiceManager;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilder;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
@@ -58,7 +57,10 @@ class TestNormalizerTest extends TestCase
         $this->sut = new TestNormalizer($this->qtiTestService, $this->documentBuilder);
     }
 
-    public function testNormalize(): void
+    /**
+     * @dataProvider dataProvider
+     */
+    public function testNormalize(string $testJson, array $expectedNormalizedBody): void
     {
         $item1 = $this->createMock(core_kernel_classes_Resource::class);
         $item2 = $this->createMock(core_kernel_classes_Resource::class);
@@ -95,21 +97,106 @@ class TestNormalizerTest extends TestCase
             ->expects($this->once())
             ->method('getJsonTest')
             ->with($test)
-            ->willReturn('{"identifier": "test_id"}');
+            ->willReturn($testJson);
 
-        $this->assertEquals(
-            [
-                'type' => ['document type'],
-                'item_uris' => [
-                    'item://1',
-                    'item://2'
+        $this->assertEquals($expectedNormalizedBody, $this->sut->normalize($test)->getBody());
+    }
+
+    public function dataProvider(): array
+    {
+        $qtiTestStructureJson = file_get_contents(__DIR__ . '/../../../resources/testDefinitionSample.json');
+        $qtiTestStructureToBeIndexed = [
+            'qti-type' => 'assessmentTest',
+            'identifier' => 'testIdentifier',
+            'testParts' => [
+                [
+                    'qti-type' => 'testPart',
+                    'identifier' => 'cluster-id-stage1',
+                    'navigationMode' => 1,
+                    'timeLimits' => [
+                        'qti-type' => 'timeLimits',
+                        'maxTime' => 80,
+                    ],
+                    'assessmentSections' => [
+                        [
+                            'qti-type' => 'assessmentSection',
+                            'identifier' => 'assessmentSection-0',
+                            'sectionParts' => [
+                                [
+                                    'href' => 'https://itemUri1',
+                                    'qti-type' => 'assessmentItemRef',
+                                    'categories' => ['cluster-id-stage1', 'x-tao-option-reviewScreen'],
+                                    'identifier' => 'item1',
+                                    'timeLimits' => [
+                                        'qti-type' => 'timeLimits',
+                                        'maxTime' => 60,
+                                    ],
+                                ],
+                            ]
+                        ],
+                    ],
                 ],
-                'qti_identifier' => 'test_id',
-                'test_qti_structure' => [
-                    'identifier' => 'test_id'
-                ]
+                [
+                    'qti-type' => 'testPart',
+                    'identifier' => 'cluster-id-stage1-Unit11',
+                    'navigationMode' => 0,
+                    'assessmentSections' => [
+                        [
+                            'qti-type' => 'assessmentSection',
+                            'identifier' => 'assessmentSection-1',
+                            'sectionParts' => [
+                                [
+                                    'href' => 'https://itemUri0',
+                                    'qti-type' => 'assessmentItemRef',
+                                    'categories' => ['cluster-id-stage1', 'x-tao-option-reviewScreen'],
+                                    'identifier' => 'item-0',
+                                    'timeLimits' => [
+                                        'qti-type' => 'timeLimits',
+                                        'maxTime' => 20,
+                                    ],
+                                ],
+                            ],
+                            'timeLimits' => [
+                                'qti-type' => 'timeLimits',
+                                'maxTime' => 60,
+                            ],
+                        ],
+                    ],
+                ],
             ],
-            $this->sut->normalize($test)->getBody()
-        );
+            'timeLimits' => [
+                'maxTime' => 360,
+                'qti-type' => 'timeLimits',
+            ],
+        ];
+
+        return [
+            'Simple' => [
+                'testJson' => '{"identifier": "test_id"}',
+                'expectedNormalizedBody' => [
+                    'type' => ['document type'],
+                    'item_uris' => [
+                        'item://1',
+                        'item://2'
+                    ],
+                    'qti_identifier' => 'test_id',
+                    'test_qti_structure' => [
+                        'identifier' => 'test_id'
+                    ]
+                ],
+            ],
+            'Has categories and timers' => [
+                'testJson' => $qtiTestStructureJson,
+                'expectedNormalizedBody' => [
+                    'type' => ['document type'],
+                    'item_uris' => [
+                        'item://1',
+                        'item://2'
+                    ],
+                    'qti_identifier' => 'testIdentifier',
+                    'test_qti_structure' => $qtiTestStructureToBeIndexed
+                ],
+            ]
+        ];
     }
 }

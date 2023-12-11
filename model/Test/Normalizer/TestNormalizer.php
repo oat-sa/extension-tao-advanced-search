@@ -41,6 +41,9 @@ class TestNormalizer
         'assessmentSections',
         'sectionParts',
         'href',
+        'categories',
+        'timeLimits',
+        'maxTime'
     ];
 
     private QtiTestService $qtiTestService;
