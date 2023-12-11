@@ -1,0 +1,75 @@
+{
+  "qti-type": "assessmentTest",
+  "identifier": "testIdentifier",
+  "testParts": [
+    {
+      "qti-type": "testPart",
+      "identifier": "cluster-id-stage1",
+      "navigationMode": 1,
+      "timeLimits": {
+        "qti-type": "timeLimits",
+        "maxTime": 80
+      },
+      "assessmentSections": [
+        {
+          "qti-type": "assessmentSection",
+          "title": "Section",
+          "identifier": "assessmentSection-0",
+          "sectionParts": [
+            {
+              "href": "https://itemUri1",
+              "label": "item-1",
+              "qti-type": "assessmentItemRef",
+              "categories": [
+                "cluster-id-stage1",
+                "x-tao-option-reviewScreen"
+              ],
+              "identifier": "item1",
+              "timeLimits": {
+                "qti-type": "timeLimits",
+                "maxTime": 60
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "qti-type": "testPart",
+      "identifier": "cluster-id-stage1-Unit11",
+      "navigationMode": 0,
+      "submissionMode": 0,
+      "assessmentSections": [
+        {
+          "qti-type": "assessmentSection",
+          "title": "Section",
+          "identifier": "assessmentSection-1",
+          "sectionParts": [
+            {
+              "href": "https://itemUri0",
+              "label": "item-0",
+              "qti-type": "assessmentItemRef",
+              "categories": [
+                "cluster-id-stage1",
+                "x-tao-option-reviewScreen"
+              ],
+              "identifier": "item-0",
+              "timeLimits": {
+                "qti-type": "timeLimits",
+                "maxTime": 20
+              }
+            }
+          ],
+          "timeLimits": {
+            "qti-type": "timeLimits",
+            "maxTime": 60
+          }
+        }
+      ]
+    }
+  ],
+  "timeLimits": {
+    "maxTime": 360,
+    "qti-type": "timeLimits"
+  }
+}
