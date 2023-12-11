@@ -58,7 +58,7 @@ class TestNormalizerTest extends TestCase
     }
 
     /**
-     * @dataProvider testDataProvider
+     * @dataProvider dataProvider
      */
     public function testNormalize(string $testJson, array $expectedNormalizedBody): void
     {
@@ -102,9 +102,9 @@ class TestNormalizerTest extends TestCase
         $this->assertEquals($expectedNormalizedBody, $this->sut->normalize($test)->getBody());
     }
 
-    public function testDataProvider(): array
+    public function dataProvider(): array
     {
-        $qtiTestStructureJson = '{"qti-type":"assessmentTest","identifier":"testIdentifier","title":"title","toolVersion":"beta","testParts":[{"qti-type":"testPart","identifier":"cluster-id-stage1","navigationMode":0,"submissionMode":0,"preConditions":[],"branchRules":[],"itemSessionControl":{"maxAttempts":0,"qti-type":"itemSessionControl"},"assessmentSections":[{"qti-type":"assessmentSection","title":"Section","identifier":"assessmentSection-0","preConditions":[],"branchRules":[],"index":0,"sectionParts":[{"href":"https://itemUri1","label":"item-1","qti-type":"assessmentItemRef","categories":["cluster-id-stage1","x-tao-option-reviewScreen"],"identifier":"item1","timeLimits":{"qti-type":"timeLimits","maxTime":60}}],"timeLimits":{"qti-type":"timeLimits","maxTime":60}}]},{"qti-type":"testPart","identifier":"cluster-id-stage1-Unit11","navigationMode":0,"submissionMode":0,"preConditions":[],"branchRules":[],"assessmentSections":[{"qti-type":"assessmentSection","title":"Section","visible":true,"identifier":"assessmentSection-1","required":true,"preConditions":[],"branchRules":[],"index":0,"itemSessionControl":{"maxAttempts":0,"qti-type":"itemSessionControl"},"categories":[],"isSubsection":false,"sectionParts":[{"href":"https://itemUri0","label":"item-0","qti-type":"assessmentItemRef","categories":["cluster-id-stage1","x-tao-option-reviewScreen"],"identifier":"item-0","timeLimits":{"qti-type":"timeLimits","maxTime":60}}],"timeLimits":{"qti-type":"timeLimits","maxTime":60}}]}],"timeLimits":{"maxTime":3600,"qti-type":"timeLimits"}}'; // phpcs:ignore
+        $qtiTestStructureJson = file_get_contents(__DIR__ . '/../../../resources/testDefinitionSample.json');
         $qtiTestStructureToBeIndexed = [
             'qti-type' => 'assessmentTest',
             'identifier' => 'testIdentifier',
@@ -112,7 +112,11 @@ class TestNormalizerTest extends TestCase
                 [
                     'qti-type' => 'testPart',
                     'identifier' => 'cluster-id-stage1',
-                    'navigationMode' => 0,
+                    'navigationMode' => 1,
+                    'timeLimits' => [
+                        'qti-type' => 'timeLimits',
+                        'maxTime' => 80,
+                    ],
                     'assessmentSections' => [
                         [
                             'qti-type' => 'assessmentSection',
@@ -128,11 +132,7 @@ class TestNormalizerTest extends TestCase
                                         'maxTime' => 60,
                                     ],
                                 ],
-                            ],
-                            'timeLimits' => [
-                                'qti-type' => 'timeLimits',
-                                'maxTime' => 60,
-                            ],
+                            ]
                         ],
                     ],
                 ],
@@ -144,7 +144,6 @@ class TestNormalizerTest extends TestCase
                         [
                             'qti-type' => 'assessmentSection',
                             'identifier' => 'assessmentSection-1',
-                            'categories' => [],
                             'sectionParts' => [
                                 [
                                     'href' => 'https://itemUri0',
@@ -153,7 +152,7 @@ class TestNormalizerTest extends TestCase
                                     'identifier' => 'item-0',
                                     'timeLimits' => [
                                         'qti-type' => 'timeLimits',
-                                        'maxTime' => 60,
+                                        'maxTime' => 20,
                                     ],
                                 ],
                             ],
@@ -166,7 +165,7 @@ class TestNormalizerTest extends TestCase
                 ],
             ],
             'timeLimits' => [
-                'maxTime' => 3600,
+                'maxTime' => 360,
                 'qti-type' => 'timeLimits',
             ],
         ];
