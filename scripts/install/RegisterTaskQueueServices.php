@@ -30,6 +30,7 @@ use oat\tao\model\search\tasks\RenameIndexProperties;
 use oat\tao\model\search\tasks\UpdateClassInIndex;
 use oat\tao\model\search\tasks\UpdateDataAccessControlInIndex;
 use oat\tao\model\search\tasks\UpdateResourceInIndex;
+use oat\tao\model\search\tasks\UpdateTestResourceInIndex;
 use oat\tao\model\taskQueue\QueueDispatcherInterface;
 use oat\taoAdvancedSearch\model\DeliveryResult\Service\DeliveryResultMigrationTask;
 use oat\taoAdvancedSearch\model\Metadata\Task\MetadataMigrationTask;
@@ -66,6 +67,7 @@ class RegisterTaskQueueServices extends InstallAction
     private function getNewAssociations(string $queueName): array
     {
         return [
+            UpdateTestResourceInIndex::class => $queueName,
             UpdateResourceInIndex::class => $queueName,
             UpdateClassInIndex::class => $queueName,
             DeleteIndexProperty::class => $queueName,
