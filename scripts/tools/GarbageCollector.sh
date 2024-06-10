@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]
 then
