@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch;
 
 use ArrayIterator;
-use Elasticsearch\Client;
+use Elastic\Elasticsearch\Client;
 use Exception;
 use Iterator;
 use oat\tao\model\search\SearchInterface as TaoSearchInterface;
@@ -111,7 +111,7 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
             )
         ];
 
-        return $this->buildResultSet($this->client->search($query));
+        return $this->buildResultSet($this->client->search($query)->asArray());
     }
 
     public function query($queryString, $type, $start = 0, $count = 10, $order = '_id', $dir = 'DESC'): ResultSet
@@ -125,7 +125,7 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
             $this->logger->debug(sprintf('Elasticsearch Query %s', json_encode($query)));
 
             return $this->searchResultNormalizer->normalizeByByResultSet(
-                $this->buildResultSet($this->client->search($query))
+                $this->buildResultSet($this->client->search($query)->asArray())
             );
         } catch (Exception $exception) {
             switch ($exception->getCode()) {
@@ -193,12 +193,12 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
                     'ignore' => 404
                 ]
             ]
-        );
+        )->asArray();
     }
 
     public function ping(): bool
     {
-        return $this->client->ping();
+        return $this->client->ping()->asBool();
     }
 
     private function buildResultSet(array $elasticResult = []): SearchResult

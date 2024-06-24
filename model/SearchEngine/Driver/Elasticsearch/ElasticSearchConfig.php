@@ -44,7 +44,35 @@ class ElasticSearchConfig
 
     public function getHosts(): array
     {
-        return $this->serviceOptions->get(self::class, self::OPTION_HOSTS);
+        $hosts = [];
+        foreach ($this->serviceOptions->get(self::class, self::OPTION_HOSTS) as $host) {
+            if (is_array($host) && isset($host['host'])){
+                $hosts[] = ($host['scheme'] ?? 'http') . '://' . $host['host'] . ':' . ($host['port'] ?? 9200);
+            } else {
+                $hosts[] = $host;
+            }
+        }
+        return $hosts;
+    }
+
+    public function getUsername(): ?string
+    {
+        foreach ($this->serviceOptions->get(self::class, self::OPTION_HOSTS) as $host) {
+            if (is_array($host) && isset($host['user'])){
+                return $host['user'];
+            }
+        }
+        return '';
+    }
+
+    public function getPassword(): ?string
+    {
+        foreach ($this->serviceOptions->get(self::class, self::OPTION_HOSTS) as $host) {
+            if (is_array($host) && isset($host['pass'])){
+                return $host['pass'];
+            }
+        }
+        return '';
     }
 
     public function getIndexPrefix(): ?string

@@ -25,7 +25,7 @@ namespace oat\taoAdvancedSearch\tests\Unit\SearchEngine\Driver\Elasticsearch;
 use oat\oatbox\log\LoggerService;
 use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\TaoOntology;
-use Elasticsearch\Client;
+use Elastic\Elasticsearch\Client;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchIndexer;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;

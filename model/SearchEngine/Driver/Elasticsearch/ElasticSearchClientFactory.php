@@ -24,8 +24,8 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch;
 
-use Elasticsearch\Client;
-use Elasticsearch\ClientBuilder;
+use Elastic\Elasticsearch\Client;
+use Elastic\Elasticsearch\ClientBuilder;
 
 class ElasticSearchClientFactory
 {
@@ -48,6 +48,7 @@ class ElasticSearchClientFactory
 
         return ClientBuilder::create()
                 ->setHosts($this->config->getHosts())
+                ->setBasicAuthentication($this->config->getUsername(), $this->config->getPassword())
                 ->build();
     }
 }
