@@ -57,22 +57,12 @@ class ElasticSearchConfig
 
     public function getUsername(): ?string
     {
-        foreach ($this->serviceOptions->get(self::class, self::OPTION_HOSTS) as $host) {
-            if (is_array($host) && isset($host['user'])){
-                return $host['user'];
-            }
-        }
-        return '';
+        return $this->getFirstHost()['user'] ?? null;
     }
 
     public function getPassword(): ?string
     {
-        foreach ($this->serviceOptions->get(self::class, self::OPTION_HOSTS) as $host) {
-            if (is_array($host) && isset($host['pass'])){
-                return $host['pass'];
-            }
-        }
-        return '';
+        return $this->getFirstHost()['pass'] ?? null;
     }
 
     public function getIndexPrefix(): ?string
@@ -93,5 +83,10 @@ class ElasticSearchConfig
     public function getElasticCloudApiKeyId(): ?string
     {
         return $this->serviceOptions->get(self::class, self::OPTION_ELASTIC_CLOUD_API_KEY_ID);
+    }
+
+    private function getFirstHost(): ?array 
+    { 
+        return current($this->serviceOptions->get(self::class, self::OPTION_HOSTS)) ?: null; 
     }
 }

@@ -39,16 +39,20 @@ class ElasticSearchClientFactory
 
     public function create(): Client
     {
+        $clientBuilder = ClientBuilder::create();
+
         if ($this->config->getElasticCloudId()) {
-            return ClientBuilder::create()
+            return $clientBuilder
                 ->setElasticCloudId($this->config->getElasticCloudId())
                 ->setApiKey($this->config->getElasticCloudApiKeyId(), $this->config->getElasticCloudApiKey())
                 ->build();
         }
+       
+        $clientBuilder->setHosts($this->config->getHosts());
+        if ($this->config->getUsername() && $this->config->getPassword()) {
+            $clientBuilder->setBasicAuthentication($this->config->getUsername(), $this->config->getPassword());
+        }
 
-        return ClientBuilder::create()
-                ->setHosts($this->config->getHosts())
-                ->setBasicAuthentication($this->config->getUsername(), $this->config->getPassword())
-                ->build();
+        return $clientBuilder->build();
     }
 }
