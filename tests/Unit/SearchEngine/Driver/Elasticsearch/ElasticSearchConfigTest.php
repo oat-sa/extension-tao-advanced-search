@@ -69,6 +69,14 @@ class ElasticSearchConfigTest extends TestCase
                         return 'elasticCloudId';
                     }
 
+                    if ($option === ElasticSearchConfig::OPTION_USERNAME) {
+                        return 'username';
+                    }
+
+                    if ($option === ElasticSearchConfig::OPTION_PASSWORD) {
+                        return 'password';
+                    }
+
                     return null;
                 }
             );
@@ -78,5 +86,7 @@ class ElasticSearchConfigTest extends TestCase
         $this->assertSame('elasticCloudApiKeyId', $this->sut->getElasticCloudApiKeyId());
         $this->assertSame('elasticCloudApiKey', $this->sut->getElasticCloudApiKey());
         $this->assertSame('elasticCloudId', $this->sut->getElasticCloudId());
+        $this->assertSame('username', $this->sut->getUsername());
+        $this->assertSame('password', $this->sut->getPassword());
     }
 }

@@ -15,22 +15,22 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2022 (original work) Open Assessment Technologies SA;
+ * Copyright (c) 2024 (original work) Open Assessment Technologies SA;
  */
 
 declare(strict_types=1);
 
 return [
-    'index' => 'property-list',
     'body' => [
-        'settings' => [
-            'index' => [
-                'number_of_shards' => '1',
-                'number_of_replicas' => '1',
-            ],
-        ],
-        'aliases' => [
-            'property-list_alias' => (object)[]
-        ],
-    ],
+        'actions' => [
+            ['add' => ['index' => 'tests', 'alias' => 'resources_alias']],
+            ['add' => ['index' => 'items', 'alias' => 'resources_alias']],
+            ['add' => ['index' => 'deliveries', 'alias' => 'resources_alias']],
+            ['add' => ['index' => 'test-takers', 'alias' => 'resources_alias']],
+            ['add' => ['index' => 'groups', 'alias' => 'resources_alias']],
+            ['add' => ['index' => 'delivery-results', 'alias' => 'resources_alias']],
+            ['add' => ['index' => 'assets', 'alias' => 'resources_alias']],
+            ['add' => ['index' => 'property-list', 'alias' => 'resources_alias']],
+        ]
+    ]
 ];

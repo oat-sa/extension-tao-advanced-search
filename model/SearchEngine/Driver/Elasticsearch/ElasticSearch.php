@@ -181,6 +181,49 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
         }
     }
 
+    public function updateAliases(): void
+    {
+        $indexFile = $this->getIndexFile();
+        $aliasFile = $this->getAliasesFile();
+
+        $indexes = [];
+
+        if ($indexFile && is_readable($indexFile)) {
+            $indexes = require $indexFile;
+        }
+
+        $aliases = [];
+
+        foreach ($indexes as $index) {
+            $aliases[$index['index']] = current(array_keys($index['body']['aliases']));
+        }
+        $this->client->indices()->updateAliases(
+            [
+                'body' => [
+                    'actions' => array_map(
+                        function ($index, $alias) {
+                            return [
+                                'add' => [
+                                    'index' => $index,
+                                    'alias' => $alias
+                                ]
+                            ];
+                        },
+                        array_keys($aliases),
+                        $aliases
+                    )
+                ]
+            ]
+        );
+
+        if ($aliasFile && is_readable($aliasFile)) {
+            $mainAliases = require $aliasFile;
+        }
+
+        // Add the main alias for all resources
+        $this->client->indices()->updateAliases($mainAliases);
+    }
+    
     public function flush(): array
     {
         return $this->client->indices()->delete(
@@ -240,5 +283,22 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
             'config' .
             DIRECTORY_SEPARATOR .
             'index.conf.php';
+    }
+
+    private function getAliasesFile(): string
+    {
+        return $this->indexFile ?? __DIR__ .
+            DIRECTORY_SEPARATOR .
+            '..' .
+            DIRECTORY_SEPARATOR .
+            '..' .
+            DIRECTORY_SEPARATOR .
+            '..' .
+            DIRECTORY_SEPARATOR .
+            '..' .
+            DIRECTORY_SEPARATOR .
+            'config' .
+            DIRECTORY_SEPARATOR .
+            'aliases.conf.php';
     }
 }

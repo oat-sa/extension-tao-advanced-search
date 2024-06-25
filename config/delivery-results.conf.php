@@ -141,5 +141,8 @@ return [
                 'number_of_replicas' => '1',
             ],
         ],
+        'aliases' => [
+            'delivery-results_alias' => (object)[]
+        ],
     ],
 ];

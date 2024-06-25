@@ -33,6 +33,8 @@ class ElasticSearchConfig
     public const OPTION_ELASTIC_CLOUD_API_KEY_ID = 'elastic_cloud_api_key_id';
     public const OPTION_ELASTIC_CLOUD_API_KEY = 'elastic_cloud_api_key';
     public const OPTION_HOSTS = 'hosts';
+    public const OPTION_USERNAME = 'user';
+    public const OPTION_PASSWORD = 'pass';
 
     /** @var ServiceOptionsInterface */
     private $serviceOptions;
@@ -57,12 +59,12 @@ class ElasticSearchConfig
 
     public function getUsername(): ?string
     {
-        return $this->getFirstHost()['user'] ?? null;
+        return $this->getFirstHost()[self::OPTION_USERNAME] ?? null;
     }
 
     public function getPassword(): ?string
     {
-        return $this->getFirstHost()['pass'] ?? null;
+        return $this->getFirstHost()[self::OPTION_PASSWORD] ?? null;
     }
 
     public function getIndexPrefix(): ?string

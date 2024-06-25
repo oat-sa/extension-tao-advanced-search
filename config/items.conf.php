@@ -89,5 +89,8 @@ return [
                 'number_of_replicas' => '1',
             ],
         ],
+        'aliases' => [
+            'items_alias' => (object)[]
+        ],
     ],
 ];

@@ -13,7 +13,7 @@
 
 ## Requirements
 
-- ElasticSearch 8+ installed.
+- ElasticSearch 8.13+ installed.
 - Have this extension installed in TAO.
 
 ## Installation instructions
@@ -49,6 +49,12 @@ you can delete the indexes by running the command bellow:
 
 ```shell
 php index.php 'oat\taoAdvancedSearch\scripts\tools\IndexDeleter'
+```
+
+### Create/Update aliases for indexes
+
+```shell
+php index.php 'oat\taoAdvancedSearch\scripts\tools\AliasesUpdater'
 ```
 
 ## Indexation

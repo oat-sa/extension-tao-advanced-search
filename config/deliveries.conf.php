@@ -72,5 +72,8 @@ return [
                 'number_of_replicas' => '1',
             ],
         ],
+        'aliases' => [
+            'deliveries_alias' => (object)[]
+        ],
     ],
 ];
