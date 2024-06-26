@@ -70,5 +70,8 @@ return [
                 'number_of_replicas' => '1',
             ],
         ],
+        'aliases' => [
+            'groups_alias' => (object)[]
+        ],
     ],
 ];

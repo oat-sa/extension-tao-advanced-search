@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\SearchEngine\ServiceProvider;
 
-use Elasticsearch\Client;
+use Elastic\Elasticsearch\Client;
 use oat\generis\model\data\permission\PermissionInterface;
 use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
 use oat\generis\model\DependencyInjection\ServiceOptions;

@@ -22,8 +22,8 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\SearchEngine\Driver\Elasticsearch;
 
-use Elasticsearch\Client;
-use Elasticsearch\Common\Exceptions\BadMethodCallException;
+use Elastic\Elasticsearch\Client;
+use Elastic\Elasticsearch\Exception\BadMethodCallException;
 use oat\generis\test\TestCase;
 use oat\oatbox\log\LoggerService;
 use oat\tao\model\TaoOntology;

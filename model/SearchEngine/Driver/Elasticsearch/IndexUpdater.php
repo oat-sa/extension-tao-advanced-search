@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch;
 
-use Elasticsearch\Client;
+use Elastic\Elasticsearch\Client;
 use oat\oatbox\service\ConfigurableService;
 use oat\tao\model\search\index\IndexUpdaterInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;

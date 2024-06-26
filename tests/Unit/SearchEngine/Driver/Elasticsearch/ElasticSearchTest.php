@@ -22,8 +22,8 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\SearchEngine\Driver\Elasticsearch;
 
-use Elasticsearch\Client;
-use Elasticsearch\Namespaces\IndicesNamespace;
+use Elastic\Elasticsearch\Client;
+use Elastic\Elasticsearch\Endpoints\Indices;
 use Exception;
 use oat\tao\model\search\ResultSet;
 use oat\tao\model\search\strategy\GenerisSearch;
@@ -241,7 +241,7 @@ class ElasticSearchTest extends TestCase
 
     public function testCreateIndexes_callIndexCreationBasedOnIndexOption(): void
     {
-        $indexMock = $this->createMock(IndicesNamespace::class);
+        $indexMock = $this->createMock(Indices::class);
         $indexMock->expects($this->at(0))
             ->method('create')
             ->with(

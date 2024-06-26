@@ -78,5 +78,8 @@ return [
                 'number_of_replicas' => '1',
             ],
         ],
+        'aliases' => [
+            'test-takers_alias' => (object)[]
+        ],
     ],
 ];

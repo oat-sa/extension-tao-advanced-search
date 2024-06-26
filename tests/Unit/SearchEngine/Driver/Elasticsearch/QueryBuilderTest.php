@@ -91,7 +91,7 @@ class QueryBuilderTest extends TestCase
 
         $this->assertSame(
             [
-                'index' => 'items',
+                'index' => 'items_alias',
                 'size' => 10,
                 'from' => 0,
                 'client' => [
@@ -99,7 +99,7 @@ class QueryBuilderTest extends TestCase
                 ],
                 'body' => $body,
             ],
-            $this->subject->getSearchParams($queryString, IndexerInterface::ITEMS_INDEX, 0, 10, '_id', 'DESC')
+            $this->subject->getSearchParams($queryString, 'items', 0, 10, '_id', 'DESC')
         );
     }
 
@@ -170,7 +170,7 @@ class QueryBuilderTest extends TestCase
 
         $this->assertSame(
             [
-                'index' => 'items',
+                'index' => 'items_alias',
                 'size' => 10,
                 'from' => 0,
                 'client' => [
@@ -178,7 +178,7 @@ class QueryBuilderTest extends TestCase
                 ],
                 'body' => $body,
             ],
-            $this->subject->getSearchParams($queryString, IndexerInterface::ITEMS_INDEX, 0, 10, '_id', 'DESC')
+            $this->subject->getSearchParams($queryString, 'items', 0, 10, '_id', 'DESC')
         );
     }
 

@@ -29,14 +29,14 @@ use Iterator;
 
 interface IndexerInterface
 {
-    public const ITEMS_INDEX = 'items';
-    public const TESTS_INDEX = 'tests';
-    public const TEST_TAKERS_INDEX = 'test-takers';
-    public const DELIVERIES_INDEX = 'deliveries';
-    public const DELIVERY_RESULTS_INDEX = 'delivery-results';
-    public const GROUPS_INDEX = 'groups';
-    public const ASSETS_INDEX = 'assets';
-    public const PROPERTY_LIST = 'property-list';
+    public const ITEMS_INDEX = 'items_alias';
+    public const TESTS_INDEX = 'tests_alias';
+    public const TEST_TAKERS_INDEX = 'test-takers_alias';
+    public const DELIVERIES_INDEX = 'deliveries_alias';
+    public const DELIVERY_RESULTS_INDEX = 'delivery-results_alias';
+    public const GROUPS_INDEX = 'groups_alias';
+    public const ASSETS_INDEX = 'assets_alias';
+    public const PROPERTY_LIST = 'property-list_alias';
     public const UNCLASSIFIEDS_DOCUMENTS_INDEX = 'unclassifieds';
 
     public const MEDIA_CLASS_URI = 'http://www.tao.lu/Ontologies/TAOMedia.rdf#Media';
