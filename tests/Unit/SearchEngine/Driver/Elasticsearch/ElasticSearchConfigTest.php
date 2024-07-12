@@ -54,7 +54,15 @@ class ElasticSearchConfigTest extends TestCase
                     }
 
                     if ($option === ElasticSearchConfig::OPTION_HOSTS) {
-                        return [['host' => 'host', 'port' => 'port', 'scheme' => 'scheme', 'user'=> 'username', 'pass' => 'password']];
+                        return [
+                            [
+                                'host' => 'host',
+                                'port' => 'port',
+                                'scheme' => 'scheme',
+                                'user' => 'username',
+                                'pass' => 'password'
+                                ]
+                        ];
                     }
 
                     if ($option === ElasticSearchConfig::OPTION_ELASTIC_CLOUD_API_KEY_ID) {

@@ -48,7 +48,7 @@ class ElasticSearchConfig
     {
         $hosts = [];
         foreach ($this->serviceOptions->get(self::class, self::OPTION_HOSTS) as $host) {
-            if (is_array($host) && isset($host['host'])){
+            if (is_array($host) && isset($host['host'])) {
                 $hosts[] = ($host['scheme'] ?? 'http') . '://' . $host['host'] . ':' . ($host['port'] ?? 9200);
             } else {
                 $hosts[] = $host;
@@ -87,8 +87,8 @@ class ElasticSearchConfig
         return $this->serviceOptions->get(self::class, self::OPTION_ELASTIC_CLOUD_API_KEY_ID);
     }
 
-    private function getFirstHost(): ?array 
-    { 
-        return current($this->serviceOptions->get(self::class, self::OPTION_HOSTS)) ?: null; 
+    private function getFirstHost(): ?array
+    {
+        return current($this->serviceOptions->get(self::class, self::OPTION_HOSTS)) ?: null;
     }
 }

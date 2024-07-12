@@ -47,7 +47,7 @@ class ElasticSearchClientFactory
                 ->setApiKey($this->config->getElasticCloudApiKeyId(), $this->config->getElasticCloudApiKey())
                 ->build();
         }
-       
+
         $clientBuilder->setHosts($this->config->getHosts());
         if ($this->config->getUsername() && $this->config->getPassword()) {
             $clientBuilder->setBasicAuthentication($this->config->getUsername(), $this->config->getPassword());

@@ -22,8 +22,10 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\SearchEngine\Driver\Elasticsearch;
 
+use DG\BypassFinals;
 use Elastic\Elasticsearch\Client;
 use Elastic\Elasticsearch\Endpoints\Indices;
+use Elastic\Elasticsearch\Response\Elasticsearch as ResponseElasticsearch;
 use Exception;
 use oat\tao\model\search\ResultSet;
 use oat\tao\model\search\strategy\GenerisSearch;
@@ -63,8 +65,13 @@ class ElasticSearchTest extends TestCase
     /** @var SearchResultNormalizer|MockObject */
     private $searchResultNormalizer;
 
+    /** @var IndexPrefixer|MockObject */
+    private $prefixer;
+
     protected function setUp(): void
     {
+        BypassFinals::enable();
+        parent::setUp();
         $this->generisSearch = $this->createMock(GenerisSearch::class);
         $this->queryBuilder = $this->createMock(QueryBuilder::class);
         $this->client = $this->createMock(Client::class);
@@ -122,10 +129,13 @@ class ElasticSearchTest extends TestCase
             )
         ];
 
+        $responseMock = $this->createMock(ResponseElasticsearch::class);
+        $responseMock->method('asArray')
+            ->willReturn([]);
         $this->client
             ->method('search')
             ->with($query)
-            ->willReturn([]);
+            ->willReturn($responseMock);
 
         $query = (new Query('indexName'))
             ->setOffset(7)
@@ -153,7 +163,7 @@ class ElasticSearchTest extends TestCase
         $this->assertEquals(777, $this->sut->countDocuments('indexName'));
     }
 
-    public function testQuery_callElasticSearchCaseClassIsSupported(): void
+    public function testQueryCallElasticSearchCaseClassIsSupported(): void
     {
         $validType = 'http://www.tao.lu/Ontologies/TAOItem.rdf#Item';
 
@@ -164,27 +174,29 @@ class ElasticSearchTest extends TestCase
 
         $documentUri = 'https://tao.docker.localhost/ontologies/tao.rdf#i5ef45f413088c8e7901a84708e84ec';
 
-        $this->client->expects($this->once())
-            ->method('search')
-            ->willReturn(
-                [
+        $responseMock = $this->createMock(ResponseElasticsearch::class);
+        $responseMock->method('asArray')
+            ->willReturn([
+                'hits' => [
                     'hits' => [
-                        'hits' => [
-                            [
-                                '_id' => $documentUri,
-                                '_source' => [
-                                    'attr1' => 'attr1 Value',
-                                    'attr2' => 'attr2 Value',
-                                    'attr3' => 'attr3 Value',
-                                ],
-                            ]
-                        ],
-                        'total' => [
-                            'value' => 1
+                        [
+                            '_id' => $documentUri,
+                            '_source' => [
+                                'attr1' => 'attr1 Value',
+                                'attr2' => 'attr2 Value',
+                                'attr3' => 'attr3 Value',
+                            ],
                         ]
+                    ],
+                    'total' => [
+                        'value' => 1
                     ]
                 ]
-            );
+            ]);
+
+        $this->client->expects($this->once())
+            ->method('search')
+            ->willReturn($responseMock);
 
         $resultSet = $this->sut->query('item', $validType);
 
@@ -193,7 +205,7 @@ class ElasticSearchTest extends TestCase
         $this->assertCount(4, $resultSet->getArrayCopy()[0]);
     }
 
-    public function testQuery_callElasticSearchGenericError(): void
+    public function testQueryCallElasticSearchGenericError(): void
     {
         $this->expectException(SyntaxException::class);
         $validType = 'http://www.tao.lu/Ontologies/TAOItem.rdf#Item';
@@ -216,7 +228,7 @@ class ElasticSearchTest extends TestCase
         $resultSet = $this->sut->query('item', $validType);
     }
 
-    public function testQuery_callElasticSearch400Error(): void
+    public function testQueryCallElasticSearch400Error(): void
     {
         $this->expectException(SyntaxException::class);
         $validType = 'http://www.tao.lu/Ontologies/TAOItem.rdf#Item';
@@ -228,7 +240,8 @@ class ElasticSearchTest extends TestCase
 
         $this->logger->expects($this->once())
             ->method('error')
-            ->with('Elasticsearch: There is an error in your search query, system returned: Error {"error":{"reason": "Error"}}');
+            ->with('Elasticsearch: There is an error in your search query, system returned: ' .
+                    'Error {"error":{"reason": "Error"}}');
 
         $documentUri = 'https://tao.docker.localhost/ontologies/tao.rdf#i5ef45f413088c8e7901a84708e84ec';
 
@@ -239,7 +252,7 @@ class ElasticSearchTest extends TestCase
         $resultSet = $this->sut->query('item', $validType);
     }
 
-    public function testCreateIndexes_callIndexCreationBasedOnIndexOption(): void
+    public function testCreateIndexesCallIndexCreationBasedOnIndexOption(): void
     {
         $indexMock = $this->createMock(Indices::class);
         $indexMock->expects($this->at(0))
@@ -282,31 +295,29 @@ class ElasticSearchTest extends TestCase
         $this->sut->createIndexes();
     }
 
-    /**
-     * @dataProvider pingProvider
-     */
-    public function testPing(bool $clientPing, bool $expected): void
+
+    public function testPingTrue(): void
     {
+        $responseMock = $this->createMock(ResponseElasticsearch::class);
+        $responseMock->method('asBool')->willReturn(true);
         $this->client
             ->expects($this->once())
             ->method('ping')
-            ->willReturn($clientPing);
+            ->willReturn($responseMock);
 
-        $this->assertEquals($expected, $this->sut->ping());
+        $this->assertEquals(true, $this->sut->ping());
     }
 
-    public function pingProvider(): array
+    public function testPingFalse(): void
     {
-        return [
-            'True' => [
-                'clientPing' => true,
-                'expected' => true,
-            ],
-            'False' => [
-                'clientPing' => false,
-                'expected' => false,
-            ],
-        ];
+        $responseMock = $this->createMock(ResponseElasticsearch::class);
+        $responseMock->method('asBool')->willReturn(false);
+        $this->client
+            ->expects($this->once())
+            ->method('ping')
+            ->willReturn($responseMock);
+
+        $this->assertEquals(false, $this->sut->ping());
     }
 
     private function mockDebugLogger(): void
@@ -319,7 +330,8 @@ class ElasticSearchTest extends TestCase
                 [
                     'ignore' => 404,
                 ],
-            'body' => '{"query":{"query_string":{"default_operator":"AND","query":"(\\"item\\")"}},"sort":{"_id":{"order":"DESC"}}}',
+            'body' => '{"query":{"query_string":{"default_operator":"AND","query":"(\\"item\\")"}},' .
+                '"sort":{"_id":{"order":"DESC"}}}',
         ];
 
         $this->queryBuilder->expects($this->once())

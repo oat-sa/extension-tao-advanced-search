@@ -27,12 +27,17 @@
     "oat-sa/oatbox-extension-installer": "~1.1||dev-master",
     "ext-json": "*",
     "oat-sa/generis": ">=15.22",
-    "oat-sa/tao-core": ">=53.7.1",
+    "oat-sa/tao-core": "dev-feat/FUN-1740/update-guzzle-client as 99.99.99",
+    "oat-sa/extension-tao-testqti": "dev-feat/FUN-1740/update-guzzle-client as 99.99.99",
     "oat-sa/extension-tao-delivery": ">=14.10.1",
     "oat-sa/extension-tao-outcome": ">=13.0.0",
     "oat-sa/extension-tao-test": ">=15.15.1",
     "oat-sa/extension-tao-mediamanager": ">=12.32.1",
-    "elasticsearch/elasticsearch": "~8.13"
+    "elasticsearch/elasticsearch": "^7.2|^8.0"
+  },
+  "require-dev": {
+    "php-http/mock-client": "^1.6",
+    "dg/bypass-finals": "^1.7"
   },
   "autoload": {
     "psr-4": {
