@@ -97,7 +97,7 @@ class QueryBuilderTest extends TestCase
 
         $this->assertSame(
             [
-                'index' => 'items_alias',
+                'index' => 'items',
                 'size' => 10,
                 'from' => 0,
                 'client' => [
@@ -289,7 +289,7 @@ class QueryBuilderTest extends TestCase
 
         $this->assertSame(
             [
-                'index' => 'items_alias',
+                'index' => 'items',
                 'size' => 10,
                 'from' => 0,
                 'client' => [

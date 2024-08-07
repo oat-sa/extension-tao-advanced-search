@@ -76,7 +76,7 @@ class IndexUpdaterTest extends TestCase
             ->method('updateByQuery')
             ->with(
                 [
-                    'index' => 'items_alias',
+                    'index' => 'items',
                     'type' => '_doc',
                     'conflicts' => 'proceed',
                     'wait_for_completion' => true,
@@ -137,7 +137,7 @@ class IndexUpdaterTest extends TestCase
             ->method('updateByQuery')
             ->with(
                 [
-                    'index' => 'items_alias',
+                    'index' => 'items',
                     'type' => '_doc',
                     'conflicts' => 'proceed',
                     'wait_for_completion' => true,
@@ -196,7 +196,7 @@ class IndexUpdaterTest extends TestCase
             ->method('updateByQuery')
             ->with(
                 [
-                    'index' => 'items_alias',
+                    'index' => 'items',
                     'type' => '_doc',
                     'conflicts' => 'proceed',
                     'wait_for_completion' => true,
