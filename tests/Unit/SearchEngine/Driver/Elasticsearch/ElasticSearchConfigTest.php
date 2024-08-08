@@ -54,7 +54,15 @@ class ElasticSearchConfigTest extends TestCase
                     }
 
                     if ($option === ElasticSearchConfig::OPTION_HOSTS) {
-                        return ['hosts'];
+                        return [
+                            [
+                                'host' => 'host',
+                                'port' => 'port',
+                                'scheme' => 'scheme',
+                                'user' => 'username',
+                                'pass' => 'password'
+                                ]
+                        ];
                     }
 
                     if ($option === ElasticSearchConfig::OPTION_ELASTIC_CLOUD_API_KEY_ID) {
@@ -69,14 +77,24 @@ class ElasticSearchConfigTest extends TestCase
                         return 'elasticCloudId';
                     }
 
+                    if ($option === ElasticSearchConfig::OPTION_USERNAME) {
+                        return 'username';
+                    }
+
+                    if ($option === ElasticSearchConfig::OPTION_PASSWORD) {
+                        return 'password';
+                    }
+
                     return null;
                 }
             );
 
         $this->assertSame('p', $this->sut->getIndexPrefix());
-        $this->assertSame(['hosts'], $this->sut->getHosts());
+        $this->assertSame(['scheme://host:port'], $this->sut->getHosts());
         $this->assertSame('elasticCloudApiKeyId', $this->sut->getElasticCloudApiKeyId());
         $this->assertSame('elasticCloudApiKey', $this->sut->getElasticCloudApiKey());
         $this->assertSame('elasticCloudId', $this->sut->getElasticCloudId());
+        $this->assertSame('username', $this->sut->getUsername());
+        $this->assertSame('password', $this->sut->getPassword());
     }
 }

@@ -28,13 +28,13 @@ use oat\generis\test\MockObject;
 use oat\oatbox\log\LoggerService;
 use oat\oatbox\session\SessionService;
 use oat\oatbox\user\User;
-use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\QueryBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use oat\taoAdvancedSearch\model\SearchEngine\Specification\UseAclSpecification;
 use PHPUnit\Framework\TestCase;
 
-interface PermissionMock extends PermissionInterface, ReverseRightLookupInterface {
+interface PermissionMock extends PermissionInterface, ReverseRightLookupInterface
+{
 }
 
 class QueryBuilderTest extends TestCase
@@ -53,6 +53,12 @@ class QueryBuilderTest extends TestCase
 
     /** @var UseAclSpecification|MockObject */
     private $useAclSpecification;
+
+    /** @var IndexPrefixer|MockObject */
+    private $prefixer;
+
+    /** @var User|MockObject */
+    private $user;
 
     protected function setUp(): void
     {
@@ -99,7 +105,7 @@ class QueryBuilderTest extends TestCase
                 ],
                 'body' => $body,
             ],
-            $this->subject->getSearchParams($queryString, IndexerInterface::ITEMS_INDEX, 0, 10, '_id', 'DESC')
+            $this->subject->getSearchParams($queryString, 'items', 0, 10, '_id', 'DESC')
         );
     }
 
@@ -108,55 +114,168 @@ class QueryBuilderTest extends TestCase
         return [
             'with user access control and role access control' => [
                 'test',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(\"test\") AND (read_access:(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
+                '{"query":{"query_string":{"default_operator":"AND","query":' .
+                '"(\\"test\\") AND (read_access:(\\"https:\\/\\/tao.docker.localhost\\/' .
+                'ontologies\\/tao.rdf#i5f64514f1c36110793759fc28c0105b\\" OR' .
+                ' \\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#BackOfficeRole\\" OR ' .
+                '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#ItemsManagerRole\\"))"}},' .
+                '"sort":{"_id":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":' .
+                '"_last","unmapped_type":"long"}}}'
             ],
             'Simple query' => [
                 'test',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(\"test\") AND (read_access:(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
+                '{"query":{"query_string":{"default_operator":"AND","query":"(\\"test\\") AND ' .
+                '(read_access:(\\"https:\\/\\/tao.docker.localhost\\/' .
+                'ontologies\\/tao.rdf#i5f64514f1c36110793759fc28c0105b\\" OR ' .
+                '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#BackOfficeRole\\" OR ' .
+                '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#ItemsManagerRole\\"))"}},' .
+                '"sort":{"_id":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"long"}}}'
             ],
             'Query specific field' => [
                 'label:test',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND (read_access:(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
+                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\\"test\\") ' .
+                'AND (read_access:(\\"https:\\/\\/tao.docker.localhost\\/' .
+                'ontologies\\/tao.rdf#i5f64514f1c36110793759fc28c0105b\\" OR ' .
+                '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#BackOfficeRole\\" OR ' .
+                '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#ItemsManagerRole\\"))"}},' .
+                '"sort":{"_id":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
             ],
             'Query specific field (variating case)' => [
                 'LaBeL:test',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND (read_access:(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
+                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\\"test\\") ' .
+                'AND (read_access:(\\"https:\\/\\/tao.docker.localhost\\/' .
+                'ontologies\\/tao.rdf#i5f64514f1c36110793759fc28c0105b\\" OR ' .
+                '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#BackOfficeRole\\" OR ' .
+                '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#ItemsManagerRole\\"))"}},' .
+                '"sort":{"_id":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
             ],
             'Query custom field (using underscore)' => [
                 'custom_field:test',
-                'body' => '{"query":{"query_string":{"default_operator":"AND","query":"(HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" OR RadioBox_custom_field:\"test\" OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") AND (read_access:(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
+                '{"query":{"query_string":{"default_operator":"AND","query":"(HTMLArea_custom_field:' .
+                '\\"test\\" OR TextArea_custom_field:\\"test\\" OR ' .
+                'TextBox_custom_field:\\"test\\" OR ComboBox_custom_field:\\"test\\" ' .
+                'OR CheckBox_custom_field:\\"test\\" OR RadioBox_custom_field:\\"test\\" ' .
+                'OR SearchTextBox_custom_field:\\"test\\" OR SearchDropdown_custom_field:\\"test\\")' .
+                ' AND (read_access:(\\"https:\\/\\/tao.docker.localhost\\/' .
+                'ontologies\\/tao.rdf#i5f64514f1c36110793759fc28c0105b\\" OR \\"http:\\/\\/www.tao.lu\\/Ontologies\\/' .
+                'TAOItem.rdf#BackOfficeRole\\" OR ' .
+                '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#ItemsManagerRole\\"))"}},' .
+                '"sort":{"_id":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
             ],
             'Query custom field (using dash)' => [
                 'custom_field:test',
-                'body' => '{"query":{"query_string":{"default_operator":"AND","query":"(HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" OR RadioBox_custom_field:\"test\" OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") AND (read_access:(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
+                '{"query":{"query_string":{"default_operator":"AND","query":"' .
+                '(HTMLArea_custom_field:\\"test\\" OR TextArea_custom_field:\\"test\\" OR ' .
+                'TextBox_custom_field:\\"test\\" OR ComboBox_custom_field:\\"test\\"' .
+                ' OR CheckBox_custom_field:\\"test\\" OR RadioBox_custom_field:\\"test\\" ' .
+                'OR SearchTextBox_custom_field:\\"test\\" OR SearchDropdown_custom_field:\\' .
+                '"test\\") AND (read_access:(\\"https:\\/\\/tao.docker.localhost\\/' .
+                'ontologies\\/tao.rdf#i5f64514f1c36110793759fc28c0105b\\" OR ' .
+                '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#BackOfficeRole\\" OR ' .
+                '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#ItemsManagerRole\\"))"}},' .
+                '"sort":{"_id":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"long"}}}'
             ],
             'Query custom field (using space)' => [
                 'custom field:test',
-                'body' => '{"query":{"query_string":{"default_operator":"AND","query":"(HTMLArea_custom field:\"test\" OR TextArea_custom field:\"test\" OR TextBox_custom field:\"test\" OR ComboBox_custom field:\"test\" OR CheckBox_custom field:\"test\" OR RadioBox_custom field:\"test\" OR SearchTextBox_custom field:\"test\" OR SearchDropdown_custom field:\"test\") AND (read_access:(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
+                'body' => '{"query":{"query_string":{"default_operator":"AND",' .
+                '"query":"(HTMLArea_custom field:\"test\" ' .
+                'OR TextArea_custom field:\"test\" OR TextBox_custom ' .
+                'field:\"test\" OR ComboBox_custom field:\"test\" ' .
+                'OR CheckBox_custom field:\"test\" OR RadioBox_custom ' .
+                'field:\"test\" OR SearchTextBox_custom field:\"test\" ' .
+                'OR SearchDropdown_custom field:\"test\") AND ' .
+                '(read_access:(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf' .
+                '#i5f64514f1c36110793759fc28c0105b\" OR ' .
+                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" ' .
+                'OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},' .
+                '"sort":{"_id":{"order":"DESC",' .
+                '"missing":"_last","unmapped_type":"long"},"label.raw":' .
+                '{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
             ],
             'Query logic operator (Uppercase)' => [
                 'label:test AND custom_field:test',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND (HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" OR RadioBox_custom_field:\"test\" OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") AND (read_access:(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
+                '{"query":{"query_string":{"default_operator":"AND","query":' .
+                '"(label:\\"test\\") AND (HTMLArea_custom_field:\\"test\\" OR TextArea_custom_' .
+                'field:\\"test\\" OR TextBox_custom_field:\\"test\\" OR ' .
+                'ComboBox_custom_field:\\"test\\" OR CheckBox_custom_field:\\"test\\" OR RadioBox_' .
+                'custom_field:\\"test\\" OR SearchTextBox_custom_field:\\"test\\" ' .
+                'OR SearchDropdown_custom_field:\\"test\\") AND (read_access:(\\"https:\\/' .
+                '\\/tao.docker.localhost\\/ontologies\\/tao.rdf#i5f64514f1c36110793759fc28c0105b\\"' .
+                ' OR \\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#' .
+                'BackOfficeRole\\" OR \\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#ItemsManagerRole\\"))"}}' .
+                ',"sort":{"_id":{"order":"DESC",' .
+                '"missing":"_last","unmapped_type":"long"},"label.raw":' .
+                '{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
             ],
             'Query logic operator (Lowercase)' => [
                 'label:test and custom_field:test',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND (HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" OR RadioBox_custom_field:\"test\" OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") AND (read_access:(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
+                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND ' .
+                '(HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
+                'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
+                'OR RadioBox_custom_field:\"test\" ' .
+                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") AND (read_access:' .
+                '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
+                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
+                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},' .
+                '"sort":{"_id":{"order":"DESC",' .
+                '"missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"long"}}}'
             ],
             'Query logic operator (Mixed)' => [
                 'label:test aNd custom_field:test',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND (HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" OR RadioBox_custom_field:\"test\" OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") AND (read_access:(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
+                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND ' .
+                '(HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
+                'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\"' .
+                ' OR RadioBox_custom_field:\"test\" ' .
+                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") AND (read_access:' .
+                '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
+                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
+                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},' .
+                '"sort":{"_id":{"order":"DESC",' .
+                '"missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"long"}}}'
             ],
             'Query URIs' => [
                 'https://test-act.docker.localhost/ontologies/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(\"https:\/\/test-act.docker.localhost\/ontologies\/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a\") AND (read_access:(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
+                '{"query":{"query_string":{"default_operator":"AND","query":"(\"https:\/\/test-act.docker.localhost\/' .
+                'ontologies\/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a\") AND (read_access:' .
+                '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
+                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
+                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#' .
+                'ItemsManagerRole\"))"}},"sort":{"_id":{"order":"DESC",' .
+                '"missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"long"}}}'
             ],
             'Query Field with URI' => [
                 'delivery: https://test-act.docker.localhost/ontologies/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(delivery:\"https:\/\/test-act.docker.localhost\/ontologies\/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a\") AND (read_access:(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
+                '{"query":{"query_string":{"default_operator":"AND","query"' .
+                ':"(delivery:\"https:\/\/test-act.docker.localhost\/' .
+                'ontologies\/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a\") AND (read_access:' .
+                '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
+                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
+                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#' .
+                'ItemsManagerRole\"))"}},"sort":{"_id":{"order":"DESC",' .
+                '"missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"long"}}}'
             ],
             'Query term with a backslash' => [
                 'some\ term',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(\"some\\\\\\\\ term\") AND (read_access:(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
+                '{"query":{"query_string":{"default_operator":"AND","query":' .
+                '"(\"some\\\\\\\\ term\") AND (read_access:' .
+                '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
+                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
+                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},' .
+                '"sort":{"_id":{"order":"DESC",' .
+                '"missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"long"}}}'
             ],
         ];
     }
@@ -178,7 +297,7 @@ class QueryBuilderTest extends TestCase
                 ],
                 'body' => $body,
             ],
-            $this->subject->getSearchParams($queryString, IndexerInterface::ITEMS_INDEX, 0, 10, '_id', 'DESC')
+            $this->subject->getSearchParams($queryString, 'items', 0, 10, '_id', 'DESC')
         );
     }
 
@@ -187,47 +306,100 @@ class QueryBuilderTest extends TestCase
         return [
             'Simple query' => [
                 'test',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(\"test\")"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
+                '{"query":{"query_string":{"default_operator":"AND","query":"(\"test\")"}},' .
+                '"sort":{"_id":{"order":"DESC",' .
+                '"missing":"_last","unmapped_type":"long"},"label.raw":' .
+                '{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"long"}}}'
             ],
             'Query specific field' => [
                 'label:test',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\")"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
+                '{"query":{"query_string":{"default_operator":"AND","query":' .
+                '"(label:\"test\")"}},"sort":{"_id":{"order":"DESC",' .
+                '"missing":"_last","unmapped_type":"long"},"label.raw":' .
+                '{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"long"}}}'
             ],
             'Query specific field (variating case)' => [
                 'LaBeL:test',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\")"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
+                '{"query":{"query_string":{"default_operator":"AND","query"' .
+                ':"(label:\"test\")"}},"sort":{"_id":{"order":"DESC",' .
+                '"missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"long"}}}'
             ],
             'Query custom field (using underscore)' => [
                 'custom_field:test',
-                'body' => '{"query":{"query_string":{"default_operator":"AND","query":"(HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" OR RadioBox_custom_field:\"test\" OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\")"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
+                '{"query":{"query_string":{"default_operator":"AND",' .
+                '"query":"(HTMLArea_custom_field:\"test\" OR ' .
+                'TextArea_custom_field:\"test\" OR TextBox_custom_field' .
+                ':\"test\" OR ComboBox_custom_field:\"test\" ' .
+                'OR CheckBox_custom_field:\"test\" OR RadioBox_custom_field:' .
+                '\"test\" OR SearchTextBox_custom_field:\"test\" ' .
+                'OR SearchDropdown_custom_field:\"test\")"}},' .
+                '"sort":{"_id":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"long"},"label.raw":{"order":' .
+                '"DESC","missing":"_last","unmapped_type":"long"}}}'
             ],
             'Query custom field (using dash)' => [
                 'custom_field:test',
-                'body' => '{"query":{"query_string":{"default_operator":"AND","query":"(HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" OR RadioBox_custom_field:\"test\" OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\")"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
+                '{"query":{"query_string":{"default_operator":"AND","query":"(HTMLArea_custom_field:\"test\" OR ' .
+                'TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" OR ComboBox_custom_field:\"test\" ' .
+                'OR CheckBox_custom_field:\"test\" OR RadioBox_custom_field:' .
+                '\"test\" OR SearchTextBox_custom_field:\"test\" ' .
+                'OR SearchDropdown_custom_field:\"test\")"}},"sort":{"_id":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
             ],
             'Query custom field (using space)' => [
                 'custom field:test',
-                'body' => '{"query":{"query_string":{"default_operator":"AND","query":"(HTMLArea_custom field:\"test\" OR TextArea_custom field:\"test\" OR TextBox_custom field:\"test\" OR ComboBox_custom field:\"test\" OR CheckBox_custom field:\"test\" OR RadioBox_custom field:\"test\" OR SearchTextBox_custom field:\"test\" OR SearchDropdown_custom field:\"test\")"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
+                'body' => '{"query":{"query_string":{"default_operator":"AND","query":"(HTMLArea_custom ' .
+                'field:\"test\" OR TextArea_custom field:\"test\" OR TextBox_custom field:\"test\" ' .
+                'OR ComboBox_custom field:\"test\" OR CheckBox_custom field:\"test\" OR RadioBox_custom ' .
+                'field:\"test\" OR SearchTextBox_custom field:\"test\" OR SearchDropdown_custom field:' .
+                '\"test\")"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},' .
+                '"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
             ],
             'Query logic operator (Uppercase)' => [
                 'label:test AND custom_field:test',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND (HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" OR RadioBox_custom_field:\"test\" OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\")"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
+                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") ' .
+                'AND (HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR ' .
+                'TextBox_custom_field:\"test\" OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:' .
+                '\"test\" OR RadioBox_custom_field:\"test\" OR SearchTextBox_custom_field:\"test\" OR ' .
+                'SearchDropdown_custom_field:\"test\")"}},"sort":{"_id":{"order":"DESC","missing":"_last"' .
+                ',"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
             ],
             'Query logic operator (Lowercase)' => [
                 'label:test and custom_field:test',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND (HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" OR RadioBox_custom_field:\"test\" OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\")"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
+                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND ' .
+                '(HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:' .
+                '\"test\" OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" OR ' .
+                'RadioBox_custom_field:\"test\" OR SearchTextBox_custom_field:\"test\" OR ' .
+                'SearchDropdown_custom_field:\"test\")"}},"sort":{"_id":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
             ],
             'Query logic operator (Mixed)' => [
                 'label:test aNd custom_field:test',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND (HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" OR RadioBox_custom_field:\"test\" OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\")"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
+                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND ' .
+                '(HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
+                'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\"' .
+                ' OR RadioBox_custom_field:\"test\" ' .
+                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\")"}},"sort":{"_id":' .
+                '{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing"' .
+                ':"_last","unmapped_type":"long"}}}',
             ],
             'Query URIs' => [
                 'https://test-act.docker.localhost/ontologies/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(\"https:\/\/test-act.docker.localhost\/ontologies\/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a\")"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
+                '{"query":{"query_string":{"default_operator":"AND","query":"(\"https:\/\/test-act.docker.localhost' .
+                '\/ontologies\/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a\")"}},' .
+                '"sort":{"_id":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
             ],
             'Query Field with URI' => [
                 'delivery: https://test-act.docker.localhost/ontologies/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(delivery:\"https:\/\/test-act.docker.localhost\/ontologies\/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a\")"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
+                '{"query":{"query_string":{"default_operator":"AND","query":' .
+                '"(delivery:\"https:\/\/test-act.docker.localhost' .
+                '\/ontologies\/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a\")"}},' .
+                '"sort":{"_id":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
             ],
         ];
     }

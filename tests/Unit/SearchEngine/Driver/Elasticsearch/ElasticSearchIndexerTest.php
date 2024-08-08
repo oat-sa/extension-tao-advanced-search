@@ -25,12 +25,13 @@ namespace oat\taoAdvancedSearch\tests\Unit\SearchEngine\Driver\Elasticsearch;
 use oat\oatbox\log\LoggerService;
 use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\TaoOntology;
-use Elasticsearch\Client;
+use Elastic\Elasticsearch\Client;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchIndexer;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use PHPUnit\Framework\MockObject\MockObject;
 use ArrayIterator;
+use DG\BypassFinals;
 use PHPUnit\Framework\TestCase;
 
 class ElasticSearchIndexerTest extends TestCase
@@ -44,8 +45,12 @@ class ElasticSearchIndexerTest extends TestCase
     /** @var ElasticSearchIndexer $sut */
     private $sut;
 
+    /** @var IndexPrefixer|MockObject */
+    private $prefixer;
+
     protected function setUp(): void
     {
+        BypassFinals::enable();
         $this->client = $this->createMock(Client::class);
         $this->logger = $this->createMock(LoggerService::class);
         $this->prefixer = $this->createMock(IndexPrefixer::class);
@@ -111,18 +116,19 @@ class ElasticSearchIndexerTest extends TestCase
         $this->logger->expects($this->at(0))
             ->method('info')
             ->with(
-                '[documentId: "some_id"] Queuing document with types '.
-                'http://www.tao.lu/Ontologies/TAOItem.rdf#Item '.
+                '[documentId: "some_id"] Queuing document with types ' .
+                'http://www.tao.lu/Ontologies/TAOItem.rdf#Item ' .
                 sprintf('into index "%s"', IndexerInterface::ITEMS_INDEX)
             );
 
         $this->logger->expects($this->at(1))
             ->method('debug')
             ->with(
-                ElasticSearchIndexer::class . '::buildIndex'.
+                ElasticSearchIndexer::class . '::buildIndex' .
                 ': Flushing batch with 1 operations'
             );
 
+        /** @var ArrayIterator|MockObject $iterator */
         $iterator = $this->createIterator([$document]);
         $iterator->expects($this->once())
             ->method('next');

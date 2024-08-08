@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\scripts\tools;
 
-use Elasticsearch\Common\Exceptions\BadRequest400Exception;
+use BadRequest400Exception;
 use Exception;
 use oat\generis\model\DependencyInjection\ServiceOptions;
 use oat\oatbox\extension\script\ScriptAction;
