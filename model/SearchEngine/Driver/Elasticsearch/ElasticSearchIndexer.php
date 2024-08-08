@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch;
 
 use oat\tao\model\search\index\IndexDocument;
-use Elasticsearch\Client;
+use Elastic\Elasticsearch\Client;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use Psr\Log\LoggerInterface;

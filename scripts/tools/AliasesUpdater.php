@@ -15,9 +15,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2022 (original work) Open Assessment Technologies SA;
+ * Copyright (c) 2024 (original work) Open Assessment Technologies SA;
  *
- * @author Gabriel Felipe Soares <gabriel.felipe.soares@taotesting.com>
  */
 
 declare(strict_types=1);
@@ -30,7 +29,7 @@ use oat\oatbox\reporting\Report;
 use oat\tao\model\search\SearchProxy;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 
-class IndexCreator extends ScriptAction
+class AliasesUpdater extends ScriptAction
 {
     protected function provideOptions()
     {
@@ -39,7 +38,7 @@ class IndexCreator extends ScriptAction
 
     protected function provideDescription()
     {
-        return 'Creates indices at Elastic Search';
+        return 'Update aliases for all indexes';
     }
 
     protected function run()
@@ -50,12 +49,11 @@ class IndexCreator extends ScriptAction
 
             /** @var ElasticSearch|null $elasticService */
             $elasticService = $searchProxy->getAdvancedSearch();
-            $elasticService->createIndexes();
             $elasticService->updateAliases();
 
-            return Report::createSuccess('Elastic indices created successfully');
+            return Report::createSuccess('Elastic aliases updated successfully');
         } catch (Exception $exception) {
-            return Report::createError(sprintf('Error while indices creation: %s', $exception->getMessage()));
+            return Report::createError(sprintf('Error while alias creation: %s', $exception->getMessage()));
         }
     }
 }

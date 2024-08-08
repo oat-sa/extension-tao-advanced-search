@@ -22,8 +22,8 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\SearchEngine\Driver\Elasticsearch;
 
-use Elasticsearch\Client;
-use Elasticsearch\Common\Exceptions\BadMethodCallException;
+use DG\BypassFinals;
+use Elastic\Elasticsearch\Client;
 use oat\generis\test\TestCase;
 use oat\oatbox\log\LoggerService;
 use oat\tao\model\TaoOntology;
@@ -38,7 +38,7 @@ class IndexUpdaterTest extends TestCase
     /** @var IndexUpdater */
     private $sut;
 
-    /** @var Client */
+    /** @var Client|MockObject */
     private $client;
 
     /** @var IndexPrefixer|MockObject */
@@ -46,6 +46,7 @@ class IndexUpdaterTest extends TestCase
 
     protected function setUp(): void
     {
+        BypassFinals::enable();
         $this->sut = new IndexUpdater();
         $this->client = $this->createMock(Client::class);
         $this->prefixer = $this->createMock(IndexPrefixer::class);
@@ -102,7 +103,7 @@ class IndexUpdaterTest extends TestCase
 
         $this->client->expects($this->once())
             ->method('updateByQuery')
-            ->willThrowException(new BadMethodCallException());
+            ->willThrowException(new \BadMethodCallException());
 
         $this->sut->updatePropertiesName(
             [
@@ -163,7 +164,7 @@ class IndexUpdaterTest extends TestCase
 
         $this->client->expects($this->once())
             ->method('updateByQuery')
-            ->willThrowException(new BadMethodCallException());
+            ->willThrowException(new \BadMethodCallException());
 
         $this->sut->deleteProperty(
             [
@@ -244,7 +245,7 @@ class IndexUpdaterTest extends TestCase
 
         $this->client->expects($this->once())
             ->method('updateByQuery')
-            ->willThrowException(new BadMethodCallException());
+            ->willThrowException(new \BadMethodCallException());
         $documentUri = 'https://tao.docker.localhost/ontologies/tao.rdf#i5ef45f413088c8e7901a84708e84ec';
         $validType = 'http://www.tao.lu/Ontologies/TAOItem.rdf#Item';
 
@@ -289,7 +290,10 @@ class IndexUpdaterTest extends TestCase
                             'type' => TaoOntology::CLASS_URI_ITEM
                         ],
                     ],
-                'source' => 'ctx._source[\'test\'] = ctx._source[\'devel\']; ctx._source[\'CheckBox_property-6\'] = ctx._source[\'TextArea_devel\']; ctx._source.remove(\'devel\'); ctx._source.remove(\'TextArea_devel\');'
+                'source' => "ctx._source['test'] = ctx._source['devel']; " .
+                    "ctx._source['CheckBox_property-6'] = ctx._source['TextArea_devel']; " .
+                    "ctx._source.remove('devel'); " .
+                    "ctx._source.remove('TextArea_devel');"
             ],
         ];
     }
