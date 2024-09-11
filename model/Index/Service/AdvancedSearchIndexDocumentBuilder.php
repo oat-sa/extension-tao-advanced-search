@@ -44,6 +44,8 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
 {
     private const ASSETS_KEY = 'asset_uris';
     private const TEST_KEY = 'test_uri';
+    private const PROPERTY_MARKING_TEST = 'http://www.tao.lu/Ontologies/TAOTest.rdf#TestTestModel';
+    private const PROPERTY_MARKING_ITEM = 'http://www.tao.lu/Ontologies/TAOItem.rdf#ItemModel';
 
     private ElementReferencesExtractor $itemElementReferencesExtractor;
     private QtiItemService $qtiItemService;
@@ -178,12 +180,42 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
 
     private function isA(string $type, core_kernel_classes_Resource $resource): bool
     {
+        if ($type === TaoOntology::CLASS_URI_TEST && $this->isTest($resource)) {
+            return true;
+        }
+
+        if ($type === TaoOntology::CLASS_URI_ITEM && $this->isItem($resource)) {
+            return true;
+        }
+
         $rootClass = $resource->getClass($type);
 
         foreach ($resource->getTypes() as $type) {
             if ($type->equals($rootClass) || $type->isSubClassOf($rootClass)) {
                 return true;
             }
+        }
+
+        return false;
+    }
+
+    private function isTest(core_kernel_classes_Resource $resource): bool
+    {
+        if ($resource->getOnePropertyValue($resource->getProperty(
+            self::PROPERTY_MARKING_TEST
+        ))) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function isItem(core_kernel_classes_Resource $resource): bool
+    {
+        if ($resource->getOnePropertyValue($resource->getProperty(
+            self::PROPERTY_MARKING_ITEM
+        ))) {
+            return true;
         }
 
         return false;
