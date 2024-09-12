@@ -44,7 +44,7 @@ class ElasticSearchClientFactory
         if ($this->config->getElasticCloudId()) {
             return $clientBuilder
                 ->setElasticCloudId($this->config->getElasticCloudId())
-                ->setApiKey($this->config->getElasticCloudApiKeyId(), $this->config->getElasticCloudApiKey())
+                ->setApiKey($this->config->getElasticCloudApiKey(), $this->config->getElasticCloudApiKeyId())
                 ->build();
         }
 
