@@ -201,27 +201,11 @@ class AdvancedSearchIndexDocumentBuilder implements IndexDocumentBuilderInterfac
 
     private function isTest(core_kernel_classes_Resource $resource): bool
     {
-        if (
-            $resource->getOnePropertyValue($resource->getProperty(
-                self::PROPERTY_MARKING_TEST
-            ))
-        ) {
-            return true;
-        }
-
-        return false;
+        return !!$resource->getOnePropertyValue($resource->getProperty(self::PROPERTY_MARKING_TEST));
     }
 
     private function isItem(core_kernel_classes_Resource $resource): bool
     {
-        if (
-            $resource->getOnePropertyValue($resource->getProperty(
-                self::PROPERTY_MARKING_ITEM
-            ))
-        ) {
-            return true;
-        }
-
-        return false;
+        return !!$resource->getOnePropertyValue($resource->getProperty(self::PROPERTY_MARKING_ITEM));
     }
 }
