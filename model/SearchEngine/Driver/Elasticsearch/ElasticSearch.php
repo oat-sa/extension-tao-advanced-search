@@ -94,6 +94,7 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
 
     public function search(Query $query): SearchResult
     {
+        //FIXME @TODO Shall we add conditions here too? $query->addCondition();
         $query = [
             'index' => $this->prefixer->prefix($query->getIndex()),
             'body' => json_encode(
@@ -121,6 +122,7 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
         }
 
         try {
+            //FIXME @TODO Shall we add conditions here too?
             $query = $this->queryBuilder->getSearchParams($queryString, $type, $start, $count, $order, $dir);
             $this->logger->debug(sprintf('Elasticsearch Query %s', json_encode($query)));
 
