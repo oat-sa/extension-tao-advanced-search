@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\Metadata\Task;
 
-use oat\generis\test\TestCase;
+use PHPUnit\Framework\TestCase;
 use oat\tao\test\unit\helpers\NoPrivacyTrait;
 use oat\taoAdvancedSearch\model\Index\Service\AbstractIndexMigrationTask;
 use oat\taoAdvancedSearch\model\Index\Service\SyncResultIndexer;

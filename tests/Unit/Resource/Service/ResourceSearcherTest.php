@@ -23,7 +23,8 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\tests\Unit\Resource\Service;
 
 use core_kernel_classes_Resource;
-use oat\generis\test\TestCase;
+use oat\generis\test\ServiceManagerMockTrait;
+use PHPUnit\Framework\TestCase;
 use oat\search\ResultSet;
 use oat\tao\model\task\migration\service\ResultFilter;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableResourceRepository;
@@ -32,6 +33,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 class ResourceSearcherTest extends TestCase
 {
+    use ServiceManagerMockTrait;
+    
     /** @var ResourceSearcher */
     private $subject;
 
@@ -44,7 +47,7 @@ class ResourceSearcherTest extends TestCase
 
         $this->subject = new ResourceSearcher();
         $this->subject->setServiceLocator(
-            $this->getServiceLocatorMock(
+            $this->getServiceManagerMock(
                 [
                     IndexableResourceRepository::class => $this->indexableResourceRepository,
                 ]

@@ -23,7 +23,8 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\tests\Unit\model\Metadata\Normalizer;
 
 use oat\generis\model\data\event\ClassPropertyDeletedEvent;
-use oat\generis\test\TestCase;
+use oat\generis\test\ServiceManagerMockTrait;
+use PHPUnit\Framework\TestCase;
 use oat\taoAdvancedSearch\model\Index\Service\ResultIndexer;
 use oat\taoAdvancedSearch\model\Metadata\Listener\MetadataListener;
 use oat\taoAdvancedSearch\model\Metadata\Listener\UnsupportedEventException;
@@ -33,6 +34,8 @@ use stdClass;
 
 class MetadataListenerTest extends TestCase
 {
+    use ServiceManagerMockTrait;
+
     /** @var MetadataListener */
     private $subject;
 
@@ -54,7 +57,7 @@ class MetadataListenerTest extends TestCase
         $this->subject = new MetadataListener();
 
         $this->subject->setServiceLocator(
-            $this->getServiceLocatorMock(
+            $this->getServiceManagerMock(
                 [
                     ResultIndexer::class => $this->resultIndexerMock,
                     MetadataNormalizer::class => $this->metadataNormalizerMock

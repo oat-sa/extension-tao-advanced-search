@@ -23,7 +23,8 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\tests\Unit\model\Metadata\Normalizer;
 
 use core_kernel_classes_Class;
-use oat\generis\test\TestCase;
+use oat\generis\test\ServiceManagerMockTrait;
+use PHPUnit\Framework\TestCase;
 use oat\tao\model\TaoOntology;
 use oat\taoAdvancedSearch\model\Metadata\Factory\ClassPathFactory;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassCachedRepository;
@@ -31,6 +32,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 class ClassPathFactoryTest extends TestCase
 {
+    use ServiceManagerMockTrait;
+
     /** @var ClassPathFactory */
     private $subject;
 
@@ -43,7 +46,7 @@ class ClassPathFactoryTest extends TestCase
         $this->indexableClassRepository = $this->createMock(IndexableClassCachedRepository::class);
 
         $this->subject->setServiceLocator(
-            $this->getServiceLocatorMock(
+            $this->getServiceManagerMock(
                 [
                     IndexableClassCachedRepository::class => $this->indexableClassRepository,
                 ]

@@ -26,18 +26,18 @@ use core_kernel_classes_Class;
 use core_kernel_classes_Resource;
 use oat\generis\model\data\event\ResourceCreated;
 use oat\generis\test\MockObject;
-use oat\generis\test\TestCase;
-use oat\oatbox\Configurable;
+use oat\generis\test\ServiceManagerMockTrait;
+use PHPUnit\Framework\TestCase;
 use oat\oatbox\event\Event;
-use oat\tao\model\event\ClassPropertiesChangedEvent;
 use oat\taoAdvancedSearch\model\Index\Service\ResultIndexer;
-use oat\taoAdvancedSearch\model\Metadata\Listener\MetadataChangedListener;
 use oat\taoAdvancedSearch\model\Metadata\Listener\MetadataInheritanceListener;
 use oat\taoAdvancedSearch\model\Metadata\Listener\UnsupportedEventException;
 use oat\taoAdvancedSearch\model\Metadata\Normalizer\MetadataNormalizer;
 
 class MetadataInheritanceListenerTest extends TestCase
 {
+    use ServiceManagerMockTrait;
+
     /** @var MetadataInheritanceListener */
     private $subject;
 
@@ -57,7 +57,7 @@ class MetadataInheritanceListenerTest extends TestCase
         $this->metadataNormalizerMock = $this->createMock(MetadataNormalizer::class);
         $this->eventMock = $this->createMock(ResourceCreated::class);
         $this->subject->setServiceLocator(
-            $this->getServiceLocatorMock(
+            $this->getServiceManagerMock(
                 [
                     ResultIndexer::class => $this->resultIndexerMock,
                     MetadataNormalizer::class => $this->metadataNormalizerMock

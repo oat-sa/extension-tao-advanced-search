@@ -24,7 +24,8 @@ namespace oat\taoAdvancedSearch\tests\Unit\SearchEngine\Driver\Elasticsearch;
 
 use DG\BypassFinals;
 use Elastic\Elasticsearch\Client;
-use oat\generis\test\TestCase;
+use PHPUnit\Framework\TestCase;
+use oat\generis\test\ServiceManagerMockTrait;
 use oat\oatbox\log\LoggerService;
 use oat\tao\model\TaoOntology;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\IndexUpdater;
@@ -35,6 +36,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 class IndexUpdaterTest extends TestCase
 {
+    use ServiceManagerMockTrait;
+
     /** @var IndexUpdater */
     private $sut;
 
@@ -52,7 +55,7 @@ class IndexUpdaterTest extends TestCase
         $this->prefixer = $this->createMock(IndexPrefixer::class);
 
         $this->sut->setServiceManager(
-            $this->getServiceLocatorMock(
+            $this->getServiceManagerMock(
                 [
                     LoggerService::SERVICE_ID => $this->createMock(LoggerService::class),
                     IndexPrefixer::class => $this->prefixer,

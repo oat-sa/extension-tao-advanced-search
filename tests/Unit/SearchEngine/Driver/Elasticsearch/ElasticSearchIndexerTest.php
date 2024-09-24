@@ -101,6 +101,7 @@ class ElasticSearchIndexerTest extends TestCase
 
     public function testBuildIndex(): void
     {
+        // Mock the IndexDocument
         $document = $this->createMock(IndexDocument::class);
         $document->expects($this->any())
             ->method('getBody')
@@ -113,19 +114,22 @@ class ElasticSearchIndexerTest extends TestCase
             ->method('getId')
             ->willReturn('some_id');
 
-        $this->logger->expects($this->at(0))
+        // Use expects with exactly() instead of at()
+        $this->logger->expects($this->exactly(1)) // 3 logs: info + debug + debug
             ->method('info')
-            ->with(
-                '[documentId: "some_id"] Queuing document with types ' .
+            ->with('[documentId: "some_id"] Queuing document with types ' .
                 'http://www.tao.lu/Ontologies/TAOItem.rdf#Item ' .
                 sprintf('into index "%s"', IndexerInterface::ITEMS_INDEX)
             );
 
-        $this->logger->expects($this->at(1))
+        $this->logger->expects($this->exactly(2))
             ->method('debug')
-            ->with(
-                ElasticSearchIndexer::class . '::buildIndex' .
-                ': Flushing batch with 1 operations'
+            ->withConsecutive(
+                [
+                    ElasticSearchIndexer::class . '::buildIndex' .
+                    ': Flushing batch with 1 operations'
+                ],
+                ['Processed 1 items (no exceptions, no skipped items)']
             );
 
         /** @var ArrayIterator|MockObject $iterator */
@@ -133,6 +137,7 @@ class ElasticSearchIndexerTest extends TestCase
         $iterator->expects($this->once())
             ->method('next');
 
+        // Use expects with atLeastOnce()
         $this->client->expects($this->atLeastOnce())
             ->method('bulk')
             ->with([
@@ -142,18 +147,16 @@ class ElasticSearchIndexerTest extends TestCase
                         '_id' => 'some_id'
                     ]],
                     ['type' => [
-                            TaoOntology::CLASS_URI_ITEM
+                        TaoOntology::CLASS_URI_ITEM
                     ]],
                 ]
             ])
             ->willReturn(['bulk_response']);
 
-        $this->logger->expects($this->at(2))
-            ->method('debug')
-            ->with('Processed 1 items (no exceptions, no skipped items)');
-
+        // Call the method under test
         $count = $this->sut->buildIndex($iterator);
 
+        // Verify the count
         $this->assertSame(1, $count);
     }
 
