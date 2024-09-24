@@ -46,7 +46,7 @@ class IndexPrefixerTest extends TestCase
     {
         $this->configFactory = $this->createMock(ElasticSearchConfigFactory::class);
         $this->config = $this->createMock(ElasticSearchConfig::class);
-    
+
         $this->configFactory
             ->method('getConfig')
             ->willReturn($this->config);

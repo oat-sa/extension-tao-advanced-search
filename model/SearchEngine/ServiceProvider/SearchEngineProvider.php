@@ -105,7 +105,7 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
                 service(ElasticSearchConfig::class),
                 service(ElasticSearchEnvConfig::class),
             ]
-        )->public();    
+        )->public();
 
         $services->set(Client::class, Client::class)
             ->factory([service(ElasticSearchClientFactory::class), 'create'])

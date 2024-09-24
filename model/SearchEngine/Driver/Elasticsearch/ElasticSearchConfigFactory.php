@@ -40,8 +40,7 @@ class ElasticSearchConfigFactory
         ServiceOptionsInterface $serviceOptions,
         ElasticSearchConfig $elasticSearchConfig,
         ElasticSearchEnvConfig $elasticSearchEnvConfig
-        )
-    {
+    ) {
         $this->serviceOptions = $serviceOptions;
         $this->elasticSearchConfig = $elasticSearchConfig;
         $this->elasticSearchEnvConfig = $elasticSearchEnvConfig;
@@ -52,7 +51,7 @@ class ElasticSearchConfigFactory
         if (
             $this->serviceOptions->get(ElasticSearchConfig::class, ElasticSearchConfig::OPTION_HOSTS)
             || $this->serviceOptions->get(ElasticSearchConfig::class, ElasticSearchConfig::OPTION_ELASTIC_CLOUD_ID)
-            ) {
+        ) {
             return $this->elasticSearchConfig;
         }
 

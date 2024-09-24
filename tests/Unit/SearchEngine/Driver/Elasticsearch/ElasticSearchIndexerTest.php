@@ -119,8 +119,7 @@ class ElasticSearchIndexerTest extends TestCase
             ->method('info')
             ->with('[documentId: "some_id"] Queuing document with types ' .
                 'http://www.tao.lu/Ontologies/TAOItem.rdf#Item ' .
-                sprintf('into index "%s"', IndexerInterface::ITEMS_INDEX)
-            );
+                sprintf('into index "%s"', IndexerInterface::ITEMS_INDEX));
 
         $this->logger->expects($this->exactly(2))
             ->method('debug')

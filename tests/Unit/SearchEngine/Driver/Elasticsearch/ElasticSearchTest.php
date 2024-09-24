@@ -289,11 +289,11 @@ class ElasticSearchTest extends TestCase
                     ]
                 ]
             );
-        
+
         $this->client->expects($this->any())
             ->method('indices')
             ->willReturn($indexMock);
-        
+
         // Call the method under test
         $this->sut->createIndexes();
     }

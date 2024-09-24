@@ -23,10 +23,10 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch;
 
-interface ElasticSearchConfigInterface 
+interface ElasticSearchConfigInterface
 {
     public function getHosts(): array;
-    
+
     public function getUsername(): ?string;
 
     public function getPassword(): ?string;

@@ -37,6 +37,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 class ResultIndexerTest extends TestCase
 {
     use ServiceManagerMockTrait;
+
     /** @var NormalizerInterface|MockObject */
     private $normalizer;
 
