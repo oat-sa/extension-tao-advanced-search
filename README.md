@@ -20,6 +20,12 @@
 
 ### Activate advanced search 
 
+#### Activate for using credentials from environment variables
+
+```shell
+php index.php 'oat\taoAdvancedSearch\scripts\tools\Activate'
+```
+
 #### Activate without credentials needed 
 
 ```shell
@@ -178,6 +184,14 @@ php index.php '\oat\taoAdvancedSearch\scripts\tools\IndexSummary'
 |---------------------------------------|--------------------------------------------------------------------------------------------|----------------|
 | FEATURE_FLAG_ADVANCED_SEARCH_DISABLED | In case you do not want to have AdvancedSearch enabled even if this extension is installed | true           |
 | ADVANCED_SEARCH_METADATA_BLACK_LIST   | To avoid indexing metadata that is used in the criteria filter                             | URI1,URI2,URI3 |
+| ELASTICSEARCH_HOSTS                   | ElasticSearch hosts (use space like delimeter)                                             | http://localhost:9200|
+| ELASTICSEARCH_USERNAME                | ElasticSearch user                                                                         | user           |
+| ELASTICSEARCH_PASSWORD                | ElasticSearch password                                                                     | pass           |
+| ELASTICSEARCH_PREFIX                  | Prefix to be used in the index name                                                        | tao            |
+| ELASTICSEARCH_CLOUD_ID                | ElasticSearch cloud id                                                                     | cloud_id       |
+| ELASTICSEARCH_API_KEY_ID              | ElasticSearch api key id                                                                   | api_key_id     |
+| ELASTICSEARCH_API_KEY                 | ElasticSearch api key                                                                      | api_key        |
+
 
 
 ## How to create custom indexers?
