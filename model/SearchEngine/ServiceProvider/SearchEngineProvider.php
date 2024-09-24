@@ -33,7 +33,10 @@ use oat\oatbox\session\SessionService;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchClientFactory;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
+use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfigFactory;
+use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchEnvConfig;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchIndexer;
+use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\GetEnvConfigs;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\QueryBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Normalizer\SearchResultNormalizer;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
@@ -51,7 +54,7 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
         $services->set(IndexPrefixer::class, IndexPrefixer::class)
             ->args(
                 [
-                    service(ElasticSearchConfig::class),
+                    service(ElasticSearchConfigFactory::class),
                 ]
             )
             ->public();
@@ -77,13 +80,32 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
                 ]
             )->public();
 
+        $services->set(GetEnvConfigs::class, GetEnvConfigs::class)
+        ->public();
+
+        $services->set(ElasticSearchEnvConfig::class, ElasticSearchEnvConfig::class)
+            ->args(
+                [
+                    service(GetEnvConfigs::class),
+                ]
+            )->public();
+
         $services->set(ElasticSearchClientFactory::class, ElasticSearchClientFactory::class)
             ->args(
                 [
-                    service(ElasticSearchConfig::class),
+                    service(ElasticSearchConfigFactory::class),
                 ]
             )
             ->public();
+
+        $services->set(ElasticSearchConfigFactory::class, ElasticSearchConfigFactory::class)
+        ->args(
+            [
+                service(ServiceOptions::SERVICE_ID),
+                service(ElasticSearchConfig::class),
+                service(ElasticSearchEnvConfig::class),
+            ]
+        )->public();    
 
         $services->set(Client::class, Client::class)
             ->factory([service(ElasticSearchClientFactory::class), 'create'])

@@ -26,7 +26,7 @@ namespace oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch;
 
 use oat\generis\model\DependencyInjection\ServiceOptionsInterface;
 
-class ElasticSearchConfig
+class ElasticSearchConfig implements ElasticSearchConfigInterface
 {
     public const OPTION_INDEX_PREFIX = 'index_prefix';
     public const OPTION_ELASTIC_CLOUD_ID = 'elastic_cloud_id';

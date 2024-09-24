@@ -25,18 +25,19 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\SearchEngine\Service;
 
 use InvalidArgumentException;
-use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
+use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchconfigFactory;
+use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfigInterface;
 
 class IndexPrefixer
 {
     private const VALID_PREFIX_REGEX = '/[^a-z0-9\-]/';
 
-    /** @var ElasticSearchConfig */
+    /** @var ElasticSearchConfigInterface */
     private $config;
 
-    public function __construct(ElasticSearchConfig $config)
+    public function __construct(ElasticSearchconfigFactory $config)
     {
-        $this->config = $config;
+        $this->config = $config->getConfig();
     }
 
     public function validate(string $prefix): void

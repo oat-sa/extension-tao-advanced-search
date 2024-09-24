@@ -29,12 +29,12 @@ use Elastic\Elasticsearch\ClientBuilder;
 
 class ElasticSearchClientFactory
 {
-    /** @var ElasticSearchConfig */
+    /** @var ElasticSearchConfigInterface */
     private $config;
 
-    public function __construct(ElasticSearchConfig $config)
+    public function __construct(ElasticSearchConfigFactory $config)
     {
-        $this->config = $config;
+        $this->config = $config->getConfig();
     }
 
     public function create(): Client

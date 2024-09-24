@@ -34,6 +34,7 @@ use oat\tao\model\search\SearchProxy;
 use oat\taoAdvancedSearch\model\Metadata\Service\AdvancedSearchSettingsService;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
+use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchEnvConfig;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\IndexUpdater;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use Zend\ServiceManager\ServiceLocatorAwareInterface;
@@ -63,6 +64,7 @@ class Activate extends ScriptAction implements ServiceLocatorAwareInterface
     protected function provideOptions(): array
     {
         return [
+            
             'host' => [
                 'prefix' => 'h',
                 'longPrefix' => 'host',
@@ -141,33 +143,25 @@ class Activate extends ScriptAction implements ServiceLocatorAwareInterface
                         )
                     ]
                 );
-            }
-
-            if ($this->hasOption('elasticCloudId')) {
+            } else if ($this->hasOption('elasticCloudId')) {
                 $serviceOptions->save(
                     ElasticSearchConfig::class,
                     ElasticSearchConfig::OPTION_ELASTIC_CLOUD_ID,
                     $this->getOption('elasticCloudId')
                 );
-            }
-
-            if ($this->hasOption('elasticCloudApiKeyId')) {
+            } else if ($this->hasOption('elasticCloudApiKeyId')) {
                 $serviceOptions->save(
                     ElasticSearchConfig::class,
                     ElasticSearchConfig::OPTION_ELASTIC_CLOUD_API_KEY_ID,
                     $this->getOption('elasticCloudApiKeyId')
                 );
-            }
-
-            if ($this->hasOption('elasticCloudApiKey')) {
+            } else if ($this->hasOption('elasticCloudApiKey')) {
                 $serviceOptions->save(
                     ElasticSearchConfig::class,
                     ElasticSearchConfig::OPTION_ELASTIC_CLOUD_API_KEY,
                     $this->getOption('elasticCloudApiKey')
                 );
-            }
-
-            if ($this->hasOption('indexPrefix')) {
+            } else if ($this->hasOption('indexPrefix')) {
                 $this->getIndexPrefixer()->validate($this->getOption('indexPrefix'));
 
                 $serviceOptions->save(
