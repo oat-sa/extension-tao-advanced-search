@@ -24,12 +24,15 @@ namespace oat\taoAdvancedSearch\tests\Unit\model\Resource\Repository;
 
 use core_kernel_classes_Class;
 use oat\generis\model\data\Ontology;
-use oat\generis\test\TestCase;
+use PHPUnit\Framework\TestCase;
+use oat\generis\test\ServiceManagerMockTrait;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepository;
 use PHPUnit\Framework\MockObject\MockObject;
 
 class IndexableClassRepositoryTest extends TestCase
 {
+    use ServiceManagerMockTrait;
+
     /** @var IndexableClassRepository */
     private $subject;
 
@@ -42,7 +45,7 @@ class IndexableClassRepositoryTest extends TestCase
         $this->subject = new IndexableClassRepository();
         $this->subject->withMenuPerspectives([]);
         $this->subject->setServiceLocator(
-            $this->getServiceLocatorMock(
+            $this->getServiceManagerMock(
                 [
                     Ontology::SERVICE_ID => $this->ontology,
                 ]

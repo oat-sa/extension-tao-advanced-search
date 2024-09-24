@@ -26,7 +26,8 @@ use core_kernel_classes_Class;
 use core_kernel_classes_Property;
 use InvalidArgumentException;
 use oat\generis\model\data\Ontology;
-use oat\generis\test\TestCase;
+use oat\generis\test\ServiceManagerMockTrait;
+use PHPUnit\Framework\TestCase;
 use oat\tao\model\Lists\Business\Domain\Metadata;
 use oat\tao\model\Lists\Business\Domain\MetadataCollection;
 use oat\tao\model\Lists\Business\Service\GetClassMetadataValuesService;
@@ -40,6 +41,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 class MetadataNormalizerTest extends TestCase
 {
+    use ServiceManagerMockTrait;
+
     /** @var MetadataNormalizer */
     private $subject;
 
@@ -84,7 +87,7 @@ class MetadataNormalizerTest extends TestCase
             ->willReturn([]);
 
         $this->subject->setServiceLocator(
-            $this->getServiceLocatorMock(
+            $this->getServiceManagerMock(
                 [
                     GetClassMetadataValuesService::class => $this->getClassMetadataValuesServiceMock,
                     Ontology::SERVICE_ID => $this->ontology,

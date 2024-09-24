@@ -25,7 +25,8 @@ namespace oat\taoAdvancedSearch\tests\Unit\model\Metadata\Normalizer;
 use Exception;
 use oat\generis\model\data\event\ClassDeletedEvent;
 use oat\generis\test\MockObject;
-use oat\generis\test\TestCase;
+use oat\generis\test\ServiceManagerMockTrait;
+use PHPUnit\Framework\TestCase;
 use oat\tao\model\event\ClassPropertiesChangedEvent;
 use oat\tao\model\search\SearchInterface;
 use oat\tao\model\search\SearchProxy;
@@ -36,6 +37,8 @@ use Psr\Log\LoggerInterface;
 
 class ClassDeletionListenerTest extends TestCase
 {
+    use ServiceManagerMockTrait;
+
     /** @var MetadataNormalizer */
     private $subject;
 
@@ -57,7 +60,7 @@ class ClassDeletionListenerTest extends TestCase
         $this->search = $this->createMock(SearchInterface::class);
 
         $this->subject->setServiceLocator(
-            $this->getServiceLocatorMock(
+            $this->getServiceManagerMock(
                 [
                     SearchProxy::SERVICE_ID => $this->search
                 ]

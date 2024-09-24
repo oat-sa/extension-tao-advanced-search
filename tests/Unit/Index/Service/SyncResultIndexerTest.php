@@ -22,7 +22,8 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\Index\Service;
 
-use oat\generis\test\TestCase;
+use oat\generis\test\ServiceManagerMockTrait;
+use PHPUnit\Framework\TestCase;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\search\SearchInterface;
@@ -36,6 +37,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 class SyncResultIndexerTest extends TestCase
 {
+    use ServiceManagerMockTrait;
+
     /** @var NormalizerInterface|MockObject */
     private $normalizer;
 
@@ -57,7 +60,7 @@ class SyncResultIndexerTest extends TestCase
         $this->indexer = new SyncResultIndexer();
         $this->indexer->setNormalizer($this->normalizer);
         $this->indexer->setServiceLocator(
-            $this->getServiceLocatorMock(
+            $this->getServiceManagerMock(
                 [
                     SearchProxy::SERVICE_ID => $this->search,
                     AdvancedSearchIndexDocumentBuilder::class => $this->indexDocumentBuilder,

@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\tests\Unit\DeliveryResult\Factory;
 
 use InvalidArgumentException;
-use oat\generis\test\TestCase;
+use PHPUnit\Framework\TestCase;
 use oat\taoAdvancedSearch\model\DeliveryResult\Normalizer\DeliveryResultNormalizer;
 use oat\taoDelivery\model\execution\DeliveryExecutionInterface;
 use stdClass;

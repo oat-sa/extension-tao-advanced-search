@@ -22,7 +22,8 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\Index\Service;
 
-use oat\generis\test\TestCase;
+use oat\generis\test\ServiceManagerMockTrait;
+use PHPUnit\Framework\TestCase;
 use oat\oatbox\log\LoggerService;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\search\tasks\AddSearchIndexFromArray;
@@ -35,6 +36,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 class ResultIndexerTest extends TestCase
 {
+    use ServiceManagerMockTrait;
     /** @var NormalizerInterface|MockObject */
     private $normalizer;
 
@@ -56,7 +58,7 @@ class ResultIndexerTest extends TestCase
         $this->indexer = new ResultIndexer();
         $this->indexer->setNormalizer($this->normalizer);
         $this->indexer->setServiceLocator(
-            $this->getServiceLocatorMock(
+            $this->getServiceManagerMock(
                 [
                     QueueDispatcherInterface::SERVICE_ID => $this->queueDispatcher,
                     AdvancedSearchChecker::class => $this->advancedSearchChecker,

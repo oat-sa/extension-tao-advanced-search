@@ -255,43 +255,46 @@ class ElasticSearchTest extends TestCase
     public function testCreateIndexesCallIndexCreationBasedOnIndexOption(): void
     {
         $indexMock = $this->createMock(Indices::class);
-        $indexMock->expects($this->at(0))
-            ->method('create')
-            ->with(
-                [
-                    'index' => 'items',
-                    'body' => [
-                        'mappings' => [
-                            'properties' => [
-                                'class' => [
-                                    'type' => 'text',
-                                ],
-                            ]
-                        ]
-                    ]
-                ]
-            );
-        $indexMock->expects($this->at(1))
-            ->method('create')
-            ->with(
-                [
-                    'index' => 'tests',
-                    'body' => [
-                        'mappings' => [
-                            'properties' => [
-                                'use' => [
-                                    'type' => 'keyword',
-                                ],
-                            ]
-                        ]
-                    ]
-                ]
-            );
 
+        // Use exactly(2) to assert that the create method is called twice
+        $indexMock->expects($this->exactly(2))
+            ->method('create')
+            ->withConsecutive(
+                [
+                    [
+                        'index' => 'items',
+                        'body' => [
+                            'mappings' => [
+                                'properties' => [
+                                    'class' => [
+                                        'type' => 'text',
+                                    ],
+                                ]
+                            ]
+                        ]
+                    ]
+                ],
+                [
+                    [
+                        'index' => 'tests',
+                        'body' => [
+                            'mappings' => [
+                                'properties' => [
+                                    'use' => [
+                                        'type' => 'keyword',
+                                    ],
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            );
+        
         $this->client->expects($this->any())
             ->method('indices')
             ->willReturn($indexMock);
-
+        
+        // Call the method under test
         $this->sut->createIndexes();
     }
 

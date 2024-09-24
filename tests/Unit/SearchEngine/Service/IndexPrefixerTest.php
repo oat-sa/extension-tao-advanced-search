@@ -26,6 +26,7 @@ namespace oat\taoAdvancedSearch\tests\Unit\SearchEngine\Service;
 
 use InvalidArgumentException;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
+use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfigFactory;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -35,13 +36,21 @@ class IndexPrefixerTest extends TestCase
     /** @var IndexPrefixer */
     private $sut;
 
+    /** @var ElasticSearchConfigFactory|MockObject */
+    private $configFactory;
+
     /** @var ElasticSearchConfig|MockObject */
     private $config;
 
     protected function setUp(): void
     {
+        $this->configFactory = $this->createMock(ElasticSearchConfigFactory::class);
         $this->config = $this->createMock(ElasticSearchConfig::class);
-        $this->sut = new IndexPrefixer($this->config);
+    
+        $this->configFactory
+            ->method('getConfig')
+            ->willReturn($this->config);
+        $this->sut = new IndexPrefixer($this->configFactory);
     }
 
     public function testPrefixAll(): void

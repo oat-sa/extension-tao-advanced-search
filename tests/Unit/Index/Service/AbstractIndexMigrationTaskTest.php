@@ -23,7 +23,8 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\tests\Unit\Index\Service;
 
 use InvalidArgumentException;
-use oat\generis\test\TestCase;
+use oat\generis\test\ServiceManagerMockTrait;
+use PHPUnit\Framework\TestCase;
 use oat\tao\model\task\migration\service\MigrationConfigFactory;
 use oat\tao\model\task\migration\service\SpawnMigrationConfigService;
 use oat\tao\test\unit\helpers\NoPrivacyTrait;
@@ -37,6 +38,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 class AbstractIndexMigrationTaskTest extends TestCase
 {
+    use ServiceManagerMockTrait;
     use NoPrivacyTrait;
 
     /** @var DeliveryResultNormalizer|MockObject */
@@ -75,7 +77,7 @@ class AbstractIndexMigrationTaskTest extends TestCase
 
         $this->subject = $this->getMockForAbstractClass(AbstractIndexMigrationTask::class);
         $this->subject->setServiceLocator(
-            $this->getServiceLocatorMock(
+            $this->getServiceManagerMock(
                 [
                     MigrationConfigFactory::class => $this->migrationConfigFactory,
                     SpawnMigrationConfigService::class => $this->spawnMigrationConfigService,

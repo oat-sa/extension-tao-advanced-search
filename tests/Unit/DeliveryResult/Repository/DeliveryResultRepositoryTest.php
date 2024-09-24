@@ -24,7 +24,8 @@ namespace oat\taoAdvancedSearch\tests\Unit\DeliveryResult\Repository;
 
 use core_kernel_classes_Resource;
 use oat\generis\model\kernel\persistence\smoothsql\search\ResourceSearchService;
-use oat\generis\test\TestCase;
+use oat\generis\test\ServiceManagerMockTrait;
+use PHPUnit\Framework\TestCase;
 use oat\search\ResultSet;
 use oat\taoAdvancedSearch\model\DeliveryResult\Repository\DeliveryResultRepository;
 use oat\taoResultServer\models\classes\ResultManagement;
@@ -33,6 +34,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 class DeliveryResultRepositoryTest extends TestCase
 {
+    use ServiceManagerMockTrait;
+
     /** @var DeliveryResultRepository */
     private $subject;
 
@@ -57,7 +60,7 @@ class DeliveryResultRepositoryTest extends TestCase
 
         $this->subject = new DeliveryResultRepository();
         $this->subject->setServiceLocator(
-            $this->getServiceLocatorMock(
+            $this->getServiceManagerMock(
                 [
                     ResultServerService::SERVICE_ID => $this->resultServerService,
                     ResourceSearchService::class => $this->resourceSearchService,

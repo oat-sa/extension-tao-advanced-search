@@ -22,7 +22,8 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\DeliveryResult\Factory;
 
-use oat\generis\test\TestCase;
+use oat\generis\test\ServiceManagerMockTrait;
+use PHPUnit\Framework\TestCase;
 use oat\tao\test\unit\helpers\NoPrivacyTrait;
 use oat\taoAdvancedSearch\model\DeliveryResult\Factory\DeliveryResultFilterFactory;
 use oat\taoAdvancedSearch\model\DeliveryResult\Repository\DeliveryResultRepository;
@@ -32,6 +33,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 class DeliveryResultFilterFactoryTest extends TestCase
 {
     use NoPrivacyTrait;
+    use ServiceManagerMockTrait;
 
     /** @var DeliveryResultFilterFactory */
     private $subject;
@@ -45,7 +47,7 @@ class DeliveryResultFilterFactoryTest extends TestCase
 
         $this->subject = new DeliveryResultFilterFactory();
         $this->subject->setServiceLocator(
-            $this->getServiceLocatorMock(
+            $this->getServiceManagerMock(
                 [
                     DeliveryResultRepository::class => $this->deliveryResultRepository,
                 ]

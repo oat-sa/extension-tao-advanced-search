@@ -24,7 +24,8 @@ namespace oat\taoAdvancedSearch\tests\Unit\model\Metadata\Normalizer;
 
 use core_kernel_classes_Class;
 use oat\generis\test\MockObject;
-use oat\generis\test\TestCase;
+use oat\generis\test\ServiceManagerMockTrait;
+use PHPUnit\Framework\TestCase;
 use oat\oatbox\event\Event;
 use oat\tao\model\event\ClassPropertiesChangedEvent;
 use oat\taoAdvancedSearch\model\Index\Service\ResultIndexer;
@@ -34,6 +35,8 @@ use oat\taoAdvancedSearch\model\Metadata\Normalizer\MetadataNormalizer;
 
 class MetadataChangedListenerTest extends TestCase
 {
+    use ServiceManagerMockTrait;
+
     /** @var MetadataNormalizer */
     private $subject;
 
@@ -53,7 +56,7 @@ class MetadataChangedListenerTest extends TestCase
         $this->metadataNormalizerMock = $this->createMock(MetadataNormalizer::class);
         $this->eventMock = $this->createMock(ClassPropertiesChangedEvent::class);
         $this->subject->setServiceLocator(
-            $this->getServiceLocatorMock(
+            $this->getServiceManagerMock(
                 [
                     ResultIndexer::class => $this->resultIndexerMock,
                     MetadataNormalizer::class => $this->metadataNormalizerMock

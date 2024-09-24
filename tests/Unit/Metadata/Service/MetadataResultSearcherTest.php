@@ -23,7 +23,8 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\tests\Unit\model\Metadata\Service;
 
 use core_kernel_classes_Class;
-use oat\generis\test\TestCase;
+use oat\generis\test\ServiceManagerMockTrait;
+use PHPUnit\Framework\TestCase;
 use oat\tao\model\task\migration\ResultUnit;
 use oat\tao\model\task\migration\service\ResultFilter;
 use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriCachedRepository;
@@ -32,6 +33,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 class MetadataResultSearcherTest extends TestCase
 {
+    use ServiceManagerMockTrait;
+
     /** @var MetadataResultSearcher */
     private $subject;
 
@@ -48,7 +51,7 @@ class MetadataResultSearcherTest extends TestCase
 
         $this->subject = new MetadataResultSearcher();
         $this->subject->setServiceLocator(
-            $this->getServiceLocatorMock(
+            $this->getServiceManagerMock(
                 [
                     ClassUriCachedRepository::class => $this->classUriRepository,
                 ]

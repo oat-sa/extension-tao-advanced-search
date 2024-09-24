@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\DeliveryResult\Service;
 
-use oat\generis\test\TestCase;
+use PHPUnit\Framework\TestCase;
 use oat\tao\test\unit\helpers\NoPrivacyTrait;
 use oat\taoAdvancedSearch\model\DeliveryResult\Factory\DeliveryResultFilterFactory;
 use oat\taoAdvancedSearch\model\DeliveryResult\Normalizer\DeliveryResultNormalizer;

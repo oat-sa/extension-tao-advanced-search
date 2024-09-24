@@ -23,7 +23,8 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\tests\Unit\model\Metadata\Repository;
 
 use oat\generis\model\data\Ontology;
-use oat\generis\test\TestCase;
+use oat\generis\test\ServiceManagerMockTrait;
+use PHPUnit\Framework\TestCase;
 use oat\oatbox\cache\SimpleCache;
 use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriCachedRepository;
 use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriRepository;
@@ -32,6 +33,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 class ClassUriCachedRepositoryTest extends TestCase
 {
+    use ServiceManagerMockTrait;
+
     /** @var ClassUriCachedRepository */
     private $subject;
 
@@ -53,7 +56,7 @@ class ClassUriCachedRepositoryTest extends TestCase
         $this->subject = $this->createMock(ClassUriRepository::class);
         $this->subject = new ClassUriCachedRepository();
         $this->subject->setServiceLocator(
-            $this->getServiceLocatorMock(
+            $this->getServiceManagerMock(
                 [
                     Ontology::SERVICE_ID => $this->ontology,
                     SimpleCache::SERVICE_ID => $this->simpleCache,
