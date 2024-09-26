@@ -55,6 +55,11 @@ class ElasticSearchConfig
     public function getHosts(): array
     {
         $hosts = [];
+
+        if (getenv(self::ENV_OPTION_HOSTS)) {
+            return explode(' ', getenv(self::ENV_OPTION_HOSTS));
+        }
+
         if ($this->serviceOptions->get(self::class, self::OPTION_HOSTS)) {
             foreach ($this->serviceOptions->get(self::class, self::OPTION_HOSTS) as $host) {
                 if (is_array($host) && isset($host['host'])) {
@@ -66,58 +71,62 @@ class ElasticSearchConfig
             return $hosts;
         }
 
-        if (getenv(self::ENV_OPTION_HOSTS)) {
-            return explode(' ', getenv(self::ENV_OPTION_HOSTS));
-        }
-
         return $hosts;
     }
 
     public function getUsername(): ?string
     {
-        if ($this->serviceOptions->get(self::class, self::OPTION_HOSTS)) {
-            return $this->getFirstHost()[self::OPTION_USERNAME] ?? null;
+        if (getenv(self::ENV_OPTION_USERNAME)) {
+            return getenv(self::ENV_OPTION_USERNAME) ?: null;
         }
-        return getenv(self::ENV_OPTION_USERNAME) ?: null;
+        return $this->getFirstHost()[self::OPTION_USERNAME] ?? null;
     }
 
     public function getPassword(): ?string
     {
-        if ($this->serviceOptions->get(self::class, self::OPTION_HOSTS)) {
-            return $this->getFirstHost()[self::OPTION_PASSWORD] ?? null;
+        if (getenv(self::ENV_OPTION_PASSWORD)) {
+            return getenv(self::ENV_OPTION_PASSWORD) ?: null;
         }
-        return getenv(self::ENV_OPTION_PASSWORD) ?: null;
+        return $this->getFirstHost()[self::OPTION_PASSWORD] ?? null;
     }
 
     public function getIndexPrefix(): ?string
     {
-        $indexPrefix = $this->serviceOptions->get(self::class, self::OPTION_INDEX_PREFIX);
-        return $indexPrefix ?? getenv(self::ENV_OPTION_INDEX_PREFIX) ?: null;
+        if (getenv(self::ENV_OPTION_INDEX_PREFIX)) {
+            return getenv(self::ENV_OPTION_INDEX_PREFIX) ?: null;
+        }
+        return $this->serviceOptions->get(self::class, self::OPTION_INDEX_PREFIX);
     }
 
     public function getElasticCloudId(): ?string
     {
-        $elasticCloudId = $this->serviceOptions->get(self::class, self::OPTION_ELASTIC_CLOUD_ID);
-        return $elasticCloudId ?? getenv(self::ENV_OPTION_ELASTIC_CLOUD_ID) ?: null;
+        if (getenv(self::ENV_OPTION_ELASTIC_CLOUD_ID)) {
+            return getenv(self::ENV_OPTION_ELASTIC_CLOUD_ID) ?: null;
+        }
+        return $this->serviceOptions->get(self::class, self::OPTION_ELASTIC_CLOUD_ID);
     }
 
     public function getElasticCloudApiKey(): ?string
     {
-        $elasticCloudApiKey = $this->serviceOptions->get(self::class, self::OPTION_ELASTIC_CLOUD_API_KEY);
-        return $elasticCloudApiKey ?? getenv(self::ENV_OPTION_ELASTIC_CLOUD_API_KEY) ?: null;
+        if (getenv(self::ENV_OPTION_ELASTIC_CLOUD_API_KEY)) {
+            return getenv(self::ENV_OPTION_ELASTIC_CLOUD_API_KEY) ?: null;
+        }
+        return $this->serviceOptions->get(self::class, self::OPTION_ELASTIC_CLOUD_API_KEY);
     }
 
     public function getElasticCloudApiKeyId(): ?string
     {
-        $elasticCloudApiKeyId = $this->serviceOptions->get(self::class, self::OPTION_ELASTIC_CLOUD_API_KEY_ID);
-        return $elasticCloudApiKeyId ?? getenv(self::ENV_OPTION_ELASTIC_CLOUD_API_KEY_ID) ?: null;
+        if (getenv(self::ENV_OPTION_ELASTIC_CLOUD_API_KEY_ID)) {
+            return getenv(self::ENV_OPTION_ELASTIC_CLOUD_API_KEY_ID) ?: null;
+        }
+        return $this->serviceOptions->get(self::class, self::OPTION_ELASTIC_CLOUD_API_KEY_ID);
     }
 
     private function getFirstHost(): ?array
     {
-        if ($this->serviceOptions->get(self::class, self::OPTION_HOSTS)) {
-            return current($this->serviceOptions->get(self::class, self::OPTION_HOSTS));
+        if (getenv(self::ENV_OPTION_HOSTS)) {
+            return [current(explode(' ', getenv(self::ENV_OPTION_HOSTS)))];
         }
-        return [current($this->getHosts())];
+        return current($this->serviceOptions->get(self::class, self::OPTION_HOSTS)) ?: null;
     }
 }
