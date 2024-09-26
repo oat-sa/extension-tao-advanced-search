@@ -125,7 +125,7 @@ class ElasticSearchConfig
     private function getFirstHost(): ?array
     {
         if (getenv(self::ENV_OPTION_HOSTS)) {
-            return [current(explode(' ', getenv(self::ENV_OPTION_HOSTS)))];
+            return [current($this->getHosts())];
         }
         return current($this->serviceOptions->get(self::class, self::OPTION_HOSTS)) ?: null;
     }
