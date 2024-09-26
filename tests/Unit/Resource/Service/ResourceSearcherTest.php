@@ -34,7 +34,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 class ResourceSearcherTest extends TestCase
 {
     use ServiceManagerMockTrait;
-    
+
     /** @var ResourceSearcher */
     private $subject;
 

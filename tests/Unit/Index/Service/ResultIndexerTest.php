@@ -37,6 +37,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 class ResultIndexerTest extends TestCase
 {
     use ServiceManagerMockTrait;
+
     /** @var NormalizerInterface|MockObject */
     private $normalizer;
 
@@ -46,7 +47,7 @@ class ResultIndexerTest extends TestCase
     /** @var QueueDispatcherInterface|MockObject */
     private $queueDispatcher;
 
-    /** @var AdvancedSearchChecker|MockObject  */
+    /** @var AdvancedSearchChecker|MockObject */
     private $advancedSearchChecker;
 
     public function setUp(): void

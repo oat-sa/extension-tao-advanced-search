@@ -115,7 +115,7 @@ class ElasticSearchIndexerTest extends TestCase
             ->willReturn('some_id');
 
         $this->logger->expects($this->exactly(1)) // 3 logs: info + debug + debug
-            ->method('info')
+        ->method('info')
             ->with('[documentId: "some_id"] Queuing document with types ' .
                 'http://www.tao.lu/Ontologies/TAOItem.rdf#Item ' .
                 sprintf('into index "%s"', IndexerInterface::ITEMS_INDEX));

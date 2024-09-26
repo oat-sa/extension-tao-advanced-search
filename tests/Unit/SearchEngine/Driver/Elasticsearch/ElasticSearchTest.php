@@ -241,7 +241,7 @@ class ElasticSearchTest extends TestCase
         $this->logger->expects($this->once())
             ->method('error')
             ->with('Elasticsearch: There is an error in your search query, system returned: ' .
-                    'Error {"error":{"reason": "Error"}}');
+                'Error {"error":{"reason": "Error"}}');
 
         $documentUri = 'https://tao.docker.localhost/ontologies/tao.rdf#i5ef45f413088c8e7901a84708e84ec';
 

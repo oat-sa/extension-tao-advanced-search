@@ -54,7 +54,7 @@ class AdvancedSearchSettingsServiceTest extends TestCase
     public function setUp(): void
     {
         $this->classMetadataSearcher = $this->createMock(ClassMetadataSearcherInterface::class);
-        $this->defaultSearchSettingsService =  $this->createMock(SearchSettingsServiceInterface::class);
+        $this->defaultSearchSettingsService = $this->createMock(SearchSettingsServiceInterface::class);
         $this->advancedSearchChecker = $this->createMock(AdvancedSearchChecker::class);
         $this->subject = new AdvancedSearchSettingsService(
             $this->classMetadataSearcher,

@@ -122,12 +122,13 @@ class MetadataNormalizerTest extends TestCase
      * @dataProvider getDataProvider
      */
     public function testNormalize(
-        string $classUri,
-        int $getByClassExplicitlyCount,
-        int $getByClassRecursiveCount,
+        string  $classUri,
+        int     $getByClassExplicitlyCount,
+        int     $getByClassRecursiveCount,
         ?string $propertyUri,
-        ?array $getValuesResult
-    ): void {
+        ?array  $getValuesResult
+    ): void
+    {
         $this->ontology
             ->method('getProperty')
             ->willReturn($this->createMock(core_kernel_classes_Property::class));

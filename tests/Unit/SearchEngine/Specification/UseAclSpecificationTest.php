@@ -32,7 +32,8 @@ use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Specification\UseAclSpecification;
 use PHPUnit\Framework\TestCase;
 
-interface PermissionMock extends PermissionInterface, ReverseRightLookupInterface {
+interface PermissionMock extends PermissionInterface, ReverseRightLookupInterface
+{
 }
 
 class UseAclSpecificationTest extends TestCase

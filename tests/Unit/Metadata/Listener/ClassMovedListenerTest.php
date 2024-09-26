@@ -82,7 +82,7 @@ class ClassMovedListenerTest extends TestCase
 
         $this->event
             ->method('getClass')
-            ->willReturn( $class);
+            ->willReturn($class);
 
         $this->resultIndexer
             ->expects($this->once())
