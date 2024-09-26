@@ -71,24 +71,27 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
                     service(IndexPrefixer::class),
                     service(UseAclSpecification::class),
                 ]
-            )->public();
+            )
+            ->public();
 
         $services->set(ElasticSearchConfig::class, ElasticSearchConfig::class)
             ->args(
                 [
                     service(ServiceOptions::SERVICE_ID),
                 ]
-            )->public();
+            )
+            ->public();
 
         $services->set(GetEnvConfigs::class, GetEnvConfigs::class)
-        ->public();
+            ->public();
 
         $services->set(ElasticSearchEnvConfig::class, ElasticSearchEnvConfig::class)
             ->args(
                 [
                     service(GetEnvConfigs::class),
                 ]
-            )->public();
+            )
+            ->public();
 
         $services->set(ElasticSearchClientFactory::class, ElasticSearchClientFactory::class)
             ->args(
@@ -99,13 +102,14 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
             ->public();
 
         $services->set(ElasticSearchConfigFactory::class, ElasticSearchConfigFactory::class)
-        ->args(
-            [
-                service(ServiceOptions::SERVICE_ID),
-                service(ElasticSearchConfig::class),
-                service(ElasticSearchEnvConfig::class),
-            ]
-        )->public();
+            ->args(
+                [
+                    service(ServiceOptions::SERVICE_ID),
+                    service(ElasticSearchConfig::class),
+                    service(ElasticSearchEnvConfig::class),
+                ]
+            )
+            ->public();
 
         $services->set(Client::class, Client::class)
             ->factory([service(ElasticSearchClientFactory::class), 'create'])
@@ -121,7 +125,8 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
                     service(LoggerService::SERVICE_ID),
                     service(SearchResultNormalizer::class),
                 ]
-            )->public();
+            )
+            ->public();
 
         $services->set(ElasticSearchIndexer::class, ElasticSearchIndexer::class)
             ->args(
@@ -130,7 +135,8 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
                     service(LoggerService::SERVICE_ID),
                     service(IndexPrefixer::class),
                 ]
-            )->public();
+            )
+            ->public();
 
         $services->set(SearchResultNormalizer::class, SearchResultNormalizer::class)
             ->public();

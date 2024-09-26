@@ -28,13 +28,13 @@ use oat\generis\model\DependencyInjection\ServiceOptionsInterface;
 class ElasticSearchConfigFactory
 {
     /** @var ServiceOptionsInterface */
-    private $serviceOptions;
+    private ServiceOptionsInterface $serviceOptions;
 
     /** @var ElasticSearchConfig */
-    private $elasticSearchConfig;
+    private ElasticSearchConfig $elasticSearchConfig;
 
     /** @var ElasticSearchEnvConfig */
-    private $elasticSearchEnvConfig;
+    private ElasticSearchEnvConfig $elasticSearchEnvConfig;
 
     public function __construct(
         ServiceOptionsInterface $serviceOptions,

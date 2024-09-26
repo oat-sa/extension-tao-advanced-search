@@ -34,7 +34,7 @@ class ElasticSearchEnvConfig implements ElasticSearchConfigInterface
     public const ENV_OPTION_PASSWORD = 'ELASTICSEARCH_PASSWORD';
 
     /** @var GetEnvConfigs */
-    private $getEnvConfigs;
+    private GetEnvConfigs $getEnvConfigs;
 
     public function __construct(GetEnvConfigs $getEnvConfigs)
     {

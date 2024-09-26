@@ -64,7 +64,6 @@ class Activate extends ScriptAction implements ServiceLocatorAwareInterface
     protected function provideOptions(): array
     {
         return [
-
             'host' => [
                 'prefix' => 'h',
                 'longPrefix' => 'host',

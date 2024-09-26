@@ -29,35 +29,39 @@ final class Version202409231414061488_taoAdvancedSearch extends AbstractMigratio
         $options = $serviceOptions->getOptions();
 
         if (
-            ($options[ElasticSearchConfig::class][ElasticSearchConfig::OPTION_ELASTIC_CLOUD_ID]
+            (
+            $options[ElasticSearchConfig::class][ElasticSearchConfig::OPTION_ELASTIC_CLOUD_ID]
             && $options[ElasticSearchConfig::class][ElasticSearchConfig::OPTION_INDEX_PREFIX]
             && $options[ElasticSearchConfig::class][ElasticSearchConfig::OPTION_ELASTIC_CLOUD_API_KEY_ID]
             && $options[ElasticSearchConfig::class][ElasticSearchConfig::OPTION_ELASTIC_CLOUD_API_KEY])
-            && (
-                getenv(ElasticSearchEnvConfig::ENV_OPTION_INDEX_PREFIX) &&
-                getenv(ElasticSearchEnvConfig::ENV_OPTION_ELASTIC_CLOUD_ID) &&
-                getenv(ElasticSearchEnvConfig::ENV_OPTION_ELASTIC_CLOUD_API_KEY_ID) &&
-                getenv(ElasticSearchEnvConfig::ENV_OPTION_ELASTIC_CLOUD_API_KEY)
-            )
-            ) {
-              unset($options[ElasticSearchConfig::class]);  
+            && $this->checkExistingEnvVariables()
+        ) {
+              unset($options[ElasticSearchConfig::class]);
               $serviceOptions->setOptions($options);
               $serviceManager->register(ServiceOptions::SERVICE_ID, $serviceOptions);
         }
 
-        if ($serviceOptions->get(ElasticSearchConfig::class, ElasticSearchConfig::OPTION_HOSTS) && getenv(ElasticSearchEnvConfig::ENV_OPTION_HOSTS)) {
+        if (
+            $serviceOptions->get(ElasticSearchConfig::class, ElasticSearchConfig::OPTION_HOSTS)
+            && getenv(ElasticSearchEnvConfig::ENV_OPTION_HOSTS)
+        ) {
             unset($options[ElasticSearchConfig::class]);
             $serviceOptions->setOptions($options);
             $serviceManager->register(ServiceOptions::SERVICE_ID, $serviceOptions);
         }
+    }
 
-        
+    private function checkExistingEnvVariables(): bool
+    {
+        return getenv(ElasticSearchEnvConfig::ENV_OPTION_INDEX_PREFIX)
+            && getenv(ElasticSearchEnvConfig::ENV_OPTION_ELASTIC_CLOUD_ID)
+            && getenv(ElasticSearchEnvConfig::ENV_OPTION_ELASTIC_CLOUD_API_KEY_ID)
+            && getenv(ElasticSearchEnvConfig::ENV_OPTION_ELASTIC_CLOUD_API_KEY);
     }
 
     public function down(Schema $schema): void
     {
         // this down() migration is auto-generated, please modify it to your needs
-
     }
 
     private function getServiceOptions(): ServiceOptions
