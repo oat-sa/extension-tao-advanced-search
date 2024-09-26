@@ -23,13 +23,16 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\tests\Unit\model\Metadata\Repository;
 
 use core_kernel_classes_Class;
-use oat\generis\test\TestCase;
+use oat\generis\test\ServiceManagerMockTrait;
+use PHPUnit\Framework\TestCase;
 use oat\taoAdvancedSearch\model\Metadata\Repository\ClassUriRepository;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassCachedRepository;
 use PHPUnit\Framework\MockObject\MockObject;
 
 class ClassUriRepositoryTest extends TestCase
 {
+    use ServiceManagerMockTrait;
+
     /** @var ClassUriRepository */
     private $subject;
 
@@ -42,7 +45,7 @@ class ClassUriRepositoryTest extends TestCase
         $this->subject = $this->createMock(ClassUriRepository::class);
         $this->subject = new ClassUriRepository();
         $this->subject->setServiceLocator(
-            $this->getServiceLocatorMock(
+            $this->getServiceManagerMock(
                 [
                     IndexableClassCachedRepository::class => $this->indexableClassRepository,
                 ]

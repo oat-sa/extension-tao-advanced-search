@@ -23,7 +23,8 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\tests\Unit\DeliveryResult\Service;
 
 use oat\generis\model\kernel\persistence\smoothsql\search\ResourceSearchService;
-use oat\generis\test\TestCase;
+use oat\generis\test\ServiceManagerMockTrait;
+use PHPUnit\Framework\TestCase;
 use oat\tao\model\task\migration\service\ResultFilter;
 use oat\tao\test\unit\helpers\NoPrivacyTrait;
 use oat\taoAdvancedSearch\model\DeliveryResult\Service\DeliveryResultSearcher;
@@ -35,6 +36,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 class DeliveryResultSearcherTest extends TestCase
 {
+    use ServiceManagerMockTrait;
     use NoPrivacyTrait;
 
     /** @var DeliveryResultSearcher */
@@ -61,7 +63,7 @@ class DeliveryResultSearcherTest extends TestCase
 
         $this->subject = new DeliveryResultSearcher();
         $this->subject->setServiceLocator(
-            $this->getServiceLocatorMock(
+            $this->getServiceManagerMock(
                 [
                     ResultServerService::SERVICE_ID => $this->resultServerService,
                     DeliveryExecutionService::SERVICE_ID => $this->deliveryExecutionService,

@@ -61,7 +61,7 @@ class ElasticSearchConfigTest extends TestCase
                                 'scheme' => 'scheme',
                                 'user' => 'username',
                                 'pass' => 'password'
-                                ]
+                            ]
                         ];
                     }
 

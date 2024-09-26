@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\tests\Unit\Index\Service;
 
 use InvalidArgumentException;
-use oat\generis\test\TestCase;
+use PHPUnit\Framework\TestCase;
 use oat\tao\model\task\migration\ResultUnit;
 use oat\taoAdvancedSearch\model\Index\Service\IndexerInterface;
 use oat\taoAdvancedSearch\model\Index\Service\IndexUnitProcessor;

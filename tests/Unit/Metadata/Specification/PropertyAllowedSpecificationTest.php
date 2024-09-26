@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\model\Metadata\Normalizer;
 
-use oat\generis\test\TestCase;
+use PHPUnit\Framework\TestCase;
 use oat\taoAdvancedSearch\model\Metadata\Specification\PropertyAllowedSpecification;
 
 class PropertyAllowedSpecificationTest extends TestCase
