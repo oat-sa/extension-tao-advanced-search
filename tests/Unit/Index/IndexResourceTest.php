@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\Index;
 
-use oat\generis\test\TestCase;
+use PHPUnit\Framework\TestCase;
 use oat\taoAdvancedSearch\model\Index\IndexResource;
 
 class IndexResourceTest extends TestCase

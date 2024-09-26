@@ -25,7 +25,6 @@ namespace oat\taoAdvancedSearch\tests\Unit\Index\Service;
 use core_kernel_classes_Class;
 use core_kernel_classes_Resource;
 use oat\generis\test\ServiceManagerMockTrait;
-use oat\oatbox\service\ServiceManager;
 use oat\tao\model\media\TaoMediaResolver;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilder;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;

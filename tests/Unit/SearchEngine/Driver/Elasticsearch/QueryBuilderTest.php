@@ -186,19 +186,19 @@ class QueryBuilderTest extends TestCase
             'Query custom field (using space)' => [
                 'custom field:test',
                 'body' => '{"query":{"query_string":{"default_operator":"AND",' .
-                '"query":"(HTMLArea_custom field:\"test\" ' .
-                'OR TextArea_custom field:\"test\" OR TextBox_custom ' .
-                'field:\"test\" OR ComboBox_custom field:\"test\" ' .
-                'OR CheckBox_custom field:\"test\" OR RadioBox_custom ' .
-                'field:\"test\" OR SearchTextBox_custom field:\"test\" ' .
-                'OR SearchDropdown_custom field:\"test\") AND ' .
-                '(read_access:(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf' .
-                '#i5f64514f1c36110793759fc28c0105b\" OR ' .
-                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" ' .
-                'OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},' .
-                '"sort":{"_id":{"order":"DESC",' .
-                '"missing":"_last","unmapped_type":"long"},"label.raw":' .
-                '{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
+                    '"query":"(HTMLArea_custom field:\"test\" ' .
+                    'OR TextArea_custom field:\"test\" OR TextBox_custom ' .
+                    'field:\"test\" OR ComboBox_custom field:\"test\" ' .
+                    'OR CheckBox_custom field:\"test\" OR RadioBox_custom ' .
+                    'field:\"test\" OR SearchTextBox_custom field:\"test\" ' .
+                    'OR SearchDropdown_custom field:\"test\") AND ' .
+                    '(read_access:(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf' .
+                    '#i5f64514f1c36110793759fc28c0105b\" OR ' .
+                    '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" ' .
+                    'OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},' .
+                    '"sort":{"_id":{"order":"DESC",' .
+                    '"missing":"_last","unmapped_type":"long"},"label.raw":' .
+                    '{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
             ],
             'Query logic operator (Uppercase)' => [
                 'label:test AND custom_field:test',
@@ -352,11 +352,11 @@ class QueryBuilderTest extends TestCase
             'Query custom field (using space)' => [
                 'custom field:test',
                 'body' => '{"query":{"query_string":{"default_operator":"AND","query":"(HTMLArea_custom ' .
-                'field:\"test\" OR TextArea_custom field:\"test\" OR TextBox_custom field:\"test\" ' .
-                'OR ComboBox_custom field:\"test\" OR CheckBox_custom field:\"test\" OR RadioBox_custom ' .
-                'field:\"test\" OR SearchTextBox_custom field:\"test\" OR SearchDropdown_custom field:' .
-                '\"test\")"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},' .
-                '"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
+                    'field:\"test\" OR TextArea_custom field:\"test\" OR TextBox_custom field:\"test\" ' .
+                    'OR ComboBox_custom field:\"test\" OR CheckBox_custom field:\"test\" OR RadioBox_custom ' .
+                    'field:\"test\" OR SearchTextBox_custom field:\"test\" OR SearchDropdown_custom field:' .
+                    '\"test\")"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},' .
+                    '"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
             ],
             'Query logic operator (Uppercase)' => [
                 'label:test AND custom_field:test',

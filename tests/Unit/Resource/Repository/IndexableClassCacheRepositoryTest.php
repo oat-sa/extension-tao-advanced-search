@@ -22,7 +22,8 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\model\Resource\Repository;
 
-use oat\generis\test\TestCase;
+use PHPUnit\Framework\TestCase;
+use oat\generis\test\ServiceManagerMockTrait;
 use oat\oatbox\cache\SimpleCache;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassCachedRepository;
 use oat\taoAdvancedSearch\model\Resource\Repository\IndexableClassRepository;
@@ -30,6 +31,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 class IndexableClassCacheRepositoryTest extends TestCase
 {
+    use ServiceManagerMockTrait;
+
     /** @var IndexableClassCachedRepository */
     private $subject;
 
@@ -45,7 +48,7 @@ class IndexableClassCacheRepositoryTest extends TestCase
         $this->simpleCache = $this->createMock(SimpleCache::class);
         $this->subject = new IndexableClassCachedRepository();
         $this->subject->setServiceLocator(
-            $this->getServiceLocatorMock(
+            $this->getServiceManagerMock(
                 [
                     IndexableClassRepository::class => $this->indexableClassRepository,
                     SimpleCache::SERVICE_ID => $this->simpleCache,

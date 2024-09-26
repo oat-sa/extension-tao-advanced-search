@@ -241,7 +241,7 @@ class ElasticSearchTest extends TestCase
         $this->logger->expects($this->once())
             ->method('error')
             ->with('Elasticsearch: There is an error in your search query, system returned: ' .
-                    'Error {"error":{"reason": "Error"}}');
+                'Error {"error":{"reason": "Error"}}');
 
         $documentUri = 'https://tao.docker.localhost/ontologies/tao.rdf#i5ef45f413088c8e7901a84708e84ec';
 
@@ -255,33 +255,34 @@ class ElasticSearchTest extends TestCase
     public function testCreateIndexesCallIndexCreationBasedOnIndexOption(): void
     {
         $indexMock = $this->createMock(Indices::class);
-        $indexMock->expects($this->at(0))
+
+        $indexMock->expects($this->exactly(2))
             ->method('create')
-            ->with(
+            ->withConsecutive(
                 [
-                    'index' => 'items',
-                    'body' => [
-                        'mappings' => [
-                            'properties' => [
-                                'class' => [
-                                    'type' => 'text',
-                                ],
+                    [
+                        'index' => 'items',
+                        'body' => [
+                            'mappings' => [
+                                'properties' => [
+                                    'class' => [
+                                        'type' => 'text',
+                                    ],
+                                ]
                             ]
                         ]
                     ]
-                ]
-            );
-        $indexMock->expects($this->at(1))
-            ->method('create')
-            ->with(
+                ],
                 [
-                    'index' => 'tests',
-                    'body' => [
-                        'mappings' => [
-                            'properties' => [
-                                'use' => [
-                                    'type' => 'keyword',
-                                ],
+                    [
+                        'index' => 'tests',
+                        'body' => [
+                            'mappings' => [
+                                'properties' => [
+                                    'use' => [
+                                        'type' => 'keyword',
+                                    ],
+                                ]
                             ]
                         ]
                     ]
