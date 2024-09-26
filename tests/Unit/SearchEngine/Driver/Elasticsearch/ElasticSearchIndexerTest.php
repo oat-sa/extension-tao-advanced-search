@@ -114,13 +114,11 @@ class ElasticSearchIndexerTest extends TestCase
             ->method('getId')
             ->willReturn('some_id');
 
-        // Use expects with exactly() instead of at()
         $this->logger->expects($this->exactly(1)) // 3 logs: info + debug + debug
             ->method('info')
             ->with('[documentId: "some_id"] Queuing document with types ' .
                 'http://www.tao.lu/Ontologies/TAOItem.rdf#Item ' .
-                sprintf('into index "%s"', IndexerInterface::ITEMS_INDEX)
-            );
+                sprintf('into index "%s"', IndexerInterface::ITEMS_INDEX));
 
         $this->logger->expects($this->exactly(2))
             ->method('debug')
@@ -137,7 +135,6 @@ class ElasticSearchIndexerTest extends TestCase
         $iterator->expects($this->once())
             ->method('next');
 
-        // Use expects with atLeastOnce()
         $this->client->expects($this->atLeastOnce())
             ->method('bulk')
             ->with([
@@ -153,10 +150,8 @@ class ElasticSearchIndexerTest extends TestCase
             ])
             ->willReturn(['bulk_response']);
 
-        // Call the method under test
         $count = $this->sut->buildIndex($iterator);
 
-        // Verify the count
         $this->assertSame(1, $count);
     }
 

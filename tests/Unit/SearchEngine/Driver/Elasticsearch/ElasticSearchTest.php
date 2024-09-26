@@ -256,7 +256,6 @@ class ElasticSearchTest extends TestCase
     {
         $indexMock = $this->createMock(Indices::class);
 
-        // Use exactly(2) to assert that the create method is called twice
         $indexMock->expects($this->exactly(2))
             ->method('create')
             ->withConsecutive(
@@ -289,12 +288,11 @@ class ElasticSearchTest extends TestCase
                     ]
                 ]
             );
-        
+
         $this->client->expects($this->any())
             ->method('indices')
             ->willReturn($indexMock);
-        
-        // Call the method under test
+
         $this->sut->createIndexes();
     }
 
