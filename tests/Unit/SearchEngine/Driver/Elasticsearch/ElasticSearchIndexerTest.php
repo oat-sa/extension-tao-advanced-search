@@ -114,7 +114,6 @@ class ElasticSearchIndexerTest extends TestCase
             ->method('getId')
             ->willReturn('some_id');
 
-        // Use expects with exactly() instead of at()
         $this->logger->expects($this->exactly(1)) // 3 logs: info + debug + debug
             ->method('info')
             ->with('[documentId: "some_id"] Queuing document with types ' .
