@@ -78,7 +78,7 @@ class ElasticSearchConfig
         if ($this->serviceOptions->get(self::class, self::OPTION_HOSTS)) {
             return $this->getFirstHost()[self::OPTION_USERNAME] ?? null;
         }
-        return getenv(self::ENV_OPTION_USERNAME) ?? null;
+        return getenv(self::ENV_OPTION_USERNAME) ?: null;
     }
 
     public function getPassword(): ?string
@@ -86,31 +86,31 @@ class ElasticSearchConfig
         if ($this->serviceOptions->get(self::class, self::OPTION_HOSTS)) {
             return $this->getFirstHost()[self::OPTION_PASSWORD] ?? null;
         }
-        return getenv(self::ENV_OPTION_PASSWORD) ?? null;
+        return getenv(self::ENV_OPTION_PASSWORD) ?: null;
     }
 
     public function getIndexPrefix(): ?string
     {
         $indexPrefix = $this->serviceOptions->get(self::class, self::OPTION_INDEX_PREFIX);
-        return $indexPrefix ?? getenv(self::ENV_OPTION_INDEX_PREFIX);
+        return $indexPrefix ?? getenv(self::ENV_OPTION_INDEX_PREFIX) ?: null;
     }
 
     public function getElasticCloudId(): ?string
     {
         $elasticCloudId = $this->serviceOptions->get(self::class, self::OPTION_ELASTIC_CLOUD_ID);
-        return $elasticCloudId ?? getenv(self::ENV_OPTION_ELASTIC_CLOUD_ID);
+        return $elasticCloudId ?? getenv(self::ENV_OPTION_ELASTIC_CLOUD_ID) ?: null;
     }
 
     public function getElasticCloudApiKey(): ?string
     {
         $elasticCloudApiKey = $this->serviceOptions->get(self::class, self::OPTION_ELASTIC_CLOUD_API_KEY);
-        return $elasticCloudApiKey ?? getenv(self::ENV_OPTION_ELASTIC_CLOUD_API_KEY);
+        return $elasticCloudApiKey ?? getenv(self::ENV_OPTION_ELASTIC_CLOUD_API_KEY) ?: null;
     }
 
     public function getElasticCloudApiKeyId(): ?string
     {
         $elasticCloudApiKeyId = $this->serviceOptions->get(self::class, self::OPTION_ELASTIC_CLOUD_API_KEY_ID);
-        return $elasticCloudApiKeyId ?? getenv(self::ENV_OPTION_ELASTIC_CLOUD_API_KEY_ID);
+        return $elasticCloudApiKeyId ?? getenv(self::ENV_OPTION_ELASTIC_CLOUD_API_KEY_ID) ?: null;
     }
 
     private function getFirstHost(): ?array
