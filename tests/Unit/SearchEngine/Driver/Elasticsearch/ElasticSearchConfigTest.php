@@ -41,6 +41,13 @@ class ElasticSearchConfigTest extends TestCase
     {
         $this->options = $this->createMock(ServiceOptionsInterface::class);
         $this->sut = new ElasticSearchConfig($this->options);
+        putenv('ELASTICSEARCH_HOSTS');
+        putenv('ELASTICSEARCH_USERNAME');
+        putenv('ELASTICSEARCH_PASSWORD');
+        putenv('ELASTICSEARCH_PREFIX');
+        putenv('ELASTICSEARCH_CLOUD_ID');
+        putenv('ELASTICSEARCH_API_KEY_ID');
+        putenv('ELASTICSEARCH_API_KEY');
     }
 
     public function testGetters(): void
@@ -96,5 +103,24 @@ class ElasticSearchConfigTest extends TestCase
         $this->assertSame('elasticCloudId', $this->sut->getElasticCloudId());
         $this->assertSame('username', $this->sut->getUsername());
         $this->assertSame('password', $this->sut->getPassword());
+    }
+
+    public function testEnvGetters(): void
+    {
+        putenv('ELASTICSEARCH_HOSTS=scheme://host:port');
+        putenv('ELASTICSEARCH_USERNAME=username');
+        putenv('ELASTICSEARCH_PASSWORD=password');
+        putenv('ELASTICSEARCH_PREFIX=prefix');
+        putenv('ELASTICSEARCH_CLOUD_ID=cloud_id');
+        putenv('ELASTICSEARCH_API_KEY_ID=api_key_id');
+        putenv('ELASTICSEARCH_API_KEY=api_key');
+
+        $this->assertSame(['scheme://host:port'], $this->sut->getHosts());
+        $this->assertSame('username', $this->sut->getUsername());
+        $this->assertSame('password', $this->sut->getPassword());
+        $this->assertSame('prefix', $this->sut->getIndexPrefix());
+        $this->assertSame('cloud_id', $this->sut->getElasticCloudId());
+        $this->assertSame('api_key_id', $this->sut->getElasticCloudApiKeyId());
+        $this->assertSame('api_key', $this->sut->getElasticCloudApiKey());
     }
 }
