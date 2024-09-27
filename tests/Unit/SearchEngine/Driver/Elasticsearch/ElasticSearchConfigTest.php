@@ -41,13 +41,13 @@ class ElasticSearchConfigTest extends TestCase
     {
         $this->options = $this->createMock(ServiceOptionsInterface::class);
         $this->sut = new ElasticSearchConfig($this->options);
-        putenv('ELASTICSEARCH_HOSTS=');
-        putenv('ELASTICSEARCH_USERNAME=');
-        putenv('ELASTICSEARCH_PASSWORD=');
-        putenv('ELASTICSEARCH_PREFIX=');
-        putenv('ELASTICSEARCH_CLOUD_ID=');
-        putenv('ELASTICSEARCH_API_KEY_ID=');
-        putenv('ELASTICSEARCH_API_KEY=');
+        putenv('ELASTICSEARCH_HOSTS');
+        putenv('ELASTICSEARCH_USERNAME');
+        putenv('ELASTICSEARCH_PASSWORD');
+        putenv('ELASTICSEARCH_PREFIX');
+        putenv('ELASTICSEARCH_CLOUD_ID');
+        putenv('ELASTICSEARCH_API_KEY_ID');
+        putenv('ELASTICSEARCH_API_KEY');
     }
 
     public function testGetters(): void
