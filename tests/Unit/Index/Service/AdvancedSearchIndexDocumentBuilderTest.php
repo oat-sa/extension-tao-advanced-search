@@ -305,6 +305,23 @@ class AdvancedSearchIndexDocumentBuilderTest extends TestCase
                 [TaoOntology::CLASS_URI_OBJECT, $this->genericType],
             ]);
 
+        $testProp = new \core_kernel_classes_Property(TaoOntology::CLASS_URI_TEST);
+        $itemProp = new \core_kernel_classes_Property(TaoOntology::CLASS_URI_ITEM);
+        $anItem
+            ->method('getProperty')
+            ->willReturnMap([
+                ['http://www.tao.lu/Ontologies/TAOTest.rdf#TestTestModel', $testProp],
+                ['http://www.tao.lu/Ontologies/TAOItem.rdf#ItemModel', $itemProp],
+            ]);
+
+        $anItem
+            ->method('getOnePropertyValue')
+            ->willReturnCallback(
+                function (\core_kernel_classes_Property $res) use ($types) {
+                    return in_array($res->getUri(), $types);
+                }
+            );
+
         return $anItem;
     }
 
