@@ -194,7 +194,8 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
         $aliases = [];
 
         foreach ($indexes as $index) {
-            $aliases[$index['index']] = current(array_keys($index['body']['aliases']));
+            $indexName = $this->prefixer->prefix($index['index']);
+            $aliases[$indexName] = current(array_keys($index['body']['aliases']));
         }
         $this->client->indices()->updateAliases(
             [
