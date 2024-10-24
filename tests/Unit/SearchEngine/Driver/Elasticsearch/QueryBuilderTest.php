@@ -243,6 +243,57 @@ class QueryBuilderTest extends TestCase
                 '"missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
                 '"unmapped_type":"long"}}}'
             ],
+            'Query using OR logic operator to join list field values' => [
+                'label:test AND custom_field:test LOGIC_OR custom_field:test1 ',
+                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND ' .
+                '((HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
+                'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
+                'OR RadioBox_custom_field:\"test\" ' .
+                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") '. 
+                'OR (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" OR TextBox_custom_field:\"test1\" ' .
+                'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
+                ' OR RadioBox_custom_field:\"test1\" ' .
+                'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\")) AND (read_access:' .
+                '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
+                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
+                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":' .
+                '{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing"' .
+                ':"_last","unmapped_type":"long"}}}',
+            ],
+            'Query using AND logic operator to join list field values' => [
+                'label:test AND custom_field:test LOGIC_AND custom_field:test1 ',
+                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND ' .
+                '((HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
+                'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
+                'OR RadioBox_custom_field:\"test\" ' .
+                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") '. 
+                'AND (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" OR TextBox_custom_field:\"test1\" ' .
+                'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
+                ' OR RadioBox_custom_field:\"test1\" ' .
+                'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\")) AND (read_access:' .
+                '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
+                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
+                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":' .
+                '{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing"' .
+                ':"_last","unmapped_type":"long"}}}',
+            ],
+            'Query using NOT logic operator to join list field values' => [
+                'label:test AND custom_field:test LOGIC_NOT custom_field:test1 ',
+                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND ' .
+                'NOT ((HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
+                'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
+                'OR RadioBox_custom_field:\"test\" ' .
+                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") '. 
+                'OR (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" OR TextBox_custom_field:\"test1\" ' .
+                'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
+                ' OR RadioBox_custom_field:\"test1\" ' .
+                'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\")) AND (read_access:' .
+                '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
+                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
+                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":' .
+                '{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing"' .
+                ':"_last","unmapped_type":"long"}}}',
+            ],
             'Query URIs' => [
                 'https://test-act.docker.localhost/ontologies/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a',
                 '{"query":{"query_string":{"default_operator":"AND","query":"(\"https:\/\/test-act.docker.localhost\/' .
@@ -383,6 +434,48 @@ class QueryBuilderTest extends TestCase
                 'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\"' .
                 ' OR RadioBox_custom_field:\"test\" ' .
                 'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\")"}},"sort":{"_id":' .
+                '{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing"' .
+                ':"_last","unmapped_type":"long"}}}',
+            ],
+            'Query using OR logic operator to join list field values' => [
+                'label:test AND custom_field:test LOGIC_OR custom_field:test1 ',
+                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND ' .
+                '((HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
+                'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
+                'OR RadioBox_custom_field:\"test\" ' .
+                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") '. 
+                'OR (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" OR TextBox_custom_field:\"test1\" ' .
+                'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
+                ' OR RadioBox_custom_field:\"test1\" ' .
+                'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\"))"}},"sort":{"_id":' .
+                '{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing"' .
+                ':"_last","unmapped_type":"long"}}}',
+            ],
+            'Query using AND logic operator to join list field values' => [
+                'label:test AND custom_field:test LOGIC_AND custom_field:test1 ',
+                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND ' .
+                '((HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
+                'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
+                'OR RadioBox_custom_field:\"test\" ' .
+                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") '. 
+                'AND (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" OR TextBox_custom_field:\"test1\" ' .
+                'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
+                ' OR RadioBox_custom_field:\"test1\" ' .
+                'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\"))"}},"sort":{"_id":' .
+                '{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing"' .
+                ':"_last","unmapped_type":"long"}}}',
+            ],
+            'Query using NOT logic operator to join list field values' => [
+                'label:test AND custom_field:test LOGIC_NOT custom_field:test1 ',
+                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND ' .
+                'NOT ((HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
+                'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
+                'OR RadioBox_custom_field:\"test\" ' .
+                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") '. 
+                'OR (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" OR TextBox_custom_field:\"test1\" ' .
+                'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
+                ' OR RadioBox_custom_field:\"test1\" ' .
+                'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\"))"}},"sort":{"_id":' .
                 '{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing"' .
                 ':"_last","unmapped_type":"long"}}}',
             ],
