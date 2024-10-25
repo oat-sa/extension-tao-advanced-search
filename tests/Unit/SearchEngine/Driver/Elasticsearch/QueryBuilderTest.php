@@ -249,8 +249,9 @@ class QueryBuilderTest extends TestCase
                 '((HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
                 'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
                 'OR RadioBox_custom_field:\"test\" ' .
-                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") '. 
-                'OR (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" OR TextBox_custom_field:\"test1\" ' .
+                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") ' .
+                'OR (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" ' .
+                'OR TextBox_custom_field:\"test1\" ' .
                 'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
                 ' OR RadioBox_custom_field:\"test1\" ' .
                 'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\")) AND (read_access:' .
@@ -266,8 +267,9 @@ class QueryBuilderTest extends TestCase
                 '((HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
                 'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
                 'OR RadioBox_custom_field:\"test\" ' .
-                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") '. 
-                'AND (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" OR TextBox_custom_field:\"test1\" ' .
+                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") ' .
+                'AND (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" ' .
+                'OR TextBox_custom_field:\"test1\" ' .
                 'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
                 ' OR RadioBox_custom_field:\"test1\" ' .
                 'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\")) AND (read_access:' .
@@ -280,11 +282,14 @@ class QueryBuilderTest extends TestCase
             'Query using NOT logic operator to join list field values' => [
                 'label:test AND custom_field:test LOGIC_NOT custom_field:test1 ',
                 '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND ' .
-                'NOT ((HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
+                'NOT ((HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" ' .
+                'OR TextBox_custom_field:\"test\" ' .
                 'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
                 'OR RadioBox_custom_field:\"test\" ' .
-                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") '. 
-                'OR (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" OR TextBox_custom_field:\"test1\" ' .
+                'OR SearchTextBox_custom_field:\"test\" ' .
+                'OR SearchDropdown_custom_field:\"test\") ' .
+                'OR (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" ' .
+                'OR TextBox_custom_field:\"test1\" ' .
                 'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
                 ' OR RadioBox_custom_field:\"test1\" ' .
                 'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\")) AND (read_access:' .
@@ -443,8 +448,9 @@ class QueryBuilderTest extends TestCase
                 '((HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
                 'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
                 'OR RadioBox_custom_field:\"test\" ' .
-                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") '. 
-                'OR (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" OR TextBox_custom_field:\"test1\" ' .
+                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") ' .
+                'OR (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" ' .
+                'OR TextBox_custom_field:\"test1\" ' .
                 'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
                 ' OR RadioBox_custom_field:\"test1\" ' .
                 'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\"))"}},"sort":{"_id":' .
@@ -457,8 +463,9 @@ class QueryBuilderTest extends TestCase
                 '((HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
                 'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
                 'OR RadioBox_custom_field:\"test\" ' .
-                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") '. 
-                'AND (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" OR TextBox_custom_field:\"test1\" ' .
+                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") ' .
+                'AND (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" ' .
+                'OR TextBox_custom_field:\"test1\" ' .
                 'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
                 ' OR RadioBox_custom_field:\"test1\" ' .
                 'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\"))"}},"sort":{"_id":' .
@@ -468,11 +475,13 @@ class QueryBuilderTest extends TestCase
             'Query using NOT logic operator to join list field values' => [
                 'label:test AND custom_field:test LOGIC_NOT custom_field:test1 ',
                 '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND ' .
-                'NOT ((HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
+                'NOT ((HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" ' .
+                'OR TextBox_custom_field:\"test\" ' .
                 'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
                 'OR RadioBox_custom_field:\"test\" ' .
-                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") '. 
-                'OR (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" OR TextBox_custom_field:\"test1\" ' .
+                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") ' .
+                'OR (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" ' .
+                'OR TextBox_custom_field:\"test1\" ' .
                 'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
                 ' OR RadioBox_custom_field:\"test1\" ' .
                 'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\"))"}},"sort":{"_id":' .
