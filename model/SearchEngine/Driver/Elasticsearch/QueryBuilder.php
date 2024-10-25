@@ -215,14 +215,13 @@ class QueryBuilder
     }
 
     private function containsLogicalModifier(string $block) {
-        $found = false;
-        foreach(self::LOGIC_MODIFIERS as $key => $logicModifier) {
-            if(strpos($block, $logicModifier) !== false) {
-                $found = true;
-                break;
-            }    
-        }    
-        return $found;
+        foreach (self::LOGIC_MODIFIERS => $logicModifier) {
+            if (strpos($block, $logicModifier) !== false) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function buildLogicCondition(string $block) {
