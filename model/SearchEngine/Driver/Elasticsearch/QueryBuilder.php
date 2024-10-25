@@ -224,22 +224,29 @@ class QueryBuilder
         return false;
     }
 
-    private function buildLogicCondition(string $block) {
-        $condition = '';
-        if(strpos($block, self::LOGIC_MODIFIERS['and'])) {
+    private function buildLogicCondition(string $block): ?string {
+        if (strpos($block, self::LOGIC_MODIFIERS['and']) !== false) {
             $logicBlocks = preg_split('/( '.self::LOGIC_MODIFIERS['and'].' )/i', $block);
             $conditions = array_map([$this, 'buildConditionFromTheBlock'], $logicBlocks);
-            $condition = sprintf('(%s)', implode(' AND ', $conditions));
-        } elseif (strpos($block, self::LOGIC_MODIFIERS['or'])) {
+            
+            return sprintf('(%s)', implode(' AND ', $conditions));
+        }
+        
+        if (strpos($block, self::LOGIC_MODIFIERS['or']) !== false) {
             $logicBlocks = preg_split('/( '.self::LOGIC_MODIFIERS['or'].' )/i', $block);
             $conditions = array_map([$this,'buildConditionFromTheBlock'], $logicBlocks);
-            $condition = sprintf('(%s)', implode(' OR ', $conditions));
-        } elseif (strpos($block, self::LOGIC_MODIFIERS['not'])) {
+
+            return sprintf('(%s)', implode(' OR ', $conditions));
+        } 
+        
+        if (strpos($block, self::LOGIC_MODIFIERS['not']) !== false) {
             $logicBlocks = preg_split('/( ' . self::LOGIC_MODIFIERS['not'] . ' )/i', $block);
             $conditions = array_map([$this,'buildConditionFromTheBlock'], $logicBlocks);
-            $condition = sprintf('NOT (%s)', implode(' OR ', $conditions));
+
+            return sprintf('NOT (%s)', implode(' OR ', $conditions));
         }
-        return $condition;
+        
+        return null;
     }
         
 
