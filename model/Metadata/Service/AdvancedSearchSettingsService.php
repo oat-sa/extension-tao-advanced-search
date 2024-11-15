@@ -27,7 +27,7 @@ namespace oat\taoAdvancedSearch\model\Metadata\Service;
 use oat\generis\model\OntologyRdfs;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\featureFlag\FeatureFlagCheckerInterface;
-use oat\tao\model\featureFlag\Service\FeatureBasedPropertiesService;
+use oat\tao\model\featureFlag\Service\FeatureFlagPropertiesMapping;
 use oat\tao\model\Lists\Business\Contract\ClassMetadataSearcherInterface;
 use oat\tao\model\Lists\Business\Domain\ClassMetadataSearchRequest;
 use oat\tao\model\Lists\Business\Input\ClassMetadataSearchInput;
@@ -53,20 +53,20 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
 
     private SearchSettingsServiceInterface $defaultSearchSettingsService;
     private FeatureFlagCheckerInterface $featureFlagChecker;
-    private FeatureBasedPropertiesService $featureBasedPropertiesService;
+    private FeatureFlagPropertiesMapping $featureFlagPropertiesMapping;
 
     public function __construct(
         ClassMetadataSearcherInterface $classMetadataSearcher,
         SearchSettingsServiceInterface $defaultSearchSettingsService,
         AdvancedSearchChecker $advancedSearchChecker,
         FeatureFlagCheckerInterface $featureFlagChecker,
-        FeatureBasedPropertiesService $featureBasedPropertiesService
+        FeatureFlagPropertiesMapping $featureFlagPropertiesMapping
     ) {
         $this->classMetadataSearcher = $classMetadataSearcher;
         $this->advancedSearchChecker = $advancedSearchChecker;
         $this->defaultSearchSettingsService = $defaultSearchSettingsService;
         $this->featureFlagChecker = $featureFlagChecker;
-        $this->featureBasedPropertiesService = $featureBasedPropertiesService;
+        $this->featureFlagPropertiesMapping = $featureFlagPropertiesMapping;
     }
 
     public function getSettingsByClassMetadataSearchRequest(
@@ -208,7 +208,7 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
     {
         $propertiesToHide = self::OMIT_PROPERTIES;
 
-        foreach ($this->featureBasedPropertiesService->getAllProperties() as $featureFlag => $properties) {
+        foreach ($this->featureFlagPropertiesMapping->getAllProperties() as $featureFlag => $properties) {
             if (!$this->featureFlagChecker->isEnabled($featureFlag)) {
                 foreach ($properties as $property) {
                     if (!in_array($property, $propertiesToHide, true)) {

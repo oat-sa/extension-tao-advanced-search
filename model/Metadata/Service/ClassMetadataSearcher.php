@@ -28,7 +28,7 @@ use oat\oatbox\service\ConfigurableService;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\featureFlag\FeatureFlagChecker;
 use oat\tao\model\featureFlag\FeatureFlagCheckerInterface;
-use oat\tao\model\featureFlag\Service\FeatureBasedPropertiesService;
+use oat\tao\model\featureFlag\Service\FeatureFlagPropertiesMapping;
 use oat\tao\model\Lists\Business\Contract\ClassMetadataSearcherInterface;
 use oat\tao\model\Lists\Business\Domain\ClassCollection;
 use oat\tao\model\Lists\Business\Domain\ClassMetadata;
@@ -276,7 +276,7 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
         $propertiesToHide = self::UNACCEPTABLE_PROPERTIES;
         $featureFlagChecker = $this->getFeatureFlagChecker();
 
-        foreach ($this->getFeatureBasedPropertiesService()->getAllProperties() as $featureFlag => $properties) {
+        foreach ($this->getFeatureFlagPropertiesMapping()->getAllProperties() as $featureFlag => $properties) {
             if (!$featureFlagChecker->isEnabled($featureFlag)) {
                 foreach ($properties as $property) {
                     if (!in_array($property, $propertiesToHide, true)) {
@@ -309,9 +309,9 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
         return $this->getServiceLocator()->get(SearchProxy::SERVICE_ID);
     }
 
-    private function getFeatureBasedPropertiesService(): FeatureBasedPropertiesService
+    private function getFeatureFlagPropertiesMapping(): FeatureFlagPropertiesMapping
     {
-        return $this->getServiceLocator()->getContainer()->get(FeatureBasedPropertiesService::class);
+        return $this->getServiceLocator()->getContainer()->get(FeatureFlagPropertiesMapping::class);
     }
 
     private function getFeatureFlagChecker(): FeatureFlagCheckerInterface
