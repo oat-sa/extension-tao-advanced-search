@@ -26,6 +26,8 @@ namespace oat\taoAdvancedSearch\model\Metadata\Service;
 
 use oat\generis\model\OntologyRdfs;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
+use oat\tao\model\featureFlag\FeatureFlagCheckerInterface;
+use oat\tao\model\featureFlag\Service\FeatureBasedPropertiesService;
 use oat\tao\model\Lists\Business\Contract\ClassMetadataSearcherInterface;
 use oat\tao\model\Lists\Business\Domain\ClassMetadataSearchRequest;
 use oat\tao\model\Lists\Business\Input\ClassMetadataSearchInput;
@@ -45,23 +47,26 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
 
     public const DEFAULT_SORT_COLUMN = 'label.raw';
 
-    /** @var ClassMetadataSearcherInterface */
-    private $classMetadataSearcher;
+    private ClassMetadataSearcherInterface $classMetadataSearcher;
 
-    /** @var AdvancedSearchChecker */
-    private $advancedSearchChecker;
+    private AdvancedSearchChecker $advancedSearchChecker;
 
-    /** @var SearchSettingsServiceInterface */
-    private $defaultSearchSettingsService;
+    private SearchSettingsServiceInterface $defaultSearchSettingsService;
+    private FeatureFlagCheckerInterface $featureFlagChecker;
+    private FeatureBasedPropertiesService $featureBasedPropertiesService;
 
     public function __construct(
         ClassMetadataSearcherInterface $classMetadataSearcher,
         SearchSettingsServiceInterface $defaultSearchSettingsService,
-        AdvancedSearchChecker $advancedSearchChecker
+        AdvancedSearchChecker $advancedSearchChecker,
+        FeatureFlagCheckerInterface $featureFlagChecker,
+        FeatureBasedPropertiesService $featureBasedPropertiesService
     ) {
         $this->classMetadataSearcher = $classMetadataSearcher;
         $this->advancedSearchChecker = $advancedSearchChecker;
         $this->defaultSearchSettingsService = $defaultSearchSettingsService;
+        $this->featureFlagChecker = $featureFlagChecker;
+        $this->featureBasedPropertiesService = $featureBasedPropertiesService;
     }
 
     public function getSettingsByClassMetadataSearchRequest(
@@ -174,9 +179,11 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
             )
         ];
 
+        $propertiesToHide = $this->getPropertiesToHide();
+
         foreach ($classCollection->getIterator() as $class) {
             foreach ($class->getMetaData()->getIterator() as $metadata) {
-                if (in_array($metadata->getPropertyUri(), self::OMIT_PROPERTIES, true)) {
+                if (in_array($metadata->getPropertyUri(), $propertiesToHide, true)) {
                     continue;
                 }
 
@@ -195,5 +202,22 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
         }
 
         return new SearchSettings($out);
+    }
+
+    private function getPropertiesToHide(): array
+    {
+        $propertiesToHide = self::OMIT_PROPERTIES;
+
+        foreach ($this->featureBasedPropertiesService->getAllProperties() as $featureFlag => $properties) {
+            if (!$this->featureFlagChecker->isEnabled($featureFlag)) {
+                foreach ($properties as $property) {
+                    if (!in_array($property, $propertiesToHide, true)) {
+                        $propertiesToHide[] = $property;
+                    }
+                }
+            }
+        }
+
+        return $propertiesToHide;
     }
 }
