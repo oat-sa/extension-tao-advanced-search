@@ -160,8 +160,8 @@ class QueryBuilderTest extends TestCase
                 '\\"test\\" OR TextArea_custom_field:\\"test\\" OR ' .
                 'TextBox_custom_field:\\"test\\" OR ComboBox_custom_field:\\"test\\" ' .
                 'OR CheckBox_custom_field:\\"test\\" OR RadioBox_custom_field:\\"test\\" ' .
-                'OR SearchTextBox_custom_field:\\"test\\" OR SearchDropdown_custom_field:\\"test\\")' .
-                ' AND (read_access:(\\"https:\\/\\/tao.docker.localhost\\/' .
+                'OR SearchTextBox_custom_field:\\"test\\" OR SearchDropdown_custom_field:\\"test\\" ' .
+                'OR Readonly_custom_field:\\"test\\") AND (read_access:(\\"https:\\/\\/tao.docker.localhost\\/' .
                 'ontologies\\/tao.rdf#i5f64514f1c36110793759fc28c0105b\\" OR \\"http:\\/\\/www.tao.lu\\/Ontologies\\/' .
                 'TAOItem.rdf#BackOfficeRole\\" OR ' .
                 '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#ItemsManagerRole\\"))"}},' .
@@ -174,8 +174,8 @@ class QueryBuilderTest extends TestCase
                 '(HTMLArea_custom_field:\\"test\\" OR TextArea_custom_field:\\"test\\" OR ' .
                 'TextBox_custom_field:\\"test\\" OR ComboBox_custom_field:\\"test\\"' .
                 ' OR CheckBox_custom_field:\\"test\\" OR RadioBox_custom_field:\\"test\\" ' .
-                'OR SearchTextBox_custom_field:\\"test\\" OR SearchDropdown_custom_field:\\' .
-                '"test\\") AND (read_access:(\\"https:\\/\\/tao.docker.localhost\\/' .
+                'OR SearchTextBox_custom_field:\\"test\\" OR SearchDropdown_custom_field:\\"test\\" ' .
+                'OR Readonly_custom_field:\\"test\\") AND (read_access:(\\"https:\\/\\/tao.docker.localhost\\/' .
                 'ontologies\\/tao.rdf#i5f64514f1c36110793759fc28c0105b\\" OR ' .
                 '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#BackOfficeRole\\" OR ' .
                 '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#ItemsManagerRole\\"))"}},' .
@@ -191,8 +191,8 @@ class QueryBuilderTest extends TestCase
                     'field:\"test\" OR ComboBox_custom field:\"test\" ' .
                     'OR CheckBox_custom field:\"test\" OR RadioBox_custom ' .
                     'field:\"test\" OR SearchTextBox_custom field:\"test\" ' .
-                    'OR SearchDropdown_custom field:\"test\") AND ' .
-                    '(read_access:(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf' .
+                    'OR SearchDropdown_custom field:\"test\" OR Readonly_custom field:\\"test\\")' .
+                    ' AND (read_access:(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf' .
                     '#i5f64514f1c36110793759fc28c0105b\" OR ' .
                     '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" ' .
                     'OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},' .
@@ -207,7 +207,8 @@ class QueryBuilderTest extends TestCase
                 'field:\\"test\\" OR TextBox_custom_field:\\"test\\" OR ' .
                 'ComboBox_custom_field:\\"test\\" OR CheckBox_custom_field:\\"test\\" OR RadioBox_' .
                 'custom_field:\\"test\\" OR SearchTextBox_custom_field:\\"test\\" ' .
-                'OR SearchDropdown_custom_field:\\"test\\") AND (read_access:(\\"https:\\/' .
+                'OR SearchDropdown_custom_field:\\"test\\" OR Readonly_custom_field:\\"test\\")' .
+                ' AND (read_access:(\\"https:\\/' .
                 '\\/tao.docker.localhost\\/ontologies\\/tao.rdf#i5f64514f1c36110793759fc28c0105b\\"' .
                 ' OR \\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#' .
                 'BackOfficeRole\\" OR \\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#ItemsManagerRole\\"))"}}' .
@@ -221,7 +222,8 @@ class QueryBuilderTest extends TestCase
                 '(HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
                 'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
                 'OR RadioBox_custom_field:\"test\" ' .
-                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") AND (read_access:' .
+                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\" ' .
+                'OR Readonly_custom_field:\"test\") AND (read_access:' .
                 '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
                 '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
                 '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},' .
@@ -235,7 +237,8 @@ class QueryBuilderTest extends TestCase
                 '(HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
                 'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\"' .
                 ' OR RadioBox_custom_field:\"test\" ' .
-                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") AND (read_access:' .
+                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\" ' .
+                'OR Readonly_custom_field:\"test\") AND (read_access:' .
                 '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
                 '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
                 '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},' .
@@ -249,12 +252,14 @@ class QueryBuilderTest extends TestCase
                 '((HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
                 'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
                 'OR RadioBox_custom_field:\"test\" ' .
-                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") ' .
+                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\" ' .
+                'OR Readonly_custom_field:\"test\") ' .
                 'OR (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" ' .
                 'OR TextBox_custom_field:\"test1\" ' .
                 'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
                 ' OR RadioBox_custom_field:\"test1\" ' .
-                'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\")) AND (read_access:' .
+                'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\" ' .
+                'OR Readonly_custom_field:\"test1\")) AND (read_access:' .
                 '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
                 '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
                 '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":' .
@@ -267,12 +272,14 @@ class QueryBuilderTest extends TestCase
                 '((HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
                 'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
                 'OR RadioBox_custom_field:\"test\" ' .
-                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") ' .
+                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\" ' .
+                'OR Readonly_custom_field:\"test\") ' .
                 'AND (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" ' .
                 'OR TextBox_custom_field:\"test1\" ' .
                 'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
                 ' OR RadioBox_custom_field:\"test1\" ' .
-                'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\")) AND (read_access:' .
+                'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\" ' .
+                'OR Readonly_custom_field:\"test1\")) AND (read_access:' .
                 '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
                 '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
                 '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":' .
@@ -287,12 +294,13 @@ class QueryBuilderTest extends TestCase
                 'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
                 'OR RadioBox_custom_field:\"test\" ' .
                 'OR SearchTextBox_custom_field:\"test\" ' .
-                'OR SearchDropdown_custom_field:\"test\") ' .
+                'OR SearchDropdown_custom_field:\"test\" OR Readonly_custom_field:\"test\") ' .
                 'OR (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" ' .
                 'OR TextBox_custom_field:\"test1\" ' .
                 'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
                 ' OR RadioBox_custom_field:\"test1\" ' .
-                'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\")) AND (read_access:' .
+                'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\" ' .
+                'OR Readonly_custom_field:\"test1\")) AND (read_access:' .
                 '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
                 '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
                 '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":' .
@@ -391,7 +399,7 @@ class QueryBuilderTest extends TestCase
                 ':\"test\" OR ComboBox_custom_field:\"test\" ' .
                 'OR CheckBox_custom_field:\"test\" OR RadioBox_custom_field:' .
                 '\"test\" OR SearchTextBox_custom_field:\"test\" ' .
-                'OR SearchDropdown_custom_field:\"test\")"}},' .
+                'OR SearchDropdown_custom_field:\"test\" OR Readonly_custom_field:\"test\")"}},' .
                 '"sort":{"_id":{"order":"DESC","missing":"_last",' .
                 '"unmapped_type":"long"},"label.raw":{"order":' .
                 '"DESC","missing":"_last","unmapped_type":"long"}}}'
@@ -401,8 +409,8 @@ class QueryBuilderTest extends TestCase
                 '{"query":{"query_string":{"default_operator":"AND","query":"(HTMLArea_custom_field:\"test\" OR ' .
                 'TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" OR ComboBox_custom_field:\"test\" ' .
                 'OR CheckBox_custom_field:\"test\" OR RadioBox_custom_field:' .
-                '\"test\" OR SearchTextBox_custom_field:\"test\" ' .
-                'OR SearchDropdown_custom_field:\"test\")"}},"sort":{"_id":{"order":"DESC","missing":"_last",' .
+                '\"test\" OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\" ' .
+                'OR Readonly_custom_field:\"test\")"}},"sort":{"_id":{"order":"DESC","missing":"_last",' .
                 '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
             ],
             'Query custom field (using space)' => [
@@ -411,8 +419,8 @@ class QueryBuilderTest extends TestCase
                     'field:\"test\" OR TextArea_custom field:\"test\" OR TextBox_custom field:\"test\" ' .
                     'OR ComboBox_custom field:\"test\" OR CheckBox_custom field:\"test\" OR RadioBox_custom ' .
                     'field:\"test\" OR SearchTextBox_custom field:\"test\" OR SearchDropdown_custom field:' .
-                    '\"test\")"}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},' .
-                    '"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
+                    '\"test\" OR Readonly_custom field:\"test\")"}},"sort":{"_id":{"order":"DESC","missing":"_last",' .
+                    '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
             ],
             'Query logic operator (Uppercase)' => [
                 'label:test AND custom_field:test',
@@ -420,8 +428,9 @@ class QueryBuilderTest extends TestCase
                 'AND (HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR ' .
                 'TextBox_custom_field:\"test\" OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:' .
                 '\"test\" OR RadioBox_custom_field:\"test\" OR SearchTextBox_custom_field:\"test\" OR ' .
-                'SearchDropdown_custom_field:\"test\")"}},"sort":{"_id":{"order":"DESC","missing":"_last"' .
-                ',"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
+                'SearchDropdown_custom_field:\"test\" OR Readonly_custom_field:\"test\")"}},"sort":{"_id":{"order":' .
+                '"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"long"}}}',
             ],
             'Query logic operator (Lowercase)' => [
                 'label:test and custom_field:test',
@@ -429,8 +438,9 @@ class QueryBuilderTest extends TestCase
                 '(HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:' .
                 '\"test\" OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" OR ' .
                 'RadioBox_custom_field:\"test\" OR SearchTextBox_custom_field:\"test\" OR ' .
-                'SearchDropdown_custom_field:\"test\")"}},"sort":{"_id":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
+                'SearchDropdown_custom_field:\"test\" OR Readonly_custom_field:\"test\")"}},"sort":{"_id":{"order":' .
+                '"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"long"}}}',
             ],
             'Query logic operator (Mixed)' => [
                 'label:test aNd custom_field:test',
@@ -438,7 +448,8 @@ class QueryBuilderTest extends TestCase
                 '(HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
                 'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\"' .
                 ' OR RadioBox_custom_field:\"test\" ' .
-                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\")"}},"sort":{"_id":' .
+                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\" ' .
+                'OR Readonly_custom_field:\"test\")"}},"sort":{"_id":' .
                 '{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing"' .
                 ':"_last","unmapped_type":"long"}}}',
             ],
@@ -448,12 +459,12 @@ class QueryBuilderTest extends TestCase
                 '((HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
                 'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
                 'OR RadioBox_custom_field:\"test\" ' .
-                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") ' .
-                'OR (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" ' .
-                'OR TextBox_custom_field:\"test1\" ' .
+                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\" ' .
+                'OR Readonly_custom_field:\"test\") OR (HTMLArea_custom_field:\"test1\" ' .
+                'OR TextArea_custom_field:\"test1\" OR TextBox_custom_field:\"test1\" ' .
                 'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
-                ' OR RadioBox_custom_field:\"test1\" ' .
-                'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\"))"}},"sort":{"_id":' .
+                ' OR RadioBox_custom_field:\"test1\" OR SearchTextBox_custom_field:\"test1\" ' .
+                'OR SearchDropdown_custom_field:\"test1\" OR Readonly_custom_field:\"test1\"))"}},"sort":{"_id":' .
                 '{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing"' .
                 ':"_last","unmapped_type":"long"}}}',
             ],
@@ -463,12 +474,14 @@ class QueryBuilderTest extends TestCase
                 '((HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
                 'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
                 'OR RadioBox_custom_field:\"test\" ' .
-                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") ' .
+                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\" ' .
+                'OR Readonly_custom_field:\"test\") ' .
                 'AND (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" ' .
                 'OR TextBox_custom_field:\"test1\" ' .
                 'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
                 ' OR RadioBox_custom_field:\"test1\" ' .
-                'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\"))"}},"sort":{"_id":' .
+                'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\" ' .
+                'OR Readonly_custom_field:\"test1\"))"}},"sort":{"_id":' .
                 '{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing"' .
                 ':"_last","unmapped_type":"long"}}}',
             ],
@@ -479,12 +492,13 @@ class QueryBuilderTest extends TestCase
                 'OR TextBox_custom_field:\"test\" ' .
                 'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
                 'OR RadioBox_custom_field:\"test\" ' .
-                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\") ' .
-                'OR (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" ' .
-                'OR TextBox_custom_field:\"test1\" ' .
+                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\" ' .
+                'OR Readonly_custom_field:\"test\") OR (HTMLArea_custom_field:\"test1\" ' .
+                'OR TextArea_custom_field:\"test1\" OR TextBox_custom_field:\"test1\" ' .
                 'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
                 ' OR RadioBox_custom_field:\"test1\" ' .
-                'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\"))"}},"sort":{"_id":' .
+                'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\" ' .
+                'OR Readonly_custom_field:\"test1\"))"}},"sort":{"_id":' .
                 '{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing"' .
                 ':"_last","unmapped_type":"long"}}}',
             ],
