@@ -72,7 +72,9 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
                 ->getSettingsByClassMetadataSearchRequest($classMetadataSearchRequest);
         }
 
-        $classCollection = $this->classMetadataSearcher->findAll(new ClassMetadataSearchInput($classMetadataSearchRequest));
+        $classCollection = $this->classMetadataSearcher->findAll(
+            new ClassMetadataSearchInput($classMetadataSearchRequest)
+        );
 
         if ($classMetadataSearchRequest->getStructure() === 'results') {
             return new SearchSettings(

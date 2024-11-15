@@ -42,6 +42,8 @@ use oat\taoAdvancedSearch\model\SearchEngine\Query;
 
 class ClassMetadataSearcher extends ConfigurableService implements ClassMetadataSearcherInterface
 {
+    use OntologyAwareTrait;
+
     private const BASE_LIST_ITEMS_URI = '/tao/PropertyValues/get?propertyUri=%s';
 
     private const UNACCEPTABLE_PROPERTIES = [
@@ -49,8 +51,6 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
         TaoOntology::PROPERTY_TRANSLATION_PROGRESS,
         TaoOntology::PROPERTY_TRANSLATION_ORIGINAL_RESOURCE_URI,
     ];
-
-    use OntologyAwareTrait;
 
     public function findAll(ClassMetadataSearchInput $input): ClassCollection
     {

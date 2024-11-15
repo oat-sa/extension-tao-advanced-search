@@ -32,6 +32,7 @@ use oat\taoAdvancedSearch\model\Metadata\Service\ListSavedEventListener;
 use oat\taoAdvancedSearch\model\Metadata\Specification\PropertyAllowedSpecification;
 use oat\taoAdvancedSearch\model\Resource\Service\ResourceIndexer;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
