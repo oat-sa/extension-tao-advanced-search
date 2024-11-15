@@ -32,11 +32,15 @@ use oat\tao\model\Lists\Business\Input\ClassMetadataSearchInput;
 use oat\tao\model\search\Contract\SearchSettingsServiceInterface;
 use oat\tao\model\search\ResultColumn;
 use oat\tao\model\search\SearchSettings;
+use oat\tao\model\TaoOntology;
 
 class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
 {
     private const OMIT_PROPERTIES = [
-        OntologyRdfs::RDFS_LABEL
+        OntologyRdfs::RDFS_LABEL,
+        TaoOntology::PROPERTY_TRANSLATION_TYPE,
+        TaoOntology::PROPERTY_TRANSLATION_PROGRESS,
+        TaoOntology::PROPERTY_TRANSLATION_ORIGINAL_RESOURCE_URI,
     ];
 
     public const DEFAULT_SORT_COLUMN = 'label.raw';

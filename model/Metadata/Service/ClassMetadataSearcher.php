@@ -36,12 +36,19 @@ use oat\tao\model\Lists\Business\Service\ClassMetadataService;
 use oat\tao\model\Lists\Business\Service\GetClassMetadataValuesService;
 use oat\tao\model\search\ResultSet;
 use oat\tao\model\search\SearchProxy;
+use oat\tao\model\TaoOntology;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 use oat\taoAdvancedSearch\model\SearchEngine\Query;
 
 class ClassMetadataSearcher extends ConfigurableService implements ClassMetadataSearcherInterface
 {
     private const BASE_LIST_ITEMS_URI = '/tao/PropertyValues/get?propertyUri=%s';
+
+    private const UNACCEPTABLE_PROPERTIES = [
+        TaoOntology::PROPERTY_TRANSLATION_TYPE,
+        TaoOntology::PROPERTY_TRANSLATION_PROGRESS,
+        TaoOntology::PROPERTY_TRANSLATION_ORIGINAL_RESOURCE_URI,
+    ];
 
     use OntologyAwareTrait;
 
@@ -89,8 +96,9 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
         $allProperties = [$result];
         $allProperties = $this->getRelatedProperties($result, $allProperties);
         $allProperties = $this->getClassPathProperties($classUri, $allProperties);
+        $allProperties = $this->filterDuplicatedProperties($allProperties);
 
-        return $this->filterDuplicatedProperties($allProperties);
+        return array_diff_key($allProperties, array_flip(self::UNACCEPTABLE_PROPERTIES));
     }
 
     private function getClassPathProperties(string $classUri, array $allProperties): array

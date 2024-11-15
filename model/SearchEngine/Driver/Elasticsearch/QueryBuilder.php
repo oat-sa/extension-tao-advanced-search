@@ -80,6 +80,7 @@ class QueryBuilder
         'RadioBox',
         'SearchTextBox',
         'SearchDropdown',
+        'Readonly',
     ];
 
     private const LOGIC_MODIFIERS = [
