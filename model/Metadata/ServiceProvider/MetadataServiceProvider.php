@@ -25,6 +25,8 @@ namespace oat\taoAdvancedSearch\model\Metadata\ServiceProvider;
 use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
 use oat\generis\persistence\PersistenceServiceProvider;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
+use oat\tao\model\featureFlag\FeatureFlagChecker;
+use oat\tao\model\featureFlag\Service\FeatureBasedPropertiesService;
 use oat\tao\model\Lists\Business\Service\ClassMetadataSearcherProxy;
 use oat\tao\model\search\Service\DefaultSearchSettingsService;
 use oat\taoAdvancedSearch\model\Metadata\Service\AdvancedSearchSettingsService;
@@ -60,6 +62,8 @@ class MetadataServiceProvider implements ContainerServiceProviderInterface
                     service(ClassMetadataSearcherProxy::SERVICE_ID),
                     service(DefaultSearchSettingsService::class),
                     service(AdvancedSearchChecker::class),
+                    service(FeatureFlagChecker::class),
+                    service(FeatureBasedPropertiesService::class),
                 ]
             )->public();
 

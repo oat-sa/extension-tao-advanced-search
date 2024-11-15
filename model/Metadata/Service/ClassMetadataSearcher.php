@@ -26,6 +26,9 @@ use core_kernel_classes_Property;
 use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\service\ConfigurableService;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
+use oat\tao\model\featureFlag\FeatureFlagChecker;
+use oat\tao\model\featureFlag\FeatureFlagCheckerInterface;
+use oat\tao\model\featureFlag\Service\FeatureBasedPropertiesService;
 use oat\tao\model\Lists\Business\Contract\ClassMetadataSearcherInterface;
 use oat\tao\model\Lists\Business\Domain\ClassCollection;
 use oat\tao\model\Lists\Business\Domain\ClassMetadata;
@@ -98,7 +101,9 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
         $allProperties = $this->getClassPathProperties($classUri, $allProperties);
         $allProperties = $this->filterDuplicatedProperties($allProperties);
 
-        return array_diff_key($allProperties, array_flip(self::UNACCEPTABLE_PROPERTIES));
+        $propertiesToHide = $this->getPropertiesToHide();
+
+        return array_diff_key($allProperties, array_flip($propertiesToHide));
     }
 
     private function getClassPathProperties(string $classUri, array $allProperties): array
@@ -266,6 +271,24 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
         return $widget && $widget->getUri() && !in_array($widget->getUri(), $ignoredWidgets, true);
     }
 
+    private function getPropertiesToHide(): array
+    {
+        $propertiesToHide = self::UNACCEPTABLE_PROPERTIES;
+        $featureFlagChecker = $this->getFeatureFlagChecker();
+
+        foreach ($this->getFeatureBasedPropertiesService()->getAllProperties() as $featureFlag => $properties) {
+            if (!$featureFlagChecker->isEnabled($featureFlag)) {
+                foreach ($properties as $property) {
+                    if (!in_array($property, $propertiesToHide, true)) {
+                        $propertiesToHide[] = $property;
+                    }
+                }
+            }
+        }
+
+        return $propertiesToHide;
+    }
+
     private function getClassMetadataSearcher(): ClassMetadataSearcherInterface
     {
         return $this->getServiceLocator()->get(ClassMetadataService::SERVICE_ID);
@@ -284,5 +307,15 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
     private function getSearch(): SearchProxy
     {
         return $this->getServiceLocator()->get(SearchProxy::SERVICE_ID);
+    }
+
+    private function getFeatureBasedPropertiesService(): FeatureBasedPropertiesService
+    {
+        return $this->getServiceLocator()->getContainer()->get(FeatureBasedPropertiesService::class);
+    }
+
+    private function getFeatureFlagChecker(): FeatureFlagCheckerInterface
+    {
+        return $this->getServiceLocator()->getContainer()->get(FeatureFlagChecker::class);
     }
 }
