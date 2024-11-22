@@ -27,6 +27,9 @@ use oat\generis\model\data\Ontology;
 use oat\generis\test\ServiceManagerMockTrait;
 use oat\oatbox\log\LoggerService;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
+use oat\tao\model\featureFlag\FeatureFlagChecker;
+use oat\tao\model\featureFlag\FeatureFlagCheckerInterface;
+use oat\tao\model\featureFlag\Service\FeatureFlagPropertiesMapping;
 use oat\tao\model\Lists\Business\Domain\ClassCollection;
 use oat\tao\model\Lists\Business\Domain\ClassMetadataSearchRequest;
 use oat\tao\model\Lists\Business\Domain\MetadataCollection;
@@ -74,6 +77,11 @@ class ClassMetadataSearcherTest extends TestCase
             ->method('getAdvancedSearch')
             ->willReturn($this->elasticSearch);
 
+        $featureFlagPropertiesMapping = $this->createMock(FeatureFlagPropertiesMapping::class);
+        $featureFlagPropertiesMapping
+            ->method('getAllProperties')
+            ->willReturn([]);
+
         $this->subject = new ClassMetadataSearcher();
         $this->subject->setServiceManager(
             $this->getServiceManagerMock(
@@ -82,7 +90,9 @@ class ClassMetadataSearcherTest extends TestCase
                     AdvancedSearchChecker::class => $this->advancedSearchChecker,
                     SearchProxy::SERVICE_ID => $this->search,
                     LoggerService::SERVICE_ID => $this->createMock(LoggerService::class),
-                    Ontology::SERVICE_ID => $this->ontology
+                    Ontology::SERVICE_ID => $this->ontology,
+                    FeatureFlagChecker::class => $this->createMock(FeatureFlagCheckerInterface::class),
+                    FeatureFlagPropertiesMapping::class => $featureFlagPropertiesMapping,
                 ]
             )
         );
