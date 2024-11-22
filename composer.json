@@ -27,11 +27,11 @@
     "oat-sa/oatbox-extension-installer": "~1.1||dev-master",
     "ext-json": "*",
     "oat-sa/generis": ">=15.22",
-    "oat-sa/tao-core": ">=54.21.0",
+    "oat-sa/tao-core": ">=54.24.0",
     "oat-sa/extension-tao-testqti": ">=48.11.0",
     "oat-sa/extension-tao-delivery": ">=14.10.1",
     "oat-sa/extension-tao-outcome": ">=13.0.0",
-    "oat-sa/extension-tao-test": ">=15.15.1",
+    "oat-sa/extension-tao-test": ">=16.4.0",
     "oat-sa/extension-tao-mediamanager": ">=12.32.1",
     "elasticsearch/elasticsearch": "^8.0"
   },

@@ -26,38 +26,47 @@ namespace oat\taoAdvancedSearch\model\Metadata\Service;
 
 use oat\generis\model\OntologyRdfs;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
+use oat\tao\model\featureFlag\FeatureFlagCheckerInterface;
+use oat\tao\model\featureFlag\Service\FeatureFlagPropertiesMapping;
 use oat\tao\model\Lists\Business\Contract\ClassMetadataSearcherInterface;
 use oat\tao\model\Lists\Business\Domain\ClassMetadataSearchRequest;
 use oat\tao\model\Lists\Business\Input\ClassMetadataSearchInput;
 use oat\tao\model\search\Contract\SearchSettingsServiceInterface;
 use oat\tao\model\search\ResultColumn;
 use oat\tao\model\search\SearchSettings;
+use oat\tao\model\TaoOntology;
 
 class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
 {
     private const OMIT_PROPERTIES = [
-        OntologyRdfs::RDFS_LABEL
+        OntologyRdfs::RDFS_LABEL,
+        TaoOntology::PROPERTY_TRANSLATION_TYPE,
+        TaoOntology::PROPERTY_TRANSLATION_PROGRESS,
+        TaoOntology::PROPERTY_TRANSLATION_ORIGINAL_RESOURCE_URI,
     ];
 
     public const DEFAULT_SORT_COLUMN = 'label.raw';
 
-    /** @var ClassMetadataSearcherInterface */
-    private $classMetadataSearcher;
+    private ClassMetadataSearcherInterface $classMetadataSearcher;
 
-    /** @var AdvancedSearchChecker */
-    private $advancedSearchChecker;
+    private AdvancedSearchChecker $advancedSearchChecker;
 
-    /** @var SearchSettingsServiceInterface */
-    private $defaultSearchSettingsService;
+    private SearchSettingsServiceInterface $defaultSearchSettingsService;
+    private FeatureFlagCheckerInterface $featureFlagChecker;
+    private FeatureFlagPropertiesMapping $featureFlagPropertiesMapping;
 
     public function __construct(
         ClassMetadataSearcherInterface $classMetadataSearcher,
         SearchSettingsServiceInterface $defaultSearchSettingsService,
-        AdvancedSearchChecker $advancedSearchChecker
+        AdvancedSearchChecker $advancedSearchChecker,
+        FeatureFlagCheckerInterface $featureFlagChecker,
+        FeatureFlagPropertiesMapping $featureFlagPropertiesMapping
     ) {
         $this->classMetadataSearcher = $classMetadataSearcher;
         $this->advancedSearchChecker = $advancedSearchChecker;
         $this->defaultSearchSettingsService = $defaultSearchSettingsService;
+        $this->featureFlagChecker = $featureFlagChecker;
+        $this->featureFlagPropertiesMapping = $featureFlagPropertiesMapping;
     }
 
     public function getSettingsByClassMetadataSearchRequest(
@@ -68,7 +77,9 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
                 ->getSettingsByClassMetadataSearchRequest($classMetadataSearchRequest);
         }
 
-        $classCollection = $this->classMetadataSearcher->findAll(new ClassMetadataSearchInput($classMetadataSearchRequest));
+        $classCollection = $this->classMetadataSearcher->findAll(
+            new ClassMetadataSearchInput($classMetadataSearchRequest)
+        );
 
         if ($classMetadataSearchRequest->getStructure() === 'results') {
             return new SearchSettings(
@@ -168,9 +179,11 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
             )
         ];
 
+        $propertiesToHide = $this->getPropertiesToHide();
+
         foreach ($classCollection->getIterator() as $class) {
             foreach ($class->getMetaData()->getIterator() as $metadata) {
-                if (in_array($metadata->getPropertyUri(), self::OMIT_PROPERTIES, true)) {
+                if (in_array($metadata->getPropertyUri(), $propertiesToHide, true)) {
                     continue;
                 }
 
@@ -189,5 +202,22 @@ class AdvancedSearchSettingsService implements SearchSettingsServiceInterface
         }
 
         return new SearchSettings($out);
+    }
+
+    private function getPropertiesToHide(): array
+    {
+        $propertiesToHide = self::OMIT_PROPERTIES;
+
+        foreach ($this->featureFlagPropertiesMapping->getAllProperties() as $featureFlag => $properties) {
+            if (!$this->featureFlagChecker->isEnabled($featureFlag)) {
+                foreach ($properties as $property) {
+                    if (!in_array($property, $propertiesToHide, true)) {
+                        $propertiesToHide[] = $property;
+                    }
+                }
+            }
+        }
+
+        return $propertiesToHide;
     }
 }

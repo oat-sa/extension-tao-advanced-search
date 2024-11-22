@@ -29,10 +29,11 @@ use Psr\SimpleCache\CacheInterface;
 
 class ClassUriCachedRepository extends ConfigurableService implements ClassUriRepositoryInterface
 {
-    private const CLASSES_INDEX = self::class . '::CLASSES_URIS';
-    private const CLASSES_INDEX_TOTAL = self::class . '::CLASSES_URIS_TOTAL';
-
     use OntologyAwareTrait;
+
+    private const CLASSES_INDEX = self::class . '::CLASSES_URIS';
+
+    private const CLASSES_INDEX_TOTAL = self::class . '::CLASSES_URIS_TOTAL';
 
     public function cacheWarmup(): void
     {

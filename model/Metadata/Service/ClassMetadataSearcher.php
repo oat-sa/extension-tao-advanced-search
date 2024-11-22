@@ -26,6 +26,9 @@ use core_kernel_classes_Property;
 use oat\generis\model\OntologyAwareTrait;
 use oat\oatbox\service\ConfigurableService;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
+use oat\tao\model\featureFlag\FeatureFlagChecker;
+use oat\tao\model\featureFlag\FeatureFlagCheckerInterface;
+use oat\tao\model\featureFlag\Service\FeatureFlagPropertiesMapping;
 use oat\tao\model\Lists\Business\Contract\ClassMetadataSearcherInterface;
 use oat\tao\model\Lists\Business\Domain\ClassCollection;
 use oat\tao\model\Lists\Business\Domain\ClassMetadata;
@@ -36,14 +39,21 @@ use oat\tao\model\Lists\Business\Service\ClassMetadataService;
 use oat\tao\model\Lists\Business\Service\GetClassMetadataValuesService;
 use oat\tao\model\search\ResultSet;
 use oat\tao\model\search\SearchProxy;
+use oat\tao\model\TaoOntology;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 use oat\taoAdvancedSearch\model\SearchEngine\Query;
 
 class ClassMetadataSearcher extends ConfigurableService implements ClassMetadataSearcherInterface
 {
+    use OntologyAwareTrait;
+
     private const BASE_LIST_ITEMS_URI = '/tao/PropertyValues/get?propertyUri=%s';
 
-    use OntologyAwareTrait;
+    private const UNACCEPTABLE_PROPERTIES = [
+        TaoOntology::PROPERTY_TRANSLATION_TYPE,
+        TaoOntology::PROPERTY_TRANSLATION_PROGRESS,
+        TaoOntology::PROPERTY_TRANSLATION_ORIGINAL_RESOURCE_URI,
+    ];
 
     public function findAll(ClassMetadataSearchInput $input): ClassCollection
     {
@@ -89,8 +99,11 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
         $allProperties = [$result];
         $allProperties = $this->getRelatedProperties($result, $allProperties);
         $allProperties = $this->getClassPathProperties($classUri, $allProperties);
+        $allProperties = $this->filterDuplicatedProperties($allProperties);
 
-        return $this->filterDuplicatedProperties($allProperties);
+        $propertiesToHide = $this->getPropertiesToHide();
+
+        return array_diff_key($allProperties, array_flip($propertiesToHide));
     }
 
     private function getClassPathProperties(string $classUri, array $allProperties): array
@@ -258,6 +271,24 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
         return $widget && $widget->getUri() && !in_array($widget->getUri(), $ignoredWidgets, true);
     }
 
+    private function getPropertiesToHide(): array
+    {
+        $propertiesToHide = self::UNACCEPTABLE_PROPERTIES;
+        $featureFlagChecker = $this->getFeatureFlagChecker();
+
+        foreach ($this->getFeatureFlagPropertiesMapping()->getAllProperties() as $featureFlag => $properties) {
+            if (!$featureFlagChecker->isEnabled($featureFlag)) {
+                foreach ($properties as $property) {
+                    if (!in_array($property, $propertiesToHide, true)) {
+                        $propertiesToHide[] = $property;
+                    }
+                }
+            }
+        }
+
+        return $propertiesToHide;
+    }
+
     private function getClassMetadataSearcher(): ClassMetadataSearcherInterface
     {
         return $this->getServiceLocator()->get(ClassMetadataService::SERVICE_ID);
@@ -276,5 +307,15 @@ class ClassMetadataSearcher extends ConfigurableService implements ClassMetadata
     private function getSearch(): SearchProxy
     {
         return $this->getServiceLocator()->get(SearchProxy::SERVICE_ID);
+    }
+
+    private function getFeatureFlagPropertiesMapping(): FeatureFlagPropertiesMapping
+    {
+        return $this->getServiceLocator()->getContainer()->get(FeatureFlagPropertiesMapping::class);
+    }
+
+    private function getFeatureFlagChecker(): FeatureFlagCheckerInterface
+    {
+        return $this->getServiceLocator()->getContainer()->get(FeatureFlagChecker::class);
     }
 }
