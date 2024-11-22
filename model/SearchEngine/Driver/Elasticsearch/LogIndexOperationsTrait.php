@@ -148,7 +148,7 @@ trait LogIndexOperationsTrait
         LoggerInterface $logger,
         Throwable $e,
         string $method,
-        string $script='',
+        string $script = '',
         $type = null,
         array $query = []
     ): void {

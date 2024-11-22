@@ -79,8 +79,7 @@ class IndexSummarizer extends ConfigurableService
         string $label,
         string $index,
         int $totalInDb
-    ): array
-    {
+    ): array {
         $totalIndexed = $this->getTotalResults($index);
         $percentageIndexed = $totalIndexed === 0 || $totalInDb === 0
             ? 0

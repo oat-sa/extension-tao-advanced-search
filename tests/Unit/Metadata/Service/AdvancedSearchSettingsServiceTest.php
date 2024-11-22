@@ -25,6 +25,8 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\tests\Unit\model\Metadata\Service;
 
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
+use oat\tao\model\featureFlag\FeatureFlagCheckerInterface;
+use oat\tao\model\featureFlag\Service\FeatureFlagPropertiesMapping;
 use oat\tao\model\Lists\Business\Contract\ClassMetadataSearcherInterface;
 use oat\tao\model\Lists\Business\Domain\ClassCollection;
 use oat\tao\model\Lists\Business\Domain\ClassMetadata;
@@ -56,10 +58,19 @@ class AdvancedSearchSettingsServiceTest extends TestCase
         $this->classMetadataSearcher = $this->createMock(ClassMetadataSearcherInterface::class);
         $this->defaultSearchSettingsService = $this->createMock(SearchSettingsServiceInterface::class);
         $this->advancedSearchChecker = $this->createMock(AdvancedSearchChecker::class);
+        $featureFlagChecker = $this->createMock(FeatureFlagCheckerInterface::class);
+        $featureFlagPropertiesMapping = $this->createMock(FeatureFlagPropertiesMapping::class);
+
+        $featureFlagPropertiesMapping
+            ->method('getAllProperties')
+            ->willReturn([]);
+
         $this->subject = new AdvancedSearchSettingsService(
             $this->classMetadataSearcher,
             $this->defaultSearchSettingsService,
-            $this->advancedSearchChecker
+            $this->advancedSearchChecker,
+            $featureFlagChecker,
+            $featureFlagPropertiesMapping
         );
     }
 

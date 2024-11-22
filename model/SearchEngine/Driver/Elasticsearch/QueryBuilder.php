@@ -80,6 +80,13 @@ class QueryBuilder
         'RadioBox',
         'SearchTextBox',
         'SearchDropdown',
+        'Readonly',
+    ];
+
+    private const LOGIC_MODIFIERS = [
+        'and' => 'LOGIC_AND',
+        'or' => 'LOGIC_OR',
+        'not' => 'LOGIC_NOT'
     ];
 
     /** @var UseAclSpecification */
@@ -126,6 +133,7 @@ class QueryBuilder
         );
 
         $queryString = htmlspecialchars_decode($queryString);
+
         $blocks = preg_split('/( AND )/i', $queryString);
         $index = $this->getIndexByType($type);
         $conditions = $this->buildConditions($index, $blocks);
@@ -207,28 +215,77 @@ class QueryBuilder
         return $this->getResourceConditions($blocks);
     }
 
+    private function containsLogicalModifier(string $block): bool
+    {
+        foreach (self::LOGIC_MODIFIERS as $logicModifier) {
+            if (strpos($block, $logicModifier) !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function buildLogicCondition(string $block): ?string
+    {
+        if (strpos($block, self::LOGIC_MODIFIERS['and']) !== false) {
+            $logicBlocks = preg_split('/( ' . self::LOGIC_MODIFIERS['and'] . ' )/i', $block);
+            $conditions = array_map([$this, 'buildConditionFromTheBlock'], $logicBlocks);
+
+            return sprintf('(%s)', implode(' AND ', $conditions));
+        }
+
+        if (strpos($block, self::LOGIC_MODIFIERS['or']) !== false) {
+            $logicBlocks = preg_split('/( ' . self::LOGIC_MODIFIERS['or'] . ' )/i', $block);
+            $conditions = array_map([$this,'buildConditionFromTheBlock'], $logicBlocks);
+
+            return sprintf('(%s)', implode(' OR ', $conditions));
+        }
+
+        if (strpos($block, self::LOGIC_MODIFIERS['not']) !== false) {
+            $logicBlocks = preg_split('/( ' . self::LOGIC_MODIFIERS['not'] . ' )/i', $block);
+            $conditions = array_map([$this,'buildConditionFromTheBlock'], $logicBlocks);
+
+            return sprintf('NOT (%s)', implode(' OR ', $conditions));
+        }
+
+        return null;
+    }
+
     private function getResourceConditions(array $blocks): array
     {
-        $conditions = [];
-        foreach ($blocks as $block) {
-            $queryBlock = $this->parseBlock($block);
 
-            if (empty($queryBlock->getField())) {
-                $conditions[] = sprintf('("%s")', $queryBlock->getTerm());
-            } elseif ($this->isStandardField($queryBlock->getField())) {
-                $conditions[] = sprintf('(%s:"%s")', $queryBlock->getField(), $queryBlock->getTerm());
+        $conditions = [];
+
+        foreach ($blocks as $block) {
+            if ($this->containsLogicalModifier($block)) {
+                $conditions[] =  $this->buildLogicCondition($block);
             } else {
-                $conditions[] = $this->buildCustomConditions($queryBlock);
+                $conditions[] =  $this->buildConditionFromTheBlock($block);
             }
         }
 
         return $conditions;
     }
 
+    private function buildConditionFromTheBlock(string $block): string
+    {
+        $queryBlock = $this->parseBlock($block);
+        if (empty($queryBlock->getField())) {
+            return sprintf('("%s")', $queryBlock->getTerm());
+        } elseif ($this->isStandardField($queryBlock->getField())) {
+            return sprintf('(%s:"%s")', $queryBlock->getField(), $queryBlock->getTerm());
+        } else {
+            return $this->buildCustomConditions($queryBlock);
+        }
+        return '';
+    }
+
     private function isStandardField(string $field): bool
     {
         return in_array(strtolower($field), self::STANDARD_FIELDS);
     }
+
 
     private function getIndexByType(string $type): string
     {

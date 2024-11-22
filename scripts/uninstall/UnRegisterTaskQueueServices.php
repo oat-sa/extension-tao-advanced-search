@@ -39,8 +39,8 @@ class UnRegisterTaskQueueServices extends InstallAction
         return new Report(Report::TYPE_SUCCESS, 'Indexation TaskQueue `%s` was unregistered', $queueName);
     }
 
-    private function getAssociationService(): QueueAssociationService{
+    private function getAssociationService(): QueueAssociationService
+    {
         return $this->getServiceManager()->get(QueueAssociationService::class);
     }
-
 }

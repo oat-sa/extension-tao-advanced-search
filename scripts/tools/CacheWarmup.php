@@ -76,7 +76,10 @@ class CacheWarmup extends ScriptAction implements ServiceLocatorAwareInterface
 
         $report->add(
             Report::createSuccess(
-                sprintf('Cache warmed up! ROOT classUris (%s) in cache', implode(', ', $indexableClassRepository->findAllUris()))
+                sprintf(
+                    'Cache warmed up! ROOT classUris (%s) in cache',
+                    implode(', ', $indexableClassRepository->findAllUris())
+                )
             )
         );
 

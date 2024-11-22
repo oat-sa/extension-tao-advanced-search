@@ -58,5 +58,4 @@ class MetadataInheritanceListener extends ConfigurableService implements Listene
         );
         return $indexer;
     }
-
 }
