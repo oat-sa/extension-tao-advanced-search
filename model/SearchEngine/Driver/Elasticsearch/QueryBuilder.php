@@ -175,10 +175,10 @@ class QueryBuilder
         return $params;
     }
 
-    public function getBoolQuery(string $field, array $values, ?int $size = self::DEFAULT_SIZE): array
+    public function getBoolQuery(string $field, array $values, string $index, ?int $size = self::DEFAULT_SIZE): array
     {
         return [
-            'index' => 'tests',
+            'index' => $index,
             'body' => [
                 'query' => [
                     'bool' => [

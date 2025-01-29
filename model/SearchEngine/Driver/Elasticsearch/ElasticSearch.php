@@ -114,9 +114,9 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
         return $this->buildResultSet($this->client->search($query)->asArray());
     }
 
-    public function boolQuery(string $field, array $values, ?int $size): SearchResult
+    public function boolQuery(string $field, array $values, string $index, ?int $size): SearchResult
     {
-        $query = $this->queryBuilder->getBoolQuery($field, $values, $size);
+        $query = $this->queryBuilder->getBoolQuery($field, $values, $index, $size);
 
         return $this->searchResultNormalizer->normalizeByByResultSet(
             $this->buildResultSet($this->client->search($query)->asArray())
