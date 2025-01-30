@@ -26,7 +26,9 @@ namespace oat\taoAdvancedSearch\model\Resource\ServiceProvider;
 
 use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
 use oat\tao\model\taskQueue\QueueDispatcherInterface;
+use oat\taoAdvancedSearch\model\Resource\Service\ItemRelationsService;
 use oat\taoAdvancedSearch\model\Resource\Service\ResourceIndexer;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\ItemUsageService;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
@@ -46,5 +48,11 @@ class ResourceServiceProvider implements ContainerServiceProviderInterface
                     service(QueueDispatcherInterface::SERVICE_ID),
                 ]
             )->public();
+
+        $services->set(ItemRelationsService::class)
+            ->args([
+                service(ItemUsageService::class),
+            ])
+            ->public();
     }
 }

@@ -24,6 +24,7 @@ use oat\taoAdvancedSearch\model\Resource\ServiceProvider\ResourceServiceProvider
 use oat\taoAdvancedSearch\model\SearchEngine\ServiceProvider\SearchEngineProvider;
 use oat\taoAdvancedSearch\model\Test\ServiceProvider\TestServiceProvider;
 use oat\taoAdvancedSearch\scripts\install\RegisterEvents;
+use oat\taoAdvancedSearch\scripts\install\RegisterItemRelationsService;
 use oat\taoAdvancedSearch\scripts\install\RegisterServices;
 use oat\taoAdvancedSearch\scripts\install\RegisterTaskQueueServices;
 use oat\taoAdvancedSearch\scripts\uninstall\UnRegisterTaskQueueServices;
@@ -64,5 +65,6 @@ return [
         SearchEngineProvider::class,
         ResourceServiceProvider::class,
         TestServiceProvider::class,
+        RegisterItemRelationsService::class
     ]
 ];
