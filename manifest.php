@@ -47,7 +47,6 @@ return [
             RegisterEvents::class,
             RegisterTaskQueueServices::class,
             RegisterItemRelationsService::class,
-            RegisterItemRelationsService::class
         ],
         'rdf' => []
     ],
