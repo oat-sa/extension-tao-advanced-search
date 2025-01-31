@@ -24,6 +24,7 @@ namespace oat\taoAdvancedSearch\model\SearchEngine\Service;
 
 use oat\tao\model\search\ResultSet;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
+use oat\taoAdvancedSearch\model\SearchEngine\Query;
 
 class ItemUsageService
 {
@@ -37,6 +38,10 @@ class ItemUsageService
 
     public function getItemTests(array $itemUris): ResultSet
     {
-        return $this->elasticSearch->boolQuery('item_uris', $itemUris,self::TEST_INDEX);
+        $query = new Query(self::TEST_INDEX);
+        foreach ($itemUris as $itemUri) {
+            $query->addCondition(sprintf('item_uris:"%s"', $itemUri));
+        }
+        return $this->elasticSearch->search($query);
     }
 }

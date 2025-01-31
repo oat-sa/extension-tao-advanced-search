@@ -32,22 +32,8 @@ class RegisterItemRelationsService extends InstallAction
     public function __invoke($params)
     {
         if ($this->getServiceManager()->get(SearchProxy::class)->supportCustomIndex()) {
-            $resourceRelationService = $this->getServiceManager()->get(ResourceRelationServiceProxy::SERVICE_ID);
-            $services = $resourceRelationService->getOption(ResourceRelationServiceProxy::OPTION_SERVICES);
-
-            if (!isset($services['test'])) {
-                $services['test'] = [];
-            }
-
-            if (is_array($services['test'])) {
-                $services['test'][] = ItemRelationsService::class;
-            }
-
-            $resourceRelationService->setOption(ResourceRelationServiceProxy::OPTION_SERVICES, $services);
-
-            $this->getServiceManager()->register(
-                ResourceRelationServiceProxy::SERVICE_ID, $resourceRelationService
-            );
+            $this->getServiceManager()->get(ResourceRelationServiceProxy::class)
+                ->addService('test', ItemRelationsService::class);
         }
     }
 }

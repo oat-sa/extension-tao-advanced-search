@@ -29,7 +29,6 @@ use Iterator;
 use oat\tao\model\search\SearchInterface as TaoSearchInterface;
 use oat\tao\model\search\SyntaxException;
 use oat\tao\model\search\ResultSet;
-use oat\taoAdvancedSearch\model\SearchEngine\Contract\BoolSearchInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\SearchInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Normalizer\SearchResultNormalizer;
@@ -38,7 +37,7 @@ use oat\taoAdvancedSearch\model\SearchEngine\SearchResult;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use Psr\Log\LoggerInterface;
 
-class ElasticSearch implements SearchInterface, TaoSearchInterface, BoolSearchInterface
+class ElasticSearch implements SearchInterface, TaoSearchInterface
 {
     /** @var string */
     private $indexFile;
@@ -113,15 +112,6 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface, BoolSearchIn
         ];
 
         return $this->buildResultSet($this->client->search($query)->asArray());
-    }
-
-    public function boolQuery(string $field, array $values, string $index, ?int $size = null): SearchResult
-    {
-        $query = $this->queryBuilder->getBoolQuery($field, $values, $index, $size);
-
-        return $this->searchResultNormalizer->normalizeByByResultSet(
-            $this->buildResultSet($this->client->search($query)->asArray())
-        );
     }
 
     public function query($queryString, $type, $start = 0, $count = 10, $order = '_id', $dir = 'DESC'): ResultSet
