@@ -29,7 +29,6 @@ use oat\taoAdvancedSearch\model\Resource\Service\ItemRelationsService;
 
 class RegisterItemRelationsService extends InstallAction
 {
-
     public function __invoke($params)
     {
         if ($this->getServiceManager()->get(SearchProxy::class)->supportCustomIndex()) {

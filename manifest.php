@@ -46,6 +46,8 @@ return [
             RegisterServices::class,
             RegisterEvents::class,
             RegisterTaskQueueServices::class,
+            RegisterItemRelationsService::class,
+            RegisterItemRelationsService::class
         ],
         'rdf' => []
     ],
@@ -65,6 +67,5 @@ return [
         SearchEngineProvider::class,
         ResourceServiceProvider::class,
         TestServiceProvider::class,
-        RegisterItemRelationsService::class
     ]
 ];
