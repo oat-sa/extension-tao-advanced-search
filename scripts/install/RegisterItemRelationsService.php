@@ -39,7 +39,7 @@ class RegisterItemRelationsService extends InstallAction
                 $services['test'] = [];
             }
 
-            if (is_array($services['tests'])) {
+            if (is_array($services['test'])) {
                 $services['test'][] = ItemRelationsService::class;
             }
 
