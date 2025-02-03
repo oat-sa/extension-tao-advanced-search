@@ -30,15 +30,7 @@ final class Version202501301912171488_taoAdvancedSearch extends AbstractMigratio
     public function down(Schema $schema): void
     {
         $resourceRelationService = $this->getServiceManager()->get(ResourceRelationServiceProxy::SERVICE_ID);
-        $services = $resourceRelationService->getOption(ResourceRelationServiceProxy::OPTION_SERVICES);
-
-        if (isset($services['test']) && is_array($services['test'])) {
-            $services['test'] = array_filter($services['test'], function ($service) {
-                return $service !== ItemRelationsService::class;
-            });
-        }
-
-        $resourceRelationService->setOption(ResourceRelationServiceProxy::OPTION_SERVICES, $services);
+        $resourceRelationService->removeService('test', ItemRelationsService::class);
         $this->getServiceManager()->register(
             ResourceRelationServiceProxy::SERVICE_ID, $resourceRelationService
         );
