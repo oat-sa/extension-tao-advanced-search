@@ -35,7 +35,6 @@ use common_Utils;
 
 class QueryBuilder
 {
-    private const DEFAULT_SIZE = 10;
     private const QUERY_STRING_REPLACEMENTS = [
         '"' => '',
         '\'' => '',
@@ -173,27 +172,6 @@ class QueryBuilder
         $this->logger->debug('Elastic Query: ' . json_encode($params));
 
         return $params;
-    }
-
-    public function getBoolQuery(string $field, array $values, string $index, ?int $size = self::DEFAULT_SIZE): array
-    {
-        return [
-            'index' => $index,
-            'body' => [
-                'query' => [
-                    'bool' => [
-                        "must" => [
-                            [
-                                'terms' => [
-                                    $field => $values
-                                ]
-                            ]
-                        ]
-                    ]
-                ],
-            ],
-            'size' => $size
-        ];
     }
 
     private function buildConditions(string $index, array $blocks): array
