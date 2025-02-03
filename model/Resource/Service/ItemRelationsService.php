@@ -26,29 +26,43 @@ use oat\tao\model\resources\relation\FindAllQuery;
 use oat\tao\model\resources\relation\ResourceRelation;
 use oat\tao\model\resources\relation\ResourceRelationCollection;
 use oat\tao\model\resources\relation\service\ResourceRelationServiceInterface;
-use oat\taoAdvancedSearch\model\SearchEngine\Service\ItemUsageService;
+use oat\tao\model\search\ResultSet;
+use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
+use oat\taoAdvancedSearch\model\SearchEngine\Query;
 
 class ItemRelationsService implements ResourceRelationServiceInterface
 {
-    private ItemUsageService $itemUsageService;
+    private const TEST_INDEX = 'tests';
+    private const TEST_RELATION = 'test';
+    private const ITEM_URIS = 'item_uris';
+    private ElasticSearch $elasticSearch;
 
-    public function __construct(ItemUsageService $itemUsageService)
+    public function __construct(ElasticSearch $elasticSearch)
     {
-        $this->itemUsageService = $itemUsageService;
+        $this->elasticSearch = $elasticSearch;
     }
 
     public function findRelations(FindAllQuery $query): ResourceRelationCollection
     {
         $resourceRelationCollection = new ResourceRelationCollection();
-        foreach ($this->itemUsageService->getItemTests([$query->getSourceId()]) as $itemUsage) {
+        foreach ($this->getItemTests([$query->getSourceId()]) as $itemUsage) {
             $label = $itemUsage['label'] ?? [];
             $resourceRelationCollection->add(new ResourceRelation(
-                'test',
+                self::TEST_RELATION,
                 $itemUsage['id'],
                 reset($label)
             ));
         }
 
         return $resourceRelationCollection;
+    }
+
+    public function getItemTests(array $itemUris): ResultSet
+    {
+        $query = new Query(self::TEST_INDEX);
+        foreach ($itemUris as $itemUri) {
+            $query->addCondition(sprintf('%s:"%s"',self::ITEM_URIS, $itemUri));
+        }
+        return $this->elasticSearch->search($query);
     }
 }
