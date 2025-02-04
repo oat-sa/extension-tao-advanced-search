@@ -57,7 +57,7 @@ class ItemRelationsService implements ResourceRelationServiceInterface
         return $resourceRelationCollection;
     }
 
-    public function getItemTests(array $itemUris): ResultSet
+    private function getItemTests(array $itemUris): ResultSet
     {
         $query = new Query(self::TEST_INDEX);
         foreach ($itemUris as $itemUri) {
