@@ -22,6 +22,8 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\Resource\Service;
 
+use common_Logger;
+use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\resources\relation\FindAllQuery;
 use oat\tao\model\resources\relation\ResourceRelation;
 use oat\tao\model\resources\relation\ResourceRelationCollection;
@@ -36,15 +38,22 @@ class ItemRelationsService implements ResourceRelationServiceInterface
     private const TEST_RELATION = 'test';
     private const ITEM_URIS = 'item_uris';
     private ElasticSearch $elasticSearch;
+    private AdvancedSearchChecker $advancedSearchChecker;
 
-    public function __construct(ElasticSearch $elasticSearch)
+    public function __construct(ElasticSearch $elasticSearch, AdvancedSearchChecker $advancedSearchChecker)
     {
         $this->elasticSearch = $elasticSearch;
+        $this->advancedSearchChecker = $advancedSearchChecker;
     }
 
     public function findRelations(FindAllQuery $query): ResourceRelationCollection
     {
         $resourceRelationCollection = new ResourceRelationCollection();
+        if (!$this->advancedSearchChecker->isEnabled()) {
+            common_Logger::w('Advanced search is enabled, skipping item relations search');
+            return $resourceRelationCollection;
+        }
+
         foreach ($this->getItemTests([$query->getSourceId()]) as $itemUsage) {
             $label = $itemUsage['label'] ?? [];
             $resourceRelationCollection->add(new ResourceRelation(

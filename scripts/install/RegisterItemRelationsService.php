@@ -24,20 +24,17 @@ namespace oat\taoAdvancedSearch\scripts\install;
 
 use oat\oatbox\extension\InstallAction;
 use oat\tao\model\resources\relation\service\ResourceRelationServiceProxy;
-use oat\tao\model\search\SearchProxy;
 use oat\taoAdvancedSearch\model\Resource\Service\ItemRelationsService;
 
 class RegisterItemRelationsService extends InstallAction
 {
     public function __invoke($params)
     {
-        if ($this->getServiceManager()->get(SearchProxy::class)->supportCustomIndex()) {
-            $resourceRelationServiceProxy = $this->getServiceManager()->get(ResourceRelationServiceProxy::SERVICE_ID);
-            $resourceRelationServiceProxy->addService('test', ItemRelationsService::class);
-            $this->getServiceManager()->register(
-                ResourceRelationServiceProxy::SERVICE_ID,
-                $resourceRelationServiceProxy
-            );
-        }
+        $resourceRelationServiceProxy = $this->getServiceManager()->get(ResourceRelationServiceProxy::SERVICE_ID);
+        $resourceRelationServiceProxy->addService('test', ItemRelationsService::class);
+        $this->getServiceManager()->register(
+            ResourceRelationServiceProxy::SERVICE_ID,
+            $resourceRelationServiceProxy
+        );
     }
 }

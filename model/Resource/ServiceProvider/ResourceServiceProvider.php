@@ -25,8 +25,11 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\Resource\ServiceProvider;
 
 use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
+use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\taskQueue\QueueDispatcherInterface;
+use oat\taoAdvancedSearch\model\Resource\Service\ItemRelationsService;
 use oat\taoAdvancedSearch\model\Resource\Service\ResourceIndexer;
+use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
@@ -46,5 +49,12 @@ class ResourceServiceProvider implements ContainerServiceProviderInterface
                     service(QueueDispatcherInterface::SERVICE_ID),
                 ]
             )->public();
+
+        $services->set(ItemRelationsService::class)
+            ->args([
+                service(ElasticSearch::class),
+                service(AdvancedSearchChecker::class)
+            ])
+            ->public();
     }
 }
