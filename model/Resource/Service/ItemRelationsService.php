@@ -61,7 +61,7 @@ class ItemRelationsService implements ResourceRelationServiceInterface
     {
         $query = new Query(self::TEST_INDEX);
         foreach ($itemUris as $itemUri) {
-            $query->addCondition(sprintf('%s:"%s"',self::ITEM_URIS, $itemUri));
+            $query->addCondition(sprintf('%s:"%s"', self::ITEM_URIS, $itemUri));
         }
         return $this->elasticSearch->search($query);
     }
