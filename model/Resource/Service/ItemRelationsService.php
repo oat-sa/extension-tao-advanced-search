@@ -43,8 +43,11 @@ class ItemRelationsService implements ResourceRelationServiceInterface
     private AdvancedSearchChecker $advancedSearchChecker;
     private Ontology $ontology;
 
-    public function __construct(ElasticSearch $elasticSearch, AdvancedSearchChecker $advancedSearchChecker, Ontology $ontology)
-    {
+    public function __construct(
+        ElasticSearch $elasticSearch,
+        AdvancedSearchChecker $advancedSearchChecker,
+        Ontology $ontology
+    ) {
         $this->elasticSearch = $elasticSearch;
         $this->advancedSearchChecker = $advancedSearchChecker;
         $this->ontology = $ontology;
@@ -92,9 +95,10 @@ class ItemRelationsService implements ResourceRelationServiceInterface
         }
 
         if ($query->getClassId()) {
+            $classResources = $this->ontology->getClass($query->getClassId())->getNestedResources();
             return $this->searchTestWithItems(
                 array_column(
-                    array_filter($this->ontology->getClass($query->getClassId())->getNestedResources(), function ($item) {
+                    array_filter($classResources, function ($item) {
                         return $item['isclass'] === 0;
                     }),
                     'id'
