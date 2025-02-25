@@ -22,9 +22,12 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\Resource\Service;
 
+use core_kernel_classes_Resource;
+use oat\generis\model\data\Ontology;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\resources\relation\FindAllQuery;
 use oat\tao\model\resources\relation\ResourceRelation;
+use oat\tao\model\resources\relation\ResourceRelationCollection;
 use oat\taoAdvancedSearch\model\Resource\Service\ItemRelationsService;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 use oat\taoAdvancedSearch\model\SearchEngine\SearchResult;
@@ -36,12 +39,13 @@ class ItemRelationsServiceTest extends TestCase
     {
         $this->elasticSearch = $this->createMock(ElasticSearch::class);
         $this->advancedSearchChecker = $this->createMock(AdvancedSearchChecker::class);
-        $this->subject = new ItemRelationsService($this->elasticSearch, $this->advancedSearchChecker);
+        $this->ontology = $this->createMock(Ontology::class);
+        $this->subject = new ItemRelationsService($this->elasticSearch, $this->advancedSearchChecker, $this->ontology);
     }
 
-    public function testFindRelations(): void
+    public function testFindRelationsForItem(): void
     {
-        $query = new FindAllQuery('sourceId', 'classId', 'test');
+        $query = new FindAllQuery('itemSourceId', null, 'test');
         $this->advancedSearchChecker->method('isEnabled')->willReturn(true);
 
         $resultSearch = new SearchResult(
@@ -54,21 +58,63 @@ class ItemRelationsServiceTest extends TestCase
             1
         );
 
-        $this->elasticSearch->method('search')->willReturn($resultSearch);
+        $this->elasticSearch->method('query')->willReturn($resultSearch);
 
         $result = $this->subject->findRelations($query);
         $resultContent = $result->jsonSerialize();
         /** @var ResourceRelation $firstResult */
         $firstResult = reset($resultContent);
-        $this->assertEquals(1, count($result->getIterator()));
         $this->assertEquals('some_id', $firstResult->getId());
+    }
+
+    public function testFindRelations(): void
+    {
+        $classMock = $this->createMock(core_kernel_classes_Resource::class);
+        $query = new FindAllQuery(null, 'classUri', 'test');
+        $this->advancedSearchChecker->method('isEnabled')->willReturn(true);
+        $this->ontology->method('getClass')->willReturn($classMock);
+        $classMock->method('getNestedResources')->willReturn(
+            [
+                [
+                    'id' => 'some_id',
+                    'isclass' => 0,
+                    'label' => ['some label']
+                ],
+                [
+                    'id' => 'some_other_id',
+                    'isclass' => 1,
+                    'label' => ['some other label']
+                ],
+            ]
+        );
+
+        $resultSearch = new SearchResult(
+            [
+                [
+                    'label' => ['some label'],
+                    'id' => 'some_id'
+                ]
+            ],
+            1
+        );
+
+        $this->elasticSearch
+            ->method('query')
+            ->with('item_uris:some_id', 'tests', 0, 20, 'label.raw', 'DESC')
+            ->willReturn($resultSearch);
+
+        $result = $this->subject->findRelations($query);
+        $this->assertInstanceOf(ResourceRelationCollection::class, $result);
+        self::assertCount(1, $result->jsonSerialize());
+        $this->assertInstanceOf(ResourceRelation::class, $result->getIterator()->current());
     }
 
     public function testFindRelationsWhenAdvancedSearchDisabled(): void
     {
         $query = new FindAllQuery('sourceId', 'classId', 'test');
-        $this->advancedSearchChecker->method('isEnabled')->willReturn(true);
+        $this->advancedSearchChecker->method('isEnabled')->willReturn(false);
         $result = $this->subject->findRelations($query);
-        $this->assertEquals(0, count($result->getIterator()));
+        $this->assertInstanceOf(ResourceRelationCollection::class, $result);
+        $this->assertEmpty($result->jsonSerialize());
     }
 }

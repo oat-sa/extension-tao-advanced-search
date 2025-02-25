@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (c) 2022 (original work) Open Assessment Technologies SA;
+ * Copyright (c) 2022-2025 (original work) Open Assessment Technologies SA;
  *
  * @author Gabriel Felipe Soares <gabriel.felipe.soares@taotesting.com>
  */
@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\Resource\ServiceProvider;
 
+use oat\generis\model\data\Ontology;
 use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\taskQueue\QueueDispatcherInterface;
@@ -53,7 +54,8 @@ class ResourceServiceProvider implements ContainerServiceProviderInterface
         $services->set(ItemRelationsService::class)
             ->args([
                 service(ElasticSearch::class),
-                service(AdvancedSearchChecker::class)
+                service(AdvancedSearchChecker::class),
+                service(Ontology::SERVICE_ID)
             ])
             ->public();
     }

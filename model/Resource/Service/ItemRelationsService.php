@@ -23,6 +23,8 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\Resource\Service;
 
 use common_Logger;
+use InvalidArgumentException;
+use oat\generis\model\data\Ontology;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\resources\relation\FindAllQuery;
 use oat\tao\model\resources\relation\ResourceRelation;
@@ -39,22 +41,24 @@ class ItemRelationsService implements ResourceRelationServiceInterface
     private const ITEM_URIS = 'item_uris';
     private ElasticSearch $elasticSearch;
     private AdvancedSearchChecker $advancedSearchChecker;
+    private Ontology $ontology;
 
-    public function __construct(ElasticSearch $elasticSearch, AdvancedSearchChecker $advancedSearchChecker)
+    public function __construct(ElasticSearch $elasticSearch, AdvancedSearchChecker $advancedSearchChecker, Ontology $ontology)
     {
         $this->elasticSearch = $elasticSearch;
         $this->advancedSearchChecker = $advancedSearchChecker;
+        $this->ontology = $ontology;
     }
 
     public function findRelations(FindAllQuery $query): ResourceRelationCollection
     {
         $resourceRelationCollection = new ResourceRelationCollection();
         if (!$this->advancedSearchChecker->isEnabled()) {
-            common_Logger::w('Advanced search is enabled, skipping item relations search');
+            common_Logger::w('Advanced search is not enabled, skipping item relations search');
             return $resourceRelationCollection;
         }
 
-        foreach ($this->getItemTests([$query->getSourceId()]) as $itemUsage) {
+        foreach ($this->getTests($query) as $itemUsage) {
             $label = $itemUsage['label'] ?? [];
             $resourceRelationCollection->add(new ResourceRelation(
                 self::TEST_RELATION,
@@ -66,12 +70,38 @@ class ItemRelationsService implements ResourceRelationServiceInterface
         return $resourceRelationCollection;
     }
 
-    private function getItemTests(array $itemUris): ResultSet
+    private function searchTestWithItems(array $itemUris): ResultSet
     {
-        $query = new Query(self::TEST_INDEX);
         foreach ($itemUris as $itemUri) {
-            $query->addCondition(sprintf('%s:"%s"', self::ITEM_URIS, $itemUri));
+            $conditions[] = (sprintf('%s:%s', self::ITEM_URIS, $itemUri));
         }
-        return $this->elasticSearch->search($query);
+
+        return $this->elasticSearch->query(
+            implode(' LOGIC_OR ', $conditions),
+            self::TEST_INDEX,
+            0,
+            20,
+            'label.raw'
+        );
+    }
+
+    private function getTests(FindAllQuery $query): ResultSet
+    {
+        if ($query->getSourceId()) {
+            return $this->searchTestWithItems([$query->getSourceId()]);
+        }
+
+        if ($query->getClassId()) {
+            return $this->searchTestWithItems(
+                array_column(
+                    array_filter($this->ontology->getClass($query->getClassId())->getNestedResources(), function ($item) {
+                        return $item['isclass'] === 0;
+                    }),
+                    'id'
+                )
+            );
+        }
+
+        throw new InvalidArgumentException('Query must have either sourceId or classId');
     }
 }
