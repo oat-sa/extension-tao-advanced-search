@@ -30,6 +30,8 @@ use Exception;
 use oat\tao\model\search\ResultSet;
 use oat\tao\model\search\strategy\GenerisSearch;
 use oat\tao\model\search\SyntaxException;
+use oat\taoAdvancedSearch\model\SearchEngine\AggregationQuery;
+use oat\taoAdvancedSearch\model\SearchEngine\AggregationResult;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\QueryBuilder;
@@ -252,6 +254,62 @@ class ElasticSearchTest extends TestCase
         $resultSet = $this->sut->query('item', $validType);
     }
 
+    public function testAggregate()
+    {
+        $aggQuery = new AggregationQuery(
+            new Query('indexName'),
+            [
+                'matching_uris' => [
+                    'terms' => [
+                        'field' => 'item_uris',
+                        'include' => [
+                            "used-item-uri-1",
+                            "not-used-item-uri-1"
+                        ]
+                    ]
+                ]
+            ],
+            [
+                'item_uris' => [
+                    "used-item-uri-1",
+                    "not-used-item-uri-1"
+                ]
+            ]
+        );
+        $this->prefixer->expects($this->once())
+            ->method('prefix')
+            ->with('indexName')
+            ->willReturn('indexName');
+
+        $responseMock = $this->createMock(ResponseElasticsearch::class);
+
+        $this->client->expects($this->once())
+            ->method('search')
+            ->willReturn($responseMock);
+
+        $responseMock->expects($this->once())
+            ->method('asArray')
+            ->willReturn([
+                'hits' => [
+                    'total' => [
+                        'value' => 1
+                    ]
+                ],
+                'aggregations' => [
+                    'matching_uris' => [
+                        'buckets' => [
+                            [
+                                'key' => 'used-item-uri-1',
+                                'doc_count' => 1
+                            ]
+                        ]
+                    ]
+                ]
+            ]);
+
+        $res = $this->sut->aggregate($aggQuery);
+        $this->assertInstanceOf(AggregationResult::class, $res);
+    }
     public function testCreateIndexesCallIndexCreationBasedOnIndexOption(): void
     {
         $indexMock = $this->createMock(Indices::class);

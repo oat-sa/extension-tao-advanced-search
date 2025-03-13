@@ -23,29 +23,34 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\Resource\Service;
 
 use common_Logger;
-use InvalidArgumentException;
 use oat\generis\model\data\Ontology;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\resources\relation\FindAllQuery;
 use oat\tao\model\resources\relation\ResourceRelation;
 use oat\tao\model\resources\relation\ResourceRelationCollection;
 use oat\tao\model\resources\relation\service\ResourceRelationServiceInterface;
-use oat\tao\model\search\ResultSet;
+use oat\taoAdvancedSearch\model\SearchEngine\AggregationQuery;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 use oat\taoAdvancedSearch\model\SearchEngine\Query;
 
-class ItemRelationsService implements ResourceRelationServiceInterface
+class ItemClassRelationService implements ResourceRelationServiceInterface
 {
     private const TEST_INDEX = 'tests';
-    private const TEST_RELATION = 'test';
     private const ITEM_URIS = 'item_uris';
+    private const MATCHING_URIS = 'matching_uris';
+    private const ITEM_RELATION = 'item';
     private ElasticSearch $elasticSearch;
     private AdvancedSearchChecker $advancedSearchChecker;
+    private Ontology $ontology;
 
-    public function __construct(ElasticSearch $elasticSearch, AdvancedSearchChecker $advancedSearchChecker)
-    {
+    public function __construct(
+        ElasticSearch $elasticSearch,
+        AdvancedSearchChecker $advancedSearchChecker,
+        Ontology $ontology,
+    ) {
         $this->elasticSearch = $elasticSearch;
         $this->advancedSearchChecker = $advancedSearchChecker;
+        $this->ontology = $ontology;
     }
 
     public function findRelations(FindAllQuery $query): ResourceRelationCollection
@@ -56,39 +61,39 @@ class ItemRelationsService implements ResourceRelationServiceInterface
             return $resourceRelationCollection;
         }
 
-        foreach ($this->getTests($query) as $itemUsage) {
-            $label = $itemUsage['label'] ?? [];
-            $resourceRelationCollection->add(new ResourceRelation(
-                self::TEST_RELATION,
-                $itemUsage['id'],
-                reset($label)
-            ));
+        $item_uris = array_column(
+            array_filter($this->ontology->getClass($query->getClassId())->getNestedResources(), function ($item) {
+                return $item['isclass'] === 0;
+            }),
+            'id'
+        );
+        $query = new Query(self::TEST_INDEX);
+
+        $aggregation = new AggregationQuery(
+            $query,
+            [
+                self::MATCHING_URIS => [
+                    'terms' => [
+                        'field' => self::ITEM_URIS,
+                        'include' => $item_uris,
+                    ],
+                ]
+            ],
+            [
+                'item_uris' => $item_uris
+            ]
+        );
+
+        foreach ($this->elasticSearch->aggregate($aggregation) as $item) {
+            $resourceRelationCollection->add(
+                new ResourceRelation(
+                    self::ITEM_RELATION,
+                    $item,
+                    $this->ontology->getResource($item)->getLabel()
+                )
+            );
         }
 
         return $resourceRelationCollection;
-    }
-
-    private function searchTestWithItems(array $itemUris): ResultSet
-    {
-        foreach ($itemUris as $itemUri) {
-            $conditions[] = (sprintf('%s:%s', self::ITEM_URIS, $itemUri));
-        }
-
-        return $this->elasticSearch->query(
-            implode(' LOGIC_OR ', $conditions),
-            self::TEST_INDEX,
-            0,
-            20,
-            'label.raw'
-        );
-    }
-
-    private function getTests(FindAllQuery $query): ResultSet
-    {
-        if ($query->getSourceId()) {
-            return $this->searchTestWithItems([$query->getSourceId()]);
-        }
-
-        throw new InvalidArgumentException('Query must have either sourceId or classId');
     }
 }

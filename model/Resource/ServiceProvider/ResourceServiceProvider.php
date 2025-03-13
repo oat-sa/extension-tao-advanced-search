@@ -28,6 +28,7 @@ use oat\generis\model\data\Ontology;
 use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\taskQueue\QueueDispatcherInterface;
+use oat\taoAdvancedSearch\model\Resource\Service\ItemClassRelationService;
 use oat\taoAdvancedSearch\model\Resource\Service\ItemRelationsService;
 use oat\taoAdvancedSearch\model\Resource\Service\ResourceIndexer;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
@@ -52,6 +53,13 @@ class ResourceServiceProvider implements ContainerServiceProviderInterface
             )->public();
 
         $services->set(ItemRelationsService::class)
+            ->args([
+                service(ElasticSearch::class),
+                service(AdvancedSearchChecker::class),
+            ])
+            ->public();
+
+        $services->set(ItemClassRelationService::class)
             ->args([
                 service(ElasticSearch::class),
                 service(AdvancedSearchChecker::class),

@@ -29,6 +29,8 @@ use Iterator;
 use oat\tao\model\search\SearchInterface as TaoSearchInterface;
 use oat\tao\model\search\SyntaxException;
 use oat\tao\model\search\ResultSet;
+use oat\taoAdvancedSearch\model\SearchEngine\AggregationQuery;
+use oat\taoAdvancedSearch\model\SearchEngine\AggregationResult;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\SearchInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Normalizer\SearchResultNormalizer;
@@ -112,6 +114,30 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
         ];
 
         return $this->buildResultSet($this->client->search($query)->asArray());
+    }
+
+    public function aggregate(AggregationQuery $aggQuery): ResultSet
+    {
+        $query = [
+            'index' => $this->prefixer->prefix($aggQuery->getQuery()->getIndex()),
+            'body' => json_encode(
+                [
+                    'query' => [
+                        'bool' => [
+                            'must' => [
+                                [
+                                    'terms' => $aggQuery->getTerms()
+                                ]
+                            ]
+                        ]
+                    ],
+                    'size' => 0,
+                    'aggs' => $aggQuery->getAggregations()
+                ]
+            )
+        ];
+
+        return $this->buildAggregationSet($this->client->search($query)->asArray());
     }
 
     public function query($queryString, $type, $start = 0, $count = 10, $order = '_id', $dir = 'DESC'): ResultSet
@@ -256,6 +282,22 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
         return new SearchResult($uris, $total);
     }
 
+    private function buildAggregationSet(array $elasticResult): AggregationResult
+    {
+        $total = 0;
+        $uris = [];
+
+        if (is_array($elasticResult) && !empty($elasticResult) && $this->hasHitsDefined($elasticResult)) {
+            $total = $elasticResult['hits']['total']['value'];
+        }
+
+        foreach ($elasticResult['aggregations']['matching_uris']['buckets'] as $bucket) {
+            $uris[] = $bucket['key'];
+        }
+
+        return new AggregationResult($uris, $total);
+    }
+
     public function __toPhpCode()
     {
         return __CLASS__;
@@ -264,17 +306,26 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
     private function getIndexFile(): string
     {
         return $this->indexFile ?? __DIR__ .
-            DIRECTORY_SEPARATOR .
-            '..' .
-            DIRECTORY_SEPARATOR .
-            '..' .
-            DIRECTORY_SEPARATOR .
-            '..' .
-            DIRECTORY_SEPARATOR .
-            '..' .
-            DIRECTORY_SEPARATOR .
-            'config' .
-            DIRECTORY_SEPARATOR .
-            'index.conf.php';
+        DIRECTORY_SEPARATOR .
+        '..' .
+        DIRECTORY_SEPARATOR .
+        '..' .
+        DIRECTORY_SEPARATOR .
+        '..' .
+        DIRECTORY_SEPARATOR .
+        '..' .
+        DIRECTORY_SEPARATOR .
+        'config' .
+        DIRECTORY_SEPARATOR .
+        'index.conf.php';
+    }
+
+    private function hasHitsDefined(array $elasticResult): bool
+    {
+        return isset(
+            $elasticResult['hits'],
+            $elasticResult['hits']['total'],
+            $elasticResult['hits']['total']['value']
+        );
     }
 }

@@ -22,8 +22,6 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\Resource\Service;
 
-use core_kernel_classes_Resource;
-use oat\generis\model\data\Ontology;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\resources\relation\FindAllQuery;
 use oat\tao\model\resources\relation\ResourceRelation;
@@ -39,8 +37,7 @@ class ItemRelationsServiceTest extends TestCase
     {
         $this->elasticSearch = $this->createMock(ElasticSearch::class);
         $this->advancedSearchChecker = $this->createMock(AdvancedSearchChecker::class);
-        $this->ontology = $this->createMock(Ontology::class);
-        $this->subject = new ItemRelationsService($this->elasticSearch, $this->advancedSearchChecker, $this->ontology);
+        $this->subject = new ItemRelationsService($this->elasticSearch, $this->advancedSearchChecker);
     }
 
     public function testFindRelationsForItem(): void
@@ -65,48 +62,6 @@ class ItemRelationsServiceTest extends TestCase
         /** @var ResourceRelation $firstResult */
         $firstResult = reset($resultContent);
         $this->assertEquals('some_id', $firstResult->getId());
-    }
-
-    public function testFindRelations(): void
-    {
-        $classMock = $this->createMock(core_kernel_classes_Resource::class);
-        $query = new FindAllQuery(null, 'classUri', 'test');
-        $this->advancedSearchChecker->method('isEnabled')->willReturn(true);
-        $this->ontology->method('getClass')->willReturn($classMock);
-        $classMock->method('getNestedResources')->willReturn(
-            [
-                [
-                    'id' => 'some_id',
-                    'isclass' => 0,
-                    'label' => ['some label']
-                ],
-                [
-                    'id' => 'some_other_id',
-                    'isclass' => 1,
-                    'label' => ['some other label']
-                ],
-            ]
-        );
-
-        $resultSearch = new SearchResult(
-            [
-                [
-                    'label' => ['some label'],
-                    'id' => 'some_id'
-                ]
-            ],
-            1
-        );
-
-        $this->elasticSearch
-            ->method('query')
-            ->with('item_uris:some_id', 'tests', 0, 20, 'label.raw', 'DESC')
-            ->willReturn($resultSearch);
-
-        $result = $this->subject->findRelations($query);
-        $this->assertInstanceOf(ResourceRelationCollection::class, $result);
-        self::assertCount(1, $result->jsonSerialize());
-        $this->assertInstanceOf(ResourceRelation::class, $result->getIterator()->current());
     }
 
     public function testFindRelationsWhenAdvancedSearchDisabled(): void
