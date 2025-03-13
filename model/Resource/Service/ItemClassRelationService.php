@@ -46,7 +46,7 @@ class ItemClassRelationService implements ResourceRelationServiceInterface
     public function __construct(
         ElasticSearch $elasticSearch,
         AdvancedSearchChecker $advancedSearchChecker,
-        Ontology $ontology,
+        Ontology $ontology
     ) {
         $this->elasticSearch = $elasticSearch;
         $this->advancedSearchChecker = $advancedSearchChecker;
