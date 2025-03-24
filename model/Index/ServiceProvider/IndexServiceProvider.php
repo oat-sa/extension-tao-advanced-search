@@ -23,12 +23,16 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\Index\ServiceProvider;
 
 use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
+use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\taoAdvancedSearch\model\Index\Service\AdvancedSearchIndexDocumentBuilder;
+use oat\taoAdvancedSearch\model\Index\Service\RecreatingIndexService;
 use oat\taoAdvancedSearch\model\Test\Normalizer\TestNormalizer;
 use oat\taoMediaManager\model\relation\service\IdDiscoverService;
 use oat\taoQtiItem\model\qti\parser\ElementReferencesExtractor;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Elastic\Elasticsearch\Client;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
@@ -48,5 +52,13 @@ class IndexServiceProvider implements ContainerServiceProviderInterface
                 service(IdDiscoverService::class),
                 service(TestNormalizer::class),
             ])->public();
+
+        $services->set(RecreatingIndexService::class)
+            ->args([
+                service(Client::class),
+                service(IndexPrefixer::class),
+                service(AdvancedSearchChecker::class)
+            ])
+            ->public();
     }
 }
