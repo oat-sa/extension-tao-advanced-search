@@ -7,6 +7,7 @@ namespace oat\taoAdvancedSearch\migrations;
 use Doctrine\DBAL\Schema\Schema;
 use oat\tao\model\resources\relation\service\ResourceRelationServiceProxy;
 use oat\tao\scripts\tools\migrations\AbstractMigration;
+use oat\taoAdvancedSearch\model\Resource\Service\ItemClassRelationService;
 use oat\taoAdvancedSearch\model\Resource\Service\ItemRelationsService;
 use oat\taoAdvancedSearch\scripts\install\RegisterItemRelationsService;
 
@@ -31,6 +32,7 @@ final class Version202501301912171488_taoAdvancedSearch extends AbstractMigratio
     {
         $resourceRelationService = $this->getServiceManager()->get(ResourceRelationServiceProxy::SERVICE_ID);
         $resourceRelationService->removeService('test', ItemRelationsService::class);
+        $resourceRelationService->removeService('itemClass', ItemClassRelationService::class);
         $this->getServiceManager()->register(
             ResourceRelationServiceProxy::SERVICE_ID, $resourceRelationService
         );

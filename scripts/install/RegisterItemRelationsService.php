@@ -24,6 +24,7 @@ namespace oat\taoAdvancedSearch\scripts\install;
 
 use oat\oatbox\extension\InstallAction;
 use oat\tao\model\resources\relation\service\ResourceRelationServiceProxy;
+use oat\taoAdvancedSearch\model\Resource\Service\ItemClassRelationService;
 use oat\taoAdvancedSearch\model\Resource\Service\ItemRelationsService;
 
 class RegisterItemRelationsService extends InstallAction
@@ -32,9 +33,11 @@ class RegisterItemRelationsService extends InstallAction
     {
         $resourceRelationServiceProxy = $this->getServiceManager()->get(ResourceRelationServiceProxy::SERVICE_ID);
         $resourceRelationServiceProxy->addService('test', ItemRelationsService::class);
+        $resourceRelationServiceProxy->addService('itemClass', ItemClassRelationService::class);
         $this->getServiceManager()->register(
             ResourceRelationServiceProxy::SERVICE_ID,
             $resourceRelationServiceProxy
         );
+
     }
 }
