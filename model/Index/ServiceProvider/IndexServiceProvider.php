@@ -27,6 +27,7 @@ use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\taoAdvancedSearch\model\Index\Service\AdvancedSearchIndexDocumentBuilder;
 use oat\taoAdvancedSearch\model\Index\Service\RecreatingIndexService;
+use oat\taoAdvancedSearch\model\Resource\Service\IndiciesConfigurationService;
 use oat\taoAdvancedSearch\model\Test\Normalizer\TestNormalizer;
 use oat\taoMediaManager\model\relation\service\IdDiscoverService;
 use oat\taoQtiItem\model\qti\parser\ElementReferencesExtractor;
@@ -58,6 +59,12 @@ class IndexServiceProvider implements ContainerServiceProviderInterface
                 service(Client::class),
                 service(IndexPrefixer::class),
                 service(AdvancedSearchChecker::class)
+            ])
+            ->public();
+
+        $services->set(IndiciesConfigurationService::class)
+            ->args([
+                service(Client::class)
             ])
             ->public();
     }
