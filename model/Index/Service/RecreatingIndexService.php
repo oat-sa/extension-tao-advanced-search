@@ -75,7 +75,7 @@ class RecreatingIndexService
             $indexes = require self::INDEX_CONFIG_FILE;
 
             if (!isset($indexes[$index])) {
-                $report->add(Report::createError('Index not found'));
+                $report->add(Report::createError(sprintf('Index %s not found in config', $index)));
                 return $report;
             }
 
