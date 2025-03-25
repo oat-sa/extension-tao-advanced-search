@@ -38,6 +38,5 @@ class RegisterItemRelationsService extends InstallAction
             ResourceRelationServiceProxy::SERVICE_ID,
             $resourceRelationServiceProxy
         );
-
     }
 }

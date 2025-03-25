@@ -63,9 +63,11 @@ final class Version202503241625501483_taoAdvancedSearch extends AbstractMigratio
 
     private function areConfigurationsEqual(array $configration, array $indexes): bool
     {
-        if (isset(
-            $indexes['tests']['body']['mappings']['properties'],
-            $configration['tests']['mappings']['properties'])
+        if (
+            isset(
+                $indexes['tests']['body']['mappings']['properties'],
+                $configration['tests']['mappings']['properties']
+            )
         ) {
             return empty(array_diff_assoc(
                 $indexes['tests']['body']['mappings']['properties'],

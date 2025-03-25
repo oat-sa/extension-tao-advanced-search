@@ -42,11 +42,10 @@ class RecreatingIndexService
     private AdvancedSearchChecker $advancedSearchChecker;
 
     public function __construct(
-        Client                $client,
-        IndexPrefixer         $indexPrefixer,
+        Client $client,
+        IndexPrefixer $indexPrefixer,
         AdvancedSearchChecker $advancedSearchChecker
-    )
-    {
+    ) {
         $this->client = $client;
         $this->indexPrefixer = $indexPrefixer;
         $this->advancedSearchChecker = $advancedSearchChecker;
@@ -83,8 +82,6 @@ class RecreatingIndexService
                 'index' => $this->indexPrefixer->prefix($index),
                 'body' => $indexes[$index]['body']
             ]);
-
-
         } catch (Exception $exception) {
             $report->add(
                 Report::createError(sprintf('Error while deleting index: %s', $exception->getMessage()))

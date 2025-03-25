@@ -34,7 +34,8 @@ final class Version202501301912171488_taoAdvancedSearch extends AbstractMigratio
         $resourceRelationService->removeService('test', ItemRelationsService::class);
         $resourceRelationService->removeService('itemClass', ItemClassRelationService::class);
         $this->getServiceManager()->register(
-            ResourceRelationServiceProxy::SERVICE_ID, $resourceRelationService
+            ResourceRelationServiceProxy::SERVICE_ID,
+            $resourceRelationService
         );
     }
 }
