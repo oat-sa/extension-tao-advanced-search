@@ -61,7 +61,7 @@ class ItemClassRelationService implements ResourceRelationServiceInterface
             return $resourceRelationCollection;
         }
 
-        $item_uris = array_column(
+        $itemUris = array_column(
             array_filter($this->ontology->getClass($query->getClassId())->getNestedResources(), function ($item) {
                 return $item['isclass'] === 0;
             }),
@@ -75,12 +75,12 @@ class ItemClassRelationService implements ResourceRelationServiceInterface
                 self::MATCHING_URIS => [
                     'terms' => [
                         'field' => self::ITEM_URIS,
-                        'include' => $item_uris,
+                        'include' => $itemUris,
                     ],
                 ]
             ],
             [
-                'item_uris' => $item_uris
+                'item_uris' => $itemUris
             ]
         );
 
