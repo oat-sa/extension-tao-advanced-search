@@ -53,19 +53,5 @@ class IndexServiceProvider implements ContainerServiceProviderInterface
                 service(IdDiscoverService::class),
                 service(TestNormalizer::class),
             ])->public();
-
-        $services->set(RecreatingIndexService::class)
-            ->args([
-                service(Client::class),
-                service(IndexPrefixer::class),
-                service(AdvancedSearchChecker::class)
-            ])
-            ->public();
-
-        $services->set(IndiciesConfigurationService::class)
-            ->args([
-                service(Client::class)
-            ])
-            ->public();
     }
 }
