@@ -68,7 +68,8 @@ class QueryBuilder
         'custom_tag',
         'context_id',
         'context_label',
-        'resource_link_id'
+        'resource_link_id',
+        'item_uris'
     ];
 
     private const CUSTOM_FIELDS = [
