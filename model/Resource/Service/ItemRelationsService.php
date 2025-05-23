@@ -24,7 +24,6 @@ namespace oat\taoAdvancedSearch\model\Resource\Service;
 
 use common_Logger;
 use InvalidArgumentException;
-use oat\generis\model\data\Ontology;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
 use oat\tao\model\featureFlag\FeatureFlagChecker;
 use oat\tao\model\resources\relation\FindAllQuery;
@@ -33,7 +32,6 @@ use oat\tao\model\resources\relation\ResourceRelationCollection;
 use oat\tao\model\resources\relation\service\ResourceRelationServiceInterface;
 use oat\tao\model\search\ResultSet;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
-use oat\taoAdvancedSearch\model\SearchEngine\Query;
 
 class ItemRelationsService implements ResourceRelationServiceInterface
 {
