@@ -140,9 +140,28 @@ class IndexRecreateRepopulate extends ScriptAction
         foreach ($indexes as $index) {
             if ($index['index'] == $chosenIndex) {
                 $index['index'] = $this->prefixer->prefix($index['index']);
+                $aliases[$chosenIndex] = current(array_keys($index['body']['aliases']));
                 unset($index['body']['aliases']);
-
                 $this->client->indices()->create($index);
+
+                $this->client->indices()->updateAliases(
+                    [
+                        'body' => [
+                            'actions' => array_map(
+                                function ($index, $alias) {
+                                    return [
+                                        'add' => [
+                                            'index' => $index,
+                                            'alias' => $alias
+                                        ]
+                                    ];
+                                },
+                                array_keys($aliases),
+                                $aliases
+                            )
+                        ]
+                    ]
+                );
             }
         }
     }
