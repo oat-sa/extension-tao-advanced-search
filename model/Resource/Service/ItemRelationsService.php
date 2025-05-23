@@ -26,6 +26,7 @@ use common_Logger;
 use InvalidArgumentException;
 use oat\generis\model\data\Ontology;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
+use oat\tao\model\featureFlag\FeatureFlagChecker;
 use oat\tao\model\resources\relation\FindAllQuery;
 use oat\tao\model\resources\relation\ResourceRelation;
 use oat\tao\model\resources\relation\ResourceRelationCollection;
@@ -41,17 +42,25 @@ class ItemRelationsService implements ResourceRelationServiceInterface
     private const ITEM_URIS = 'item_uris';
     private ElasticSearch $elasticSearch;
     private AdvancedSearchChecker $advancedSearchChecker;
+    private FeatureFlagChecker $featureFlagChecker;
 
-    public function __construct(ElasticSearch $elasticSearch, AdvancedSearchChecker $advancedSearchChecker)
-    {
+    public function __construct(
+        ElasticSearch $elasticSearch,
+        AdvancedSearchChecker $advancedSearchChecker,
+        FeatureFlagChecker $featureFlagChecker
+    ) {
         $this->elasticSearch = $elasticSearch;
         $this->advancedSearchChecker = $advancedSearchChecker;
+        $this->featureFlagChecker = $featureFlagChecker;
     }
 
     public function findRelations(FindAllQuery $query): ResourceRelationCollection
     {
         $resourceRelationCollection = new ResourceRelationCollection();
-        if (!$this->advancedSearchChecker->isEnabled()) {
+        if (
+            !$this->featureFlagChecker->isEnabled(FeatureFlagChecker::FEATURE_FLAG_ITEM_RELATION_ON_DELETE) ||
+            !$this->advancedSearchChecker->isEnabled()
+        ) {
             common_Logger::w('Advanced search is not enabled, skipping item relations search');
             return $resourceRelationCollection;
         }
