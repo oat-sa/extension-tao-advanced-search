@@ -61,7 +61,7 @@ class ItemClassRelationService implements ResourceRelationServiceInterface
     {
         $resourceRelationCollection = new ResourceRelationCollection();
         if (
-            !$this->featureFlagChecker->isEnabled(FeatureFlagChecker::FEATURE_FLAG_ITEM_RELATION_ON_DELETE) ||
+            !$this->featureFlagChecker->isEnabled(ItemRelationsService::FEATURE_FLAG_ITEM_RELATION_ON_DELETE) ||
             !$this->advancedSearchChecker->isEnabled()
         ) {
             common_Logger::w('Advanced search is not enabled, skipping item relations search');

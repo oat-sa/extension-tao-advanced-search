@@ -40,6 +40,8 @@ class ItemRelationsService implements ResourceRelationServiceInterface
     private const TEST_INDEX = 'tests';
     private const TEST_RELATION = 'test';
     private const ITEM_URIS = 'item_uris';
+
+    public const FEATURE_FLAG_ITEM_RELATION_ON_DELETE = 'FEATURE_FLAG_ITEM_RELATION_ON_DELETE';
     private ElasticSearch $elasticSearch;
     private AdvancedSearchChecker $advancedSearchChecker;
     private FeatureFlagChecker $featureFlagChecker;
@@ -58,7 +60,7 @@ class ItemRelationsService implements ResourceRelationServiceInterface
     {
         $resourceRelationCollection = new ResourceRelationCollection();
         if (
-            !$this->featureFlagChecker->isEnabled(FeatureFlagChecker::FEATURE_FLAG_ITEM_RELATION_ON_DELETE) ||
+            !$this->featureFlagChecker->isEnabled(self::FEATURE_FLAG_ITEM_RELATION_ON_DELETE) ||
             !$this->advancedSearchChecker->isEnabled()
         ) {
             common_Logger::w('Advanced search is not enabled, skipping item relations search');
