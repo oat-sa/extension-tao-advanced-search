@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -163,7 +164,9 @@ class IndexRecreateRepopulate extends ScriptAction
     {
         $indexClasses = array_flip(IndexerInterface::AVAILABLE_INDEXES);
         if (!isset($indexClasses[$index])) {
-            throw new RuntimeException(sprintf('Provided index name "%s" does not correspond to a known class', $index));
+            throw new RuntimeException(
+                sprintf('Provided index name "%s" does not correspond to a known class', $index)
+            );
         }
         return $indexClasses[$index];
     }
