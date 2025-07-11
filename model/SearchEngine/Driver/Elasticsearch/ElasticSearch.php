@@ -26,6 +26,7 @@ use ArrayIterator;
 use Elastic\Elasticsearch\Client;
 use Exception;
 use Iterator;
+use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\search\SearchInterface as TaoSearchInterface;
 use oat\tao\model\search\SyntaxException;
 use oat\tao\model\search\ResultSet;
@@ -177,6 +178,19 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
             ? $documents
             : new ArrayIterator($documents);
 
+        foreach ($documents as $document) {
+            if (!$document instanceof IndexDocument) {
+                throw new \InvalidArgumentException(
+                    'Expected an instance of IndexDocument, got ' . get_class($document)
+                );
+            }
+            $indexName = $this->indexer->getIndexNameByDocument($document);
+            if (!$this->isExistingIndex($indexName)) {
+                $this->createIndexes();
+                continue;
+            }
+        }
+
         return $this->indexer->buildIndex($documents);
     }
 
@@ -192,30 +206,27 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
 
     public function createIndexes(): void
     {
-        $indexFile = $this->getIndexFile();
+        $definitions = $this->getIndexes();
+        foreach ($definitions as $def) {
+            $name = $this->prefixer->prefix($def['index']);
 
-        $indexes = [];
+            if ($this->isExistingIndex($name)) {
+                continue;
+            }
 
-        if ($indexFile && is_readable($indexFile)) {
-            $indexes = require $indexFile;
-        }
+            $payload = $def;
+            $payload['index'] = $name;
 
-        foreach ($indexes as $index) {
-            $index['index'] = $this->prefixer->prefix($index['index']);
-
-            $this->client->indices()->create($index);
+            // 3) Create it
+            $this->client
+                 ->indices()
+                 ->create($payload);
         }
     }
 
     public function updateAliases(): void
     {
-        $indexFile = $this->getIndexFile();
-
-        $indexes = [];
-
-        if ($indexFile && is_readable($indexFile)) {
-            $indexes = require $indexFile;
-        }
+        $indexes = $this->getIndexes();
 
         $aliases = [];
 
@@ -245,22 +256,33 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
 
     public function flush(): array
     {
-        return $this->client->indices()->delete(
-            [
-                'index' => implode(
-                    ',',
-                    $this->prefixer->prefixAll(IndexerInterface::AVAILABLE_INDEXES)
-                ),
-                'client' => [
-                    'ignore' => 404
-                ]
-            ]
-        )->asArray();
+        $indexes = $this->prefixer->prefixAll(IndexerInterface::AVAILABLE_INDEXES);
+        $indexList = implode(',', $indexes);
+
+        $params = [
+            'index'               => $indexList,
+            'ignore_unavailable'  => true,
+            'allow_no_indices'    => true,
+        ];
+
+        return $this->client->indices()
+                            ->delete($params)
+                            ->asArray();
     }
 
     public function ping(): bool
     {
         return $this->client->ping()->asBool();
+    }
+
+    private function isExistingIndex(string $indexName): bool
+    {
+        try {
+            return $this->client->indices()->exists(['index' => $indexName])->asBool();
+        } catch (Exception $e) {
+            $this->logger->error(sprintf('Error checking index existence: %s', $e->getMessage()));
+            return false;
+        }
     }
 
     private function buildResultSet(array $elasticResult = []): SearchResult
@@ -301,6 +323,15 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
     public function __toPhpCode()
     {
         return __CLASS__;
+    }
+
+    private function getIndexes(): array
+    {
+        $indexFile = $this->getIndexFile();
+        $indexes = ($indexFile && is_readable($indexFile))
+                     ? require $indexFile
+                     : [];
+        return $indexes;
     }
 
     private function getIndexFile(): string
