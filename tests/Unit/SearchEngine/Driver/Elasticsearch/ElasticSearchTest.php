@@ -313,7 +313,11 @@ class ElasticSearchTest extends TestCase
     public function testCreateIndexesCallIndexCreationBasedOnIndexOption(): void
     {
         $indexMock = $this->createMock(Indices::class);
-
+        $responseMock = $this->createMock(ResponseElasticsearch::class);
+        $responseMock->method('asBool')->willReturn(false);
+        $indexMock->expects($this->exactly(2))
+            ->method('exists')
+            ->willReturn($responseMock);
         $indexMock->expects($this->exactly(2))
             ->method('create')
             ->withConsecutive(
