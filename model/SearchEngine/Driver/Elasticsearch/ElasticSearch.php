@@ -178,7 +178,8 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
             ? $documents
             : new ArrayIterator($documents);
 
-        foreach ($documents as $document) {
+        $cloneDocuments = clone $documents;
+        foreach ($cloneDocuments as $document) {
             if (!$document instanceof IndexDocument) {
                 throw new \InvalidArgumentException(
                     'Expected an instance of IndexDocument, got ' . get_class($document)
