@@ -209,19 +209,17 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
     {
         $definitions = $this->getIndexes();
         foreach ($definitions as $def) {
-            $name = $this->prefixer->prefix($def['index']);
+            $prefixedIndexName = $this->prefixer->prefix($def['index']);
 
-            if ($this->isExistingIndex($name)) {
+            if ($this->isExistingIndex($prefixedIndexName)) {
                 continue;
             }
 
-            $payload = $def;
-            $payload['index'] = $name;
-
-            // 3) Create it
             $this->client
                  ->indices()
-                 ->create($payload);
+                 ->create($def + [
+	                     'index' => $prefixedIndexName,
+	                 ]);
         }
     }
 
@@ -329,9 +327,7 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
     private function getIndexes(): array
     {
         $indexFile = $this->getIndexFile();
-        $indexes = ($indexFile && is_readable($indexFile))
-                     ? require $indexFile
-                     : [];
+        $indexes = is_readable($indexFile) ? require $indexFile : [];
         return $indexes;
     }
 
