@@ -218,8 +218,8 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
             $this->client
                  ->indices()
                  ->create($def + [
-	                     'index' => $prefixedIndexName,
-	                 ]);
+                         'index' => $prefixedIndexName,
+                     ]);
         }
     }
 
