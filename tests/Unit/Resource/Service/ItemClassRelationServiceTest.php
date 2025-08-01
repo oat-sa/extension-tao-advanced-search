@@ -32,7 +32,6 @@ use oat\taoAdvancedSearch\model\SearchEngine\AggregationQuery;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 use oat\taoAdvancedSearch\model\SearchEngine\Query;
 use PHPUnit\Framework\TestCase;
-use oat\tao\model\featureFlag\FeatureFlagChecker;
 
 class ItemClassRelationServiceTest extends TestCase
 {
@@ -41,19 +40,16 @@ class ItemClassRelationServiceTest extends TestCase
         $this->elasticSearch = $this->createMock(ElasticSearch::class);
         $this->advancedSearchChecker = $this->createMock(AdvancedSearchChecker::class);
         $this->ontology = $this->createMock(Ontology::class);
-        $this->featureFlagChecker = $this->createMock(FeatureFlagChecker::class);
         $this->subject = new ItemClassRelationService(
             $this->elasticSearch,
             $this->advancedSearchChecker,
             $this->ontology,
-            $this->featureFlagChecker
         );
     }
 
     public function testFindRelations(): void
     {
         $this->advancedSearchChecker->method('isEnabled')->willReturn(true);
-        $this->featureFlagChecker->method('isEnabled')->willReturn(true);
         $resource = $this->createMock(core_kernel_classes_Resource::class);
         $this->ontology
             ->expects(self::once())
