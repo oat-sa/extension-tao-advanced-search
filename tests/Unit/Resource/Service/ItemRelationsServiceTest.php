@@ -30,7 +30,6 @@ use oat\taoAdvancedSearch\model\Resource\Service\ItemRelationsService;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 use oat\taoAdvancedSearch\model\SearchEngine\SearchResult;
 use PHPUnit\Framework\TestCase;
-use oat\tao\model\featureFlag\FeatureFlagChecker;
 
 class ItemRelationsServiceTest extends TestCase
 {
@@ -38,11 +37,9 @@ class ItemRelationsServiceTest extends TestCase
     {
         $this->elasticSearch = $this->createMock(ElasticSearch::class);
         $this->advancedSearchChecker = $this->createMock(AdvancedSearchChecker::class);
-        $this->featureFlagChecker = $this->createMock(FeatureFlagChecker::class);
         $this->subject = new ItemRelationsService(
             $this->elasticSearch,
             $this->advancedSearchChecker,
-            $this->featureFlagChecker
         );
     }
 
@@ -50,7 +47,6 @@ class ItemRelationsServiceTest extends TestCase
     {
         $query = new FindAllQuery('itemSourceId', null, 'test');
         $this->advancedSearchChecker->method('isEnabled')->willReturn(true);
-        $this->featureFlagChecker->method('isEnabled')->willReturn(true);
 
         $resultSearch = new SearchResult(
             [
@@ -75,7 +71,6 @@ class ItemRelationsServiceTest extends TestCase
     {
         $query = new FindAllQuery('sourceId', 'classId', 'test');
         $this->advancedSearchChecker->method('isEnabled')->willReturn(false);
-        $this->featureFlagChecker->method('isEnabled')->willReturn(true);
         $result = $this->subject->findRelations($query);
         $this->assertInstanceOf(ResourceRelationCollection::class, $result);
         $this->assertEmpty($result->jsonSerialize());
