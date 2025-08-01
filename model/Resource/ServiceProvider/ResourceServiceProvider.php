@@ -27,7 +27,6 @@ namespace oat\taoAdvancedSearch\model\Resource\ServiceProvider;
 use oat\generis\model\data\Ontology;
 use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
-use oat\tao\model\featureFlag\FeatureFlagChecker;
 use oat\tao\model\taskQueue\QueueDispatcherInterface;
 use oat\taoAdvancedSearch\model\Resource\Service\ItemClassRelationService;
 use oat\taoAdvancedSearch\model\Resource\Service\ItemRelationsService;
@@ -57,7 +56,6 @@ class ResourceServiceProvider implements ContainerServiceProviderInterface
             ->args([
                 service(ElasticSearch::class),
                 service(AdvancedSearchChecker::class),
-                service(FeatureFlagChecker::class)
             ])
             ->public();
 
@@ -66,7 +64,6 @@ class ResourceServiceProvider implements ContainerServiceProviderInterface
                 service(ElasticSearch::class),
                 service(AdvancedSearchChecker::class),
                 service(Ontology::SERVICE_ID),
-                service(FeatureFlagChecker::class)
             ])
             ->public();
     }
