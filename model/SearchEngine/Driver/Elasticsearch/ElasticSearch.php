@@ -214,12 +214,10 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
             if ($this->isExistingIndex($prefixedIndexName)) {
                 continue;
             }
-
+            $def['index'] = $prefixedIndexName;
             $this->client
                  ->indices()
-                 ->create($def + [
-                         'index' => $prefixedIndexName,
-                     ]);
+                 ->create($def);
         }
     }
 
