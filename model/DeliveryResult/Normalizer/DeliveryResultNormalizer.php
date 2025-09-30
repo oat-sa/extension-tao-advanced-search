@@ -30,6 +30,7 @@ use oat\tao\helpers\UserHelper;
 use oat\taoAdvancedSearch\model\Index\IndexResource;
 use oat\taoAdvancedSearch\model\Index\Normalizer\NormalizerInterface;
 use oat\taoDelivery\model\execution\DeliveryExecutionInterface;
+use oat\taoOutcomeUi\model\search\ResultCustomFieldsService;
 use oat\taoResultServer\models\classes\ResultService;
 
 class DeliveryResultNormalizer extends ConfigurableService implements NormalizerInterface
@@ -58,7 +59,7 @@ class DeliveryResultNormalizer extends ConfigurableService implements Normalizer
         if ($this->getExtensionsManagerService()->isInstalled('taoOutcomeUi')) {
             $customFieldService = $this
                 ->getServiceLocator()
-                ->get(oat\taoOutcomeUi\model\search\ResultCustomFieldsService::SERVICE_ID);
+                ->get(ResultCustomFieldsService::SERVICE_ID);
             $customBody = $customFieldService->getCustomFields($deliveryExecution);
         }
 
