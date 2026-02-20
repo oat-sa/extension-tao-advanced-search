@@ -29,7 +29,6 @@ use Doctrine\DBAL\Query\QueryBuilder;
 use oat\generis\model\OntologyRdfs;
 use oat\tao\model\Lists\Business\Event\ListSavedEvent;
 use oat\taoAdvancedSearch\model\Resource\Service\ResourceIndexer;
-use PDO;
 
 class ListSavedEventListener
 {
@@ -85,7 +84,7 @@ class ListSavedEventListener
                 ]
             );
 
-        return $this->queryBuilder->execute()->getIterator()->fetchAll(PDO::FETCH_COLUMN);
+        return $this->queryBuilder->executeQuery()->fetchFirstColumn();
     }
 
     private function getRecordsUsingProperty(array $propertyUris): array
@@ -104,6 +103,6 @@ class ListSavedEventListener
             ->andWhere($expressionBuilder->in('statements.predicate', ':predicate'))
             ->setParameter('predicate', $propertyUris, Connection::PARAM_STR_ARRAY);
 
-        return $this->queryBuilder->execute()->getIterator()->fetchAll(PDO::FETCH_COLUMN);
+        return $this->queryBuilder->executeQuery()->fetchFirstColumn();
     }
 }
