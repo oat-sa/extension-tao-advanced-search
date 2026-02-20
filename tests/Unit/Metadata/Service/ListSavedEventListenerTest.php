@@ -24,9 +24,8 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\model\Metadata\Service;
 
-use Doctrine\DBAL\Driver\ResultStatement;
-use Doctrine\DBAL\ForwardCompatibility\Result;
 use Doctrine\DBAL\Query\Expression\ExpressionBuilder;
+use Doctrine\DBAL\Result;
 use Doctrine\DBAL\Query\QueryBuilder;
 use oat\generis\test\ServiceManagerMockTrait;
 use oat\tao\model\Lists\Business\Event\ListSavedEvent;
@@ -63,9 +62,7 @@ class ListSavedEventListenerTest extends TestCase
     public function testListenAndProcessInChunks(): void
     {
         $result1 = $this->createMock(Result::class);
-        $iterator1 = $this->createMock(ResultStatement::class);
         $result2 = $this->createMock(Result::class);
-        $iterator2 = $this->createMock(ResultStatement::class);
 
         $this->queryBuilder
             ->method('expr')
@@ -89,7 +86,7 @@ class ListSavedEventListenerTest extends TestCase
 
         $this->queryBuilder
             ->expects($this->exactly(2))
-            ->method('execute')
+            ->method('executeQuery')
             ->willReturnCallback(
                 function () use ($result1, $result2) {
                     static $count = 0;
@@ -104,22 +101,12 @@ class ListSavedEventListenerTest extends TestCase
 
         $result1
             ->expects($this->once())
-            ->method('getIterator')
-            ->willReturn($iterator1);
-
-        $iterator1
-            ->expects($this->once())
-            ->method('fetchAll')
+            ->method('fetchFirstColumn')
             ->willReturn(['uri']);
 
         $result2
             ->expects($this->once())
-            ->method('getIterator')
-            ->willReturn($iterator2);
-
-        $iterator2
-            ->expects($this->once())
-            ->method('fetchAll')
+            ->method('fetchFirstColumn')
             ->willReturn(['uri1', 'uri2']);
 
         $this->resourceIndexer
