@@ -127,7 +127,12 @@ class ElasticSearchIndexer implements IndexerInterface
 
                 $this->logErrorsFromResponse($this->logger, $document, $response);
 
-                $count += $blockSize;
+                if (!empty($response['errors'])) {
+                    $exceptions++;
+                } else {
+                    $count += $blockSize;
+                }
+
                 $blockSize = 0;
                 $params = [];
             }
@@ -141,7 +146,11 @@ class ElasticSearchIndexer implements IndexerInterface
 
             $this->logErrorsFromResponse($this->logger, null, $response);
 
-            $count += $blockSize;
+            if (!empty($response['errors'])) {
+                $exceptions++;
+            } else {
+                $count += $blockSize;
+            }
         }
 
         $this->logCompletion($this->logger, $count, $visited, $skipped, $exceptions);
