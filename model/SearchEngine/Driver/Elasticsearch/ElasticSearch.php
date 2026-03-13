@@ -191,6 +191,16 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
 
             if (!$this->isExistingIndex($indexName)) {
                 $this->createIndexes();
+
+                if (!$this->isExistingIndex($indexName)) {
+                    $this->logger->warning(
+                        sprintf(
+                            'Index "%s" still does not exist after creation attempt, skipping document',
+                            $indexName
+                        )
+                    );
+                    continue;
+                }
             }
 
             $validatedDocuments[] = $document;
