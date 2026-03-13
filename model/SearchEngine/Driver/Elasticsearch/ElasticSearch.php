@@ -174,25 +174,33 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
 
     public function index($documents = []): int
     {
-        $documents = $documents instanceof Iterator
+        $iterator = $documents instanceof Iterator
             ? $documents
             : new ArrayIterator($documents);
 
-        $cloneDocuments = clone $documents;
-        foreach ($cloneDocuments as $document) {
+        $validatedDocuments = [];
+
+        foreach ($iterator as $document) {
             if (!$document instanceof IndexDocument) {
                 throw new \InvalidArgumentException(
                     'Expected an instance of IndexDocument, got ' . get_class($document)
                 );
             }
+
             $indexName = $this->indexer->getIndexNameByDocument($document);
+
             if (!$this->isExistingIndex($indexName)) {
                 $this->createIndexes();
-                continue;
             }
+
+            $validatedDocuments[] = $document;
         }
 
-        return $this->indexer->buildIndex($documents);
+        if (empty($validatedDocuments)) {
+            return 0;
+        }
+
+        return $this->indexer->buildIndex(new ArrayIterator($validatedDocuments));
     }
 
     public function remove($resourceId): bool

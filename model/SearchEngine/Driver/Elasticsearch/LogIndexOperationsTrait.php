@@ -91,6 +91,23 @@ trait LogIndexOperationsTrait
 
     private function logErrorsFromResponse(LoggerInterface $logger, ?IndexDocument $document, $clientResponse): void
     {
+        if (!is_array($clientResponse)) {
+            // Try best-effort normalization for unexpected response types
+            if (is_object($clientResponse) && method_exists($clientResponse, 'asArray')) {
+                $clientResponse = $clientResponse->asArray();
+            } else {
+                $logger->warning(
+                    ($document ? sprintf('[documentId: "%s"] ', $document->getId()) : '') .
+                    sprintf(
+                        'Unexpected non-array client response of type %s',
+                        is_object($clientResponse) ? get_class($clientResponse) : gettype($clientResponse)
+                    )
+                );
+
+                return;
+            }
+        }
+
         if ($clientResponse['errors'] ?? false) {
             $logger->warning(
                 ($document ? sprintf('[documentId: "%s"] ', $document->getId()) : '') .
@@ -99,6 +116,21 @@ trait LogIndexOperationsTrait
                     json_encode($clientResponse)
                 )
             );
+
+            if (isset($clientResponse['items']) && is_array($clientResponse['items'])) {
+                foreach ($clientResponse['items'] as $item) {
+                    $action = key($item);
+                    $result = current($item);
+
+                    if (!empty($result['error'])) {
+                        $logger->warning(sprintf(
+                            'Bulk item error (action=%s): %s',
+                            $action,
+                            json_encode($result['error'])
+                        ));
+                    }
+                }
+            }
         }
     }
 
