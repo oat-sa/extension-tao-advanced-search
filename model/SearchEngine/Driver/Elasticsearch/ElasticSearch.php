@@ -182,8 +182,9 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
 
         foreach ($iterator as $document) {
             if (!$document instanceof IndexDocument) {
+                $actualType = is_object($document) ? get_class($document) : gettype($document);
                 throw new \InvalidArgumentException(
-                    'Expected an instance of IndexDocument, got ' . get_class($document)
+                    'Expected an instance of IndexDocument, got ' . $actualType
                 );
             }
 
