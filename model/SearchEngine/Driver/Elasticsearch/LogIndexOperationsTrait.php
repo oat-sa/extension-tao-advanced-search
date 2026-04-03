@@ -89,22 +89,21 @@ trait LogIndexOperationsTrait
         }
     }
 
-    private function logErrorsFromResponse(LoggerInterface $logger, ?IndexDocument $document, $clientResponse): void
+    private function logErrorsFromResponse(LoggerInterface $logger, ?IndexDocument $document, $clientResponse): ?string
     {
         if (!is_array($clientResponse)) {
-            // Try best-effort normalization for unexpected response types
             if (is_object($clientResponse) && method_exists($clientResponse, 'asArray')) {
                 $clientResponse = $clientResponse->asArray();
             } else {
+                $errorMessage = sprintf(
+                    'Unexpected non-array client response of type %s',
+                    is_object($clientResponse) ? get_class($clientResponse) : gettype($clientResponse)
+                );
                 $logger->warning(
-                    ($document ? sprintf('[documentId: "%s"] ', $document->getId()) : '') .
-                    sprintf(
-                        'Unexpected non-array client response of type %s',
-                        is_object($clientResponse) ? get_class($clientResponse) : gettype($clientResponse)
-                    )
+                    ($document ? sprintf('[documentId: "%s"] ', $document->getId()) : '') . $errorMessage
                 );
 
-                return;
+                return $errorMessage;
             }
         }
 
@@ -128,10 +127,27 @@ trait LogIndexOperationsTrait
                             $action,
                             json_encode($result['error'])
                         ));
+
+                        return $this->extractErrorReason($result['error']);
                     }
                 }
             }
+
+            return 'Unknown indexing error';
         }
+
+        return null;
+    }
+
+    private function extractErrorReason(array $error): string
+    {
+        $reason = $error['reason'] ?? 'Unknown error';
+
+        if (isset($error['caused_by']['reason'])) {
+            $reason .= ': ' . $error['caused_by']['reason'];
+        }
+
+        return $reason;
     }
 
     private function logUnclassifiedDocument(

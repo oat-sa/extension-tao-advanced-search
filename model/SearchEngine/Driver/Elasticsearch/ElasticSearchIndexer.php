@@ -25,6 +25,7 @@ namespace oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch;
 use oat\tao\model\search\index\IndexDocument;
 use Elastic\Elasticsearch\Client;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
+use oat\taoAdvancedSearch\model\SearchEngine\IndexingResult;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use Psr\Log\LoggerInterface;
 use Exception;
@@ -73,7 +74,7 @@ class ElasticSearchIndexer implements IndexerInterface
         return IndexerInterface::UNCLASSIFIEDS_DOCUMENTS_INDEX;
     }
 
-    public function buildIndex(Iterator $documents): int
+    public function buildIndex(Iterator $documents): IndexingResult
     {
         $visited = 0;
         $skipped = 0;
@@ -81,6 +82,7 @@ class ElasticSearchIndexer implements IndexerInterface
         $count = 0;
         $blockSize = 0;
         $params = [];
+        $errorMessage = null;
 
         while ($documents->valid()) {
             /** @var IndexDocument $document */
@@ -91,7 +93,9 @@ class ElasticSearchIndexer implements IndexerInterface
                 $indexName = $this->getIndexNameByDocument($document);
             } catch (Exception $e) {
                 $this->logIndexFailure($this->logger, $e, __METHOD__);
+                $errorMessage = $e->getMessage();
                 $exceptions++;
+                $documents->next();
 
                 continue;
             }
@@ -125,9 +129,10 @@ class ElasticSearchIndexer implements IndexerInterface
                 $response = $this->client->bulk($params);
                 $response = is_array($response) ? $response : $response->asArray();
 
-                $this->logErrorsFromResponse($this->logger, $document, $response);
+                $batchError = $this->logErrorsFromResponse($this->logger, $document, $response);
 
-                if (!empty($response['errors'])) {
+                if ($batchError !== null) {
+                    $errorMessage = $batchError;
                     $exceptions++;
                 } else {
                     $count += $blockSize;
@@ -144,9 +149,10 @@ class ElasticSearchIndexer implements IndexerInterface
             $response = $this->client->bulk($params);
             $response = is_array($response) ? $response : $response->asArray();
 
-            $this->logErrorsFromResponse($this->logger, null, $response);
+            $batchError = $this->logErrorsFromResponse($this->logger, null, $response);
 
-            if (!empty($response['errors'])) {
+            if ($batchError !== null) {
+                $errorMessage = $batchError;
                 $exceptions++;
             } else {
                 $count += $blockSize;
@@ -155,7 +161,7 @@ class ElasticSearchIndexer implements IndexerInterface
 
         $this->logCompletion($this->logger, $count, $visited, $skipped, $exceptions);
 
-        return $count;
+        return new IndexingResult($count, $errorMessage);
     }
 
     public function deleteDocument(string $id): bool

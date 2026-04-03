@@ -34,6 +34,7 @@ use oat\taoAdvancedSearch\model\SearchEngine\AggregationQuery;
 use oat\taoAdvancedSearch\model\SearchEngine\AggregationResult;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\SearchInterface;
+use oat\taoAdvancedSearch\model\SearchEngine\IndexingResult;
 use oat\taoAdvancedSearch\model\SearchEngine\Normalizer\SearchResultNormalizer;
 use oat\taoAdvancedSearch\model\SearchEngine\Query;
 use oat\taoAdvancedSearch\model\SearchEngine\SearchResult;
@@ -62,6 +63,9 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
 
     /** @var SearchResultNormalizer */
     private $searchResultNormalizer;
+
+    /** @var IndexingResult|null */
+    private $lastIndexingResult;
 
     public function __construct(
         Client $client,
@@ -174,11 +178,14 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
 
     public function index($documents = []): int
     {
+        $this->lastIndexingResult = null;
+
         $iterator = $documents instanceof Iterator
             ? $documents
             : new ArrayIterator($documents);
 
         $validatedDocuments = [];
+        $skippedError = null;
 
         foreach ($iterator as $document) {
             if (!$document instanceof IndexDocument) {
@@ -194,12 +201,8 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
                 $this->createIndexes();
 
                 if (!$this->isExistingIndex($indexName)) {
-                    $this->logger->warning(
-                        sprintf(
-                            'Index "%s" still does not exist after creation attempt, skipping document',
-                            $indexName
-                        )
-                    );
+                    $skippedError = sprintf('Index "%s" does not exist after creation attempt', $indexName);
+                    $this->logger->warning($skippedError . ', skipping document');
                     continue;
                 }
             }
@@ -208,10 +211,18 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
         }
 
         if (empty($validatedDocuments)) {
+            $this->lastIndexingResult = new IndexingResult(0, $skippedError);
             return 0;
         }
 
-        return $this->indexer->buildIndex(new ArrayIterator($validatedDocuments));
+        $this->lastIndexingResult = $this->indexer->buildIndex(new ArrayIterator($validatedDocuments));
+
+        return $this->lastIndexingResult->getTotalIndexed();
+    }
+
+    public function getLastIndexingResult(): ?IndexingResult
+    {
+        return $this->lastIndexingResult;
     }
 
     public function remove($resourceId): bool
