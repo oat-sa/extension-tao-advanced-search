@@ -27,10 +27,12 @@ namespace oat\taoAdvancedSearch\model\Resource\ServiceProvider;
 use oat\generis\model\data\Ontology;
 use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
 use oat\tao\model\AdvancedSearch\AdvancedSearchChecker;
+use oat\tao\model\resources\relation\service\ResourceRelationServiceProxy;
 use oat\tao\model\taskQueue\QueueDispatcherInterface;
 use oat\taoAdvancedSearch\model\Resource\Service\ItemClassRelationService;
 use oat\taoAdvancedSearch\model\Resource\Service\ItemRelationsService;
 use oat\taoAdvancedSearch\model\Resource\Service\ResourceIndexer;
+use oat\taoAdvancedSearch\model\Resource\Service\TestDeliveryRelationService;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -64,6 +66,14 @@ class ResourceServiceProvider implements ContainerServiceProviderInterface
                 service(ElasticSearch::class),
                 service(AdvancedSearchChecker::class),
                 service(Ontology::SERVICE_ID),
+            ])
+            ->public();
+
+        $services->set(TestDeliveryRelationService::class)
+            ->args([
+                service(ElasticSearch::class),
+                service(AdvancedSearchChecker::class),
+                service(ResourceRelationServiceProxy::SERVICE_ID),
             ])
             ->public();
     }
