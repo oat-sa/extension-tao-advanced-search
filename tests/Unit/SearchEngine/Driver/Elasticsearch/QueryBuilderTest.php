@@ -28,6 +28,7 @@ use oat\generis\test\MockObject;
 use oat\oatbox\log\LoggerService;
 use oat\oatbox\session\SessionService;
 use oat\oatbox\user\User;
+use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\QueryBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use oat\taoAdvancedSearch\model\SearchEngine\Specification\UseAclSpecification;
@@ -57,8 +58,14 @@ class QueryBuilderTest extends TestCase
     /** @var IndexPrefixer|MockObject */
     private $prefixer;
 
+    /** @var ElasticSearchConfig|MockObject */
+    private $elasticSearchConfig;
+
     /** @var User|MockObject */
     private $user;
+
+    /** @var bool Whether ACL read_access filter is applied (matches mock behaviour). */
+    private $accessControlEnabled = false;
 
     protected function setUp(): void
     {
@@ -68,13 +75,22 @@ class QueryBuilderTest extends TestCase
         $this->user = $this->createMock(User::class);
         $this->useAclSpecification = $this->createMock(UseAclSpecification::class);
         $this->prefixer = $this->createMock(IndexPrefixer::class);
+        $this->elasticSearchConfig = $this->createMock(ElasticSearchConfig::class);
+        $this->elasticSearchConfig->method('isNestedAttributesQueryEnabled')->willReturn(true);
+
+        $this->useAclSpecification
+            ->method('isSatisfiedBy')
+            ->willReturnCallback(function (): bool {
+                return $this->accessControlEnabled;
+            });
 
         $this->subject = new QueryBuilder(
             $this->loggerService,
             $this->permissionMock,
             $this->sessionServiceMock,
             $this->prefixer,
-            $this->useAclSpecification
+            $this->useAclSpecification,
+            $this->elasticSearchConfig
         );
 
         $this->sessionServiceMock
@@ -156,156 +172,39 @@ class QueryBuilderTest extends TestCase
             ],
             'Query custom field (using underscore)' => [
                 'custom_field:test',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(HTMLArea_custom_field:' .
-                '\\"test\\" OR TextArea_custom_field:\\"test\\" OR ' .
-                'TextBox_custom_field:\\"test\\" OR ComboBox_custom_field:\\"test\\" ' .
-                'OR CheckBox_custom_field:\\"test\\" OR RadioBox_custom_field:\\"test\\" ' .
-                'OR SearchTextBox_custom_field:\\"test\\" OR SearchDropdown_custom_field:\\"test\\" ' .
-                'OR Readonly_custom_field:\\"test\\") AND (read_access:(\\"https:\\/\\/tao.docker.localhost\\/' .
-                'ontologies\\/tao.rdf#i5f64514f1c36110793759fc28c0105b\\" OR \\"http:\\/\\/www.tao.lu\\/Ontologies\\/' .
-                'TAOItem.rdf#BackOfficeRole\\" OR ' .
-                '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#ItemsManagerRole\\"))"}},' .
-                '"sort":{"_id":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
+                self::expectedBodyAcl('custom_field:test'),
             ],
             'Query custom field (using dash)' => [
                 'custom_field:test',
-                '{"query":{"query_string":{"default_operator":"AND","query":"' .
-                '(HTMLArea_custom_field:\\"test\\" OR TextArea_custom_field:\\"test\\" OR ' .
-                'TextBox_custom_field:\\"test\\" OR ComboBox_custom_field:\\"test\\"' .
-                ' OR CheckBox_custom_field:\\"test\\" OR RadioBox_custom_field:\\"test\\" ' .
-                'OR SearchTextBox_custom_field:\\"test\\" OR SearchDropdown_custom_field:\\"test\\" ' .
-                'OR Readonly_custom_field:\\"test\\") AND (read_access:(\\"https:\\/\\/tao.docker.localhost\\/' .
-                'ontologies\\/tao.rdf#i5f64514f1c36110793759fc28c0105b\\" OR ' .
-                '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#BackOfficeRole\\" OR ' .
-                '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#ItemsManagerRole\\"))"}},' .
-                '"sort":{"_id":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"}}}'
+                self::expectedBodyAcl('custom_field:test'),
             ],
             'Query custom field (using space)' => [
                 'custom field:test',
-                'body' => '{"query":{"query_string":{"default_operator":"AND",' .
-                    '"query":"(HTMLArea_custom field:\"test\" ' .
-                    'OR TextArea_custom field:\"test\" OR TextBox_custom ' .
-                    'field:\"test\" OR ComboBox_custom field:\"test\" ' .
-                    'OR CheckBox_custom field:\"test\" OR RadioBox_custom ' .
-                    'field:\"test\" OR SearchTextBox_custom field:\"test\" ' .
-                    'OR SearchDropdown_custom field:\"test\" OR Readonly_custom field:\\"test\\")' .
-                    ' AND (read_access:(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf' .
-                    '#i5f64514f1c36110793759fc28c0105b\" OR ' .
-                    '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" ' .
-                    'OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},' .
-                    '"sort":{"_id":{"order":"DESC",' .
-                    '"missing":"_last","unmapped_type":"long"},"label.raw":' .
-                    '{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
+                self::expectedBodyAcl('custom field:test'),
             ],
             'Query logic operator (Uppercase)' => [
                 'label:test AND custom_field:test',
-                '{"query":{"query_string":{"default_operator":"AND","query":' .
-                '"(label:\\"test\\") AND (HTMLArea_custom_field:\\"test\\" OR TextArea_custom_' .
-                'field:\\"test\\" OR TextBox_custom_field:\\"test\\" OR ' .
-                'ComboBox_custom_field:\\"test\\" OR CheckBox_custom_field:\\"test\\" OR RadioBox_' .
-                'custom_field:\\"test\\" OR SearchTextBox_custom_field:\\"test\\" ' .
-                'OR SearchDropdown_custom_field:\\"test\\" OR Readonly_custom_field:\\"test\\")' .
-                ' AND (read_access:(\\"https:\\/' .
-                '\\/tao.docker.localhost\\/ontologies\\/tao.rdf#i5f64514f1c36110793759fc28c0105b\\"' .
-                ' OR \\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#' .
-                'BackOfficeRole\\" OR \\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#ItemsManagerRole\\"))"}}' .
-                ',"sort":{"_id":{"order":"DESC",' .
-                '"missing":"_last","unmapped_type":"long"},"label.raw":' .
-                '{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
+                self::expectedBodyAcl('label:test AND custom_field:test'),
             ],
             'Query logic operator (Lowercase)' => [
                 'label:test and custom_field:test',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND ' .
-                '(HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
-                'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
-                'OR RadioBox_custom_field:\"test\" ' .
-                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\" ' .
-                'OR Readonly_custom_field:\"test\") AND (read_access:' .
-                '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
-                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
-                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},' .
-                '"sort":{"_id":{"order":"DESC",' .
-                '"missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"}}}'
+                self::expectedBodyAcl('label:test and custom_field:test'),
             ],
             'Query logic operator (Mixed)' => [
                 'label:test aNd custom_field:test',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND ' .
-                '(HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
-                'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\"' .
-                ' OR RadioBox_custom_field:\"test\" ' .
-                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\" ' .
-                'OR Readonly_custom_field:\"test\") AND (read_access:' .
-                '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
-                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
-                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},' .
-                '"sort":{"_id":{"order":"DESC",' .
-                '"missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"}}}'
+                self::expectedBodyAcl('label:test aNd custom_field:test'),
             ],
             'Query using OR logic operator to join list field values' => [
                 'label:test AND custom_field:test LOGIC_OR custom_field:test1 ',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND ' .
-                '((HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
-                'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
-                'OR RadioBox_custom_field:\"test\" ' .
-                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\" ' .
-                'OR Readonly_custom_field:\"test\") ' .
-                'OR (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" ' .
-                'OR TextBox_custom_field:\"test1\" ' .
-                'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
-                ' OR RadioBox_custom_field:\"test1\" ' .
-                'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\" ' .
-                'OR Readonly_custom_field:\"test1\")) AND (read_access:' .
-                '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
-                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
-                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":' .
-                '{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing"' .
-                ':"_last","unmapped_type":"long"}}}',
+                self::expectedBodyAcl('label:test AND custom_field:test LOGIC_OR custom_field:test1 '),
             ],
             'Query using AND logic operator to join list field values' => [
                 'label:test AND custom_field:test LOGIC_AND custom_field:test1 ',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND ' .
-                '((HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
-                'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
-                'OR RadioBox_custom_field:\"test\" ' .
-                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\" ' .
-                'OR Readonly_custom_field:\"test\") ' .
-                'AND (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" ' .
-                'OR TextBox_custom_field:\"test1\" ' .
-                'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
-                ' OR RadioBox_custom_field:\"test1\" ' .
-                'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\" ' .
-                'OR Readonly_custom_field:\"test1\")) AND (read_access:' .
-                '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
-                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
-                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":' .
-                '{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing"' .
-                ':"_last","unmapped_type":"long"}}}',
+                self::expectedBodyAcl('label:test AND custom_field:test LOGIC_AND custom_field:test1 '),
             ],
             'Query using NOT logic operator to join list field values' => [
                 'label:test AND custom_field:test LOGIC_NOT custom_field:test1 ',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND ' .
-                'NOT ((HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" ' .
-                'OR TextBox_custom_field:\"test\" ' .
-                'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
-                'OR RadioBox_custom_field:\"test\" ' .
-                'OR SearchTextBox_custom_field:\"test\" ' .
-                'OR SearchDropdown_custom_field:\"test\" OR Readonly_custom_field:\"test\") ' .
-                'OR (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" ' .
-                'OR TextBox_custom_field:\"test1\" ' .
-                'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
-                ' OR RadioBox_custom_field:\"test1\" ' .
-                'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\" ' .
-                'OR Readonly_custom_field:\"test1\")) AND (read_access:' .
-                '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
-                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
-                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":' .
-                '{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing"' .
-                ':"_last","unmapped_type":"long"}}}',
+                self::expectedBodyAcl('label:test AND custom_field:test LOGIC_NOT custom_field:test1 '),
             ],
             'Query URIs' => [
                 'https://test-act.docker.localhost/ontologies/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a',
@@ -393,114 +292,39 @@ class QueryBuilderTest extends TestCase
             ],
             'Query custom field (using underscore)' => [
                 'custom_field:test',
-                '{"query":{"query_string":{"default_operator":"AND",' .
-                '"query":"(HTMLArea_custom_field:\"test\" OR ' .
-                'TextArea_custom_field:\"test\" OR TextBox_custom_field' .
-                ':\"test\" OR ComboBox_custom_field:\"test\" ' .
-                'OR CheckBox_custom_field:\"test\" OR RadioBox_custom_field:' .
-                '\"test\" OR SearchTextBox_custom_field:\"test\" ' .
-                'OR SearchDropdown_custom_field:\"test\" OR Readonly_custom_field:\"test\")"}},' .
-                '"sort":{"_id":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"},"label.raw":{"order":' .
-                '"DESC","missing":"_last","unmapped_type":"long"}}}'
+                self::expectedBodyNoAcl('custom_field:test'),
             ],
             'Query custom field (using dash)' => [
                 'custom_field:test',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(HTMLArea_custom_field:\"test\" OR ' .
-                'TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" OR ComboBox_custom_field:\"test\" ' .
-                'OR CheckBox_custom_field:\"test\" OR RadioBox_custom_field:' .
-                '\"test\" OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\" ' .
-                'OR Readonly_custom_field:\"test\")"}},"sort":{"_id":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
+                self::expectedBodyNoAcl('custom_field:test'),
             ],
             'Query custom field (using space)' => [
                 'custom field:test',
-                'body' => '{"query":{"query_string":{"default_operator":"AND","query":"(HTMLArea_custom ' .
-                    'field:\"test\" OR TextArea_custom field:\"test\" OR TextBox_custom field:\"test\" ' .
-                    'OR ComboBox_custom field:\"test\" OR CheckBox_custom field:\"test\" OR RadioBox_custom ' .
-                    'field:\"test\" OR SearchTextBox_custom field:\"test\" OR SearchDropdown_custom field:' .
-                    '\"test\" OR Readonly_custom field:\"test\")"}},"sort":{"_id":{"order":"DESC","missing":"_last",' .
-                    '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
+                self::expectedBodyNoAcl('custom field:test'),
             ],
             'Query logic operator (Uppercase)' => [
                 'label:test AND custom_field:test',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") ' .
-                'AND (HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR ' .
-                'TextBox_custom_field:\"test\" OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:' .
-                '\"test\" OR RadioBox_custom_field:\"test\" OR SearchTextBox_custom_field:\"test\" OR ' .
-                'SearchDropdown_custom_field:\"test\" OR Readonly_custom_field:\"test\")"}},"sort":{"_id":{"order":' .
-                '"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"}}}',
+                self::expectedBodyNoAcl('label:test AND custom_field:test'),
             ],
             'Query logic operator (Lowercase)' => [
                 'label:test and custom_field:test',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND ' .
-                '(HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:' .
-                '\"test\" OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" OR ' .
-                'RadioBox_custom_field:\"test\" OR SearchTextBox_custom_field:\"test\" OR ' .
-                'SearchDropdown_custom_field:\"test\" OR Readonly_custom_field:\"test\")"}},"sort":{"_id":{"order":' .
-                '"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"}}}',
+                self::expectedBodyNoAcl('label:test and custom_field:test'),
             ],
             'Query logic operator (Mixed)' => [
                 'label:test aNd custom_field:test',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND ' .
-                '(HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
-                'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\"' .
-                ' OR RadioBox_custom_field:\"test\" ' .
-                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\" ' .
-                'OR Readonly_custom_field:\"test\")"}},"sort":{"_id":' .
-                '{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing"' .
-                ':"_last","unmapped_type":"long"}}}',
+                self::expectedBodyNoAcl('label:test aNd custom_field:test'),
             ],
             'Query using OR logic operator to join list field values' => [
                 'label:test AND custom_field:test LOGIC_OR custom_field:test1 ',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND ' .
-                '((HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
-                'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
-                'OR RadioBox_custom_field:\"test\" ' .
-                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\" ' .
-                'OR Readonly_custom_field:\"test\") OR (HTMLArea_custom_field:\"test1\" ' .
-                'OR TextArea_custom_field:\"test1\" OR TextBox_custom_field:\"test1\" ' .
-                'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
-                ' OR RadioBox_custom_field:\"test1\" OR SearchTextBox_custom_field:\"test1\" ' .
-                'OR SearchDropdown_custom_field:\"test1\" OR Readonly_custom_field:\"test1\"))"}},"sort":{"_id":' .
-                '{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing"' .
-                ':"_last","unmapped_type":"long"}}}',
+                self::expectedBodyNoAcl('label:test AND custom_field:test LOGIC_OR custom_field:test1 '),
             ],
             'Query using AND logic operator to join list field values' => [
                 'label:test AND custom_field:test LOGIC_AND custom_field:test1 ',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND ' .
-                '((HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" ' .
-                'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
-                'OR RadioBox_custom_field:\"test\" ' .
-                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\" ' .
-                'OR Readonly_custom_field:\"test\") ' .
-                'AND (HTMLArea_custom_field:\"test1\" OR TextArea_custom_field:\"test1\" ' .
-                'OR TextBox_custom_field:\"test1\" ' .
-                'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
-                ' OR RadioBox_custom_field:\"test1\" ' .
-                'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\" ' .
-                'OR Readonly_custom_field:\"test1\"))"}},"sort":{"_id":' .
-                '{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing"' .
-                ':"_last","unmapped_type":"long"}}}',
+                self::expectedBodyNoAcl('label:test AND custom_field:test LOGIC_AND custom_field:test1 '),
             ],
             'Query using NOT logic operator to join list field values' => [
                 'label:test AND custom_field:test LOGIC_NOT custom_field:test1 ',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(label:\"test\") AND ' .
-                'NOT ((HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" ' .
-                'OR TextBox_custom_field:\"test\" ' .
-                'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" ' .
-                'OR RadioBox_custom_field:\"test\" ' .
-                'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\" ' .
-                'OR Readonly_custom_field:\"test\") OR (HTMLArea_custom_field:\"test1\" ' .
-                'OR TextArea_custom_field:\"test1\" OR TextBox_custom_field:\"test1\" ' .
-                'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
-                ' OR RadioBox_custom_field:\"test1\" ' .
-                'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\" ' .
-                'OR Readonly_custom_field:\"test1\"))"}},"sort":{"_id":' .
-                '{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing"' .
-                ':"_last","unmapped_type":"long"}}}',
+                self::expectedBodyNoAcl('label:test AND custom_field:test LOGIC_NOT custom_field:test1 '),
             ],
             'Query URIs' => [
                 'https://test-act.docker.localhost/ontologies/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a',
@@ -520,11 +344,31 @@ class QueryBuilderTest extends TestCase
         ];
     }
 
+    private static function expectedBodies(): array
+    {
+        static $cache;
+
+        if ($cache === null) {
+            $path = __DIR__ . '/query-builder-expected-bodies.json';
+            $cache = json_decode((string) file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
+        }
+
+        return $cache;
+    }
+
+    private static function expectedBodyAcl(string $query): string
+    {
+        return self::expectedBodies()['acl'][$query];
+    }
+
+    private static function expectedBodyNoAcl(string $query): string
+    {
+        return self::expectedBodies()['noacl'][$query];
+    }
+
     private function createAccessControlMock(bool $includeAccessControl): void
     {
-        $this->useAclSpecification
-            ->method('isSatisfiedBy')
-            ->willReturn($includeAccessControl);
+        $this->accessControlEnabled = $includeAccessControl;
 
         $this->user
             ->expects($this->any())

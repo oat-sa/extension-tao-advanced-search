@@ -73,4 +73,37 @@ class SearchResultNormalizerTest extends TestCase
             $this->subject->normalizeByByResultSet($resultSet)
         );
     }
+
+    public function testNormalizeByByResultSetExpandsNestedAttributesWithRawValue(): void
+    {
+        $resultSet = new ResultSet(
+            [
+                [
+                    'label' => 'Item A',
+                    'attributes' => [
+                        [
+                            'key' => 'my_prop_key',
+                            'type' => 'TextBox',
+                            'value' => 'stored_value',
+                            'raw_value' => 'Human readable',
+                        ],
+                    ],
+                ],
+            ],
+            1
+        );
+
+        $this->assertEquals(
+            new SearchResult(
+                [
+                    [
+                        'label' => 'Item A',
+                        'TextBox_my_prop_key' => 'Human readable',
+                    ],
+                ],
+                1
+            ),
+            $this->subject->normalizeByByResultSet($resultSet)
+        );
+    }
 }

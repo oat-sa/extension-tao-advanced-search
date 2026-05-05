@@ -48,6 +48,7 @@ class SearchResultNormalizer
         $out = [];
 
         foreach ($resultSet as $result) {
+            $result = $this->flattenNestedAttributes($result);
             $newResult = [];
 
             foreach ($result as $resultKey => $resultValue) {
@@ -89,6 +90,65 @@ class SearchResultNormalizer
     private function isKeyAllowed(string $key): bool
     {
         return !in_array($key, self::OMIT_PROPERTIES, true);
+    }
+
+    /**
+     * Expands nested {@code attributes} documents into the legacy flat field names produced before nested indexing,
+     * so consumers still receive {@code Widget_<encodedPropUri>} and optional {@code *_raw} pairs.
+     *
+     * @param mixed $result One hit {@code _source} row
+     */
+    private function flattenNestedAttributes($result): array
+    {
+        $result = (array) $result;
+
+        if (!isset($result['attributes']) || !is_array($result['attributes'])) {
+            return $result;
+        }
+
+        foreach ($result['attributes'] as $attr) {
+            if (!is_array($attr) || !isset($attr['type'], $attr['key'])) {
+                continue;
+            }
+
+            $baseField = $attr['type'] . '_' . $attr['key'];
+            if (array_key_exists('value', $attr)) {
+                $this->appendMergedFieldValue($result, $baseField, $attr['value']);
+            }
+            if (
+                isset($attr['raw_value'])
+                && $attr['raw_value'] !== ''
+                && $attr['raw_value'] !== null
+            ) {
+                $this->appendMergedFieldValue(
+                    $result,
+                    $baseField . PropertyIndexReferenceFactory::RAW_SUFFIX,
+                    $attr['raw_value']
+                );
+            }
+        }
+        unset($result['attributes']);
+
+        return $result;
+    }
+
+    private function appendMergedFieldValue(array &$result, string $fieldName, $value): void
+    {
+        if (!array_key_exists($fieldName, $result)) {
+            $result[$fieldName] = $value;
+            return;
+        }
+
+        $existing = $result[$fieldName];
+        $incoming = is_array($value) ? $value : [$value];
+
+        if (!is_array($existing)) {
+            $result[$fieldName] = array_values(array_unique(array_merge([$existing], $incoming)));
+
+            return;
+        }
+
+        $result[$fieldName] = array_values(array_unique(array_merge($existing, $incoming)));
     }
 
     private function extractId(string $key): string

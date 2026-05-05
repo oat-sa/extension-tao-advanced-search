@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch;
 
+use oat\tao\model\search\index\DocumentBuilder\PropertyIndexReferenceFactory;
 use oat\tao\model\search\index\IndexDocument;
 use Elastic\Elasticsearch\Client;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
@@ -37,6 +38,15 @@ class ElasticSearchIndexer implements IndexerInterface
     use LogIndexOperationsTrait;
 
     private const INDEXING_BLOCK_SIZE = 100;
+    private const ATTRIBUTES_FIELD = 'attributes';
+    private const INDEXES_USING_NESTED_ATTRIBUTES = [
+        IndexerInterface::ITEMS_INDEX,
+        IndexerInterface::TESTS_INDEX,
+        IndexerInterface::DELIVERIES_INDEX,
+        IndexerInterface::GROUPS_INDEX,
+        IndexerInterface::ASSETS_INDEX,
+        IndexerInterface::TEST_TAKERS_INDEX,
+    ];
 
     /** @var Client */
     private $client;
@@ -214,11 +224,15 @@ class ElasticSearchIndexer implements IndexerInterface
             return $params;
         }
 
-        $body = array_merge(
-            $document->getBody(),
-            (array)$document->getDynamicProperties(),
-            (array)$document->getAccessProperties()
-        );
+        $body = $document->getBody();
+        $dynamicProperties = (array) $document->getDynamicProperties();
+        if ($this->shouldUseNestedAttributes($indexName)) {
+            $body[self::ATTRIBUTES_FIELD] = $this->buildAttributes($dynamicProperties);
+        } else {
+            $body = array_merge($body, $dynamicProperties);
+        }
+
+        $body = array_merge($body, (array) $document->getAccessProperties());
 
         if ($action === 'update') {
             $body = ['doc' => $body];
@@ -227,5 +241,75 @@ class ElasticSearchIndexer implements IndexerInterface
         $params['body'][] = $body;
 
         return $params;
+    }
+
+    private function shouldUseNestedAttributes(string $indexName): bool
+    {
+        foreach (self::INDEXES_USING_NESTED_ATTRIBUTES as $index) {
+            if ($indexName === $index || str_ends_with($indexName, $index)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function buildAttributes(array $dynamicProperties): array
+    {
+        $attributes = [];
+        $rawSuffix = PropertyIndexReferenceFactory::RAW_SUFFIX;
+
+        foreach ($dynamicProperties as $fieldName => $values) {
+            if (!is_array($values) || strpos($fieldName, '_') === false) {
+                continue;
+            }
+
+            [$type, $key] = explode('_', $fieldName, 2);
+            if ($key === '' || substr($key, -strlen($rawSuffix)) === $rawSuffix) {
+                continue;
+            }
+
+            $rawFieldName = $fieldName . $rawSuffix;
+            $rawValues = [];
+            if (isset($dynamicProperties[$rawFieldName]) && is_array($dynamicProperties[$rawFieldName])) {
+                $rawValues = array_values($dynamicProperties[$rawFieldName]);
+            }
+
+            foreach (array_values($values) as $idx => $value) {
+                $row = [
+                    'key' => $key,
+                    'type' => $type,
+                    'value' => (string) $value,
+                ];
+                $rawString = $this->resolveRawValueForIndex($rawValues, $idx);
+                if ($rawString !== null) {
+                    $row['raw_value'] = $rawString;
+                }
+                $attributes[] = $row;
+            }
+        }
+
+        return $attributes;
+    }
+
+    /**
+     * Pairs main dynamic-field values with parallel {@see PropertyIndexReferenceFactory::createRaw} values.
+     * When only one raw chunk exists (typical for multi-select imploded into one string), it applies to every row.
+     */
+    private function resolveRawValueForIndex(array $rawValues, int $valueIndex): ?string
+    {
+        if ($rawValues === []) {
+            return null;
+        }
+
+        if (isset($rawValues[$valueIndex])) {
+            return (string) $rawValues[$valueIndex];
+        }
+
+        if (count($rawValues) === 1) {
+            return (string) $rawValues[0];
+        }
+
+        return null;
     }
 }

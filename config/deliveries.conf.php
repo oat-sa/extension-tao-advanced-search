@@ -64,6 +64,33 @@ return [
                 'test_uri' => [
                     'type' => 'keyword',
                 ],
+                'attributes' => [
+                    'type' => 'nested',
+                    'properties' => [
+                        'key' => [
+                            'type' => 'keyword',
+                        ],
+                        'type' => [
+                            'type' => 'keyword',
+                        ],
+                        'value' => [
+                            'type' => 'text',
+                            'fields' => [
+                                'raw' => [
+                                    'type' => 'keyword'
+                                ]
+                            ]
+                        ],
+                        'raw_value' => [
+                            'type' => 'text',
+                            'fields' => [
+                                'raw' => [
+                                    'type' => 'keyword'
+                                ]
+                            ]
+                        ],
+                    ],
+                ],
             ],
         ],
         'settings' => [

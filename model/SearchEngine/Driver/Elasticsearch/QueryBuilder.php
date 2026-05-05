@@ -42,6 +42,10 @@ class QueryBuilder
     ];
 
     private const READ_ACCESS_FIELD = 'read_access';
+    private const ATTRIBUTES_FIELD = 'attributes';
+    private const ATTRIBUTES_KEY_FIELD = 'attributes.key';
+    private const ATTRIBUTES_TYPE_FIELD = 'attributes.type';
+    private const ATTRIBUTES_VALUE_FIELD = 'attributes.value.raw';
 
     public const STRUCTURE_TO_INDEX_MAP = [
         'results' => IndexerInterface::DELIVERY_RESULTS_INDEX,
@@ -105,18 +109,23 @@ class QueryBuilder
     /** @var IndexPrefixer */
     private $prefixer;
 
+    /** @var ElasticSearchConfig */
+    private $elasticSearchConfig;
+
     public function __construct(
         LoggerInterface $logger,
         PermissionInterface $permission,
         SessionService $sessionService,
         IndexPrefixer $prefixer,
-        UseAclSpecification $useAclSpecification
+        UseAclSpecification $useAclSpecification,
+        ElasticSearchConfig $elasticSearchConfig
     ) {
         $this->logger = $logger;
         $this->permission = $permission;
         $this->sessionService = $sessionService;
         $this->prefixer = $prefixer;
         $this->useAclSpecification = $useAclSpecification;
+        $this->elasticSearchConfig = $elasticSearchConfig;
     }
 
     public function getSearchParams(
@@ -138,15 +147,8 @@ class QueryBuilder
         $blocks = preg_split('/( AND )/i', $queryString);
         $index = $this->getIndexByType($type);
         $conditions = $this->buildConditions($index, $blocks);
-
         $query = [
-            'query' => [
-                'query_string' =>
-                    [
-                        'default_operator' => 'AND',
-                        'query' => implode(' AND ', $conditions)
-                    ]
-            ],
+            'query' => $this->buildMainQuery($conditions),
             'sort' => [
                 $order => [
                     'order' => $dir,
@@ -175,12 +177,49 @@ class QueryBuilder
         return $params;
     }
 
+    private function buildMainQuery(array $conditions): array
+    {
+        if (empty($conditions['nested'])) {
+            return [
+                'query_string' => [
+                    'default_operator' => 'AND',
+                    'query' => implode(' AND ', $conditions['legacy']),
+                ]
+            ];
+        }
+
+        $must = [];
+
+        if (!empty($conditions['legacy'])) {
+            $must[] = [
+                'query_string' => [
+                    'default_operator' => 'AND',
+                    'query' => implode(' AND ', $conditions['legacy']),
+                ],
+            ];
+        }
+
+        foreach ($conditions['nested'] as $nestedCondition) {
+            $must[] = $nestedCondition;
+        }
+
+        if (empty($must)) {
+            return ['match_all' => (object)[]];
+        }
+
+        return [
+            'bool' => [
+                'must' => $must
+            ]
+        ];
+    }
+
     private function buildConditions(string $index, array $blocks): array
     {
         $conditions = $this->buildConditionsByType($index, $blocks);
 
         if ($this->includeAccessData($index)) {
-            $conditions[] = $this->buildAccessConditions();
+            $conditions['legacy'][] = $this->buildAccessConditions();
         }
 
         return $conditions;
@@ -193,7 +232,7 @@ class QueryBuilder
      */
     private function getResultsConditions(array $blocks): array
     {
-        $conditions = [];
+        $conditions = ['legacy' => [], 'nested' => []];
 
         foreach ($blocks as $block) {
             $block = $this->parseBlock($block);
@@ -201,7 +240,7 @@ class QueryBuilder
                 continue;
             }
 
-            $conditions[] = sprintf('("%s")', $block->getTerm());
+            $conditions['legacy'][] = sprintf('("%s")', $block->getTerm());
         }
 
         return $conditions;
@@ -256,14 +295,21 @@ class QueryBuilder
     private function getResourceConditions(array $blocks): array
     {
 
-        $conditions = [];
+        $conditions = ['legacy' => [], 'nested' => []];
 
         foreach ($blocks as $block) {
-            if ($this->containsLogicalModifier($block)) {
-                $conditions[] =  $this->buildLogicCondition($block);
-            } else {
-                $conditions[] =  $this->buildConditionFromTheBlock($block);
+            if ($this->containsLogicalModifier($block) && $this->isLogicalCustomCondition($block)) {
+                $conditions['nested'][] = $this->buildLogicalCustomCondition($block);
+                continue;
             }
+
+            $queryBlock = $this->parseBlock($block);
+            if ($this->isCustomFieldBlock($queryBlock)) {
+                $conditions['nested'][] = $this->buildCustomCompatibilityCondition($queryBlock);
+                continue;
+            }
+
+            $conditions['legacy'][] = $this->buildConditionFromTheBlock($block);
         }
 
         return $conditions;
@@ -306,6 +352,109 @@ class QueryBuilder
         }
 
         return '(' . implode(' OR ', $conditions) . ')';
+    }
+
+    private function isCustomFieldBlock(QueryBlock $queryBlock): bool
+    {
+        return !empty($queryBlock->getField()) && !$this->isStandardField($queryBlock->getField());
+    }
+
+    private function buildCustomCompatibilityCondition(QueryBlock $queryBlock): array
+    {
+        if (!$this->elasticSearchConfig->isNestedAttributesQueryEnabled()) {
+            return [
+                'query_string' => [
+                    'default_operator' => 'AND',
+                    'query' => $this->buildCustomConditions($queryBlock),
+                ],
+            ];
+        }
+
+        return [
+            'bool' => [
+                'should' => [
+                    [
+                        'query_string' => [
+                            'default_operator' => 'AND',
+                            'query' => $this->buildCustomConditions($queryBlock),
+                        ],
+                    ],
+                    $this->buildNestedAttributeCondition($queryBlock),
+                ],
+                'minimum_should_match' => 1,
+            ],
+        ];
+    }
+
+    private function buildNestedAttributeCondition(QueryBlock $queryBlock): array
+    {
+        $should = [];
+        foreach (self::CUSTOM_FIELDS as $customField) {
+            $should[] = [
+                'bool' => [
+                    'must' => [
+                        ['term' => [self::ATTRIBUTES_KEY_FIELD => $queryBlock->getField()]],
+                        ['term' => [self::ATTRIBUTES_TYPE_FIELD => $customField]],
+                        ['term' => [self::ATTRIBUTES_VALUE_FIELD => $queryBlock->getTerm()]],
+                    ]
+                ]
+            ];
+        }
+
+        return [
+            'nested' => [
+                'path' => self::ATTRIBUTES_FIELD,
+                'query' => [
+                    'bool' => [
+                        'should' => $should,
+                        'minimum_should_match' => 1,
+                    ]
+                ]
+            ]
+        ];
+    }
+
+    private function isLogicalCustomCondition(string $block): bool
+    {
+        $parts = preg_split('/( LOGIC_AND | LOGIC_OR | LOGIC_NOT )/i', $block);
+        foreach ($parts as $part) {
+            $part = trim($part);
+            if ($part === '') {
+                continue;
+            }
+
+            if (!$this->isCustomFieldBlock($this->parseBlock($part))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function buildLogicalCustomCondition(string $block): array
+    {
+        if (stripos($block, self::LOGIC_MODIFIERS['and']) !== false) {
+            $logicBlocks = preg_split('/( ' . self::LOGIC_MODIFIERS['and'] . ' )/i', $block);
+            $conditions = array_map(fn (string $part): array => $this->buildCustomCompatibilityCondition($this->parseBlock($part)), $logicBlocks);
+
+            return ['bool' => ['must' => $conditions]];
+        }
+
+        if (stripos($block, self::LOGIC_MODIFIERS['or']) !== false) {
+            $logicBlocks = preg_split('/( ' . self::LOGIC_MODIFIERS['or'] . ' )/i', $block);
+            $conditions = array_map(fn (string $part): array => $this->buildCustomCompatibilityCondition($this->parseBlock($part)), $logicBlocks);
+
+            return ['bool' => ['should' => $conditions, 'minimum_should_match' => 1]];
+        }
+
+        if (stripos($block, self::LOGIC_MODIFIERS['not']) !== false) {
+            $logicBlocks = preg_split('/( ' . self::LOGIC_MODIFIERS['not'] . ' )/i', $block);
+            $conditions = array_map(fn (string $part): array => $this->buildCustomCompatibilityCondition($this->parseBlock($part)), $logicBlocks);
+
+            return ['bool' => ['must_not' => $conditions]];
+        }
+
+        return $this->buildCustomCompatibilityCondition($this->parseBlock($block));
     }
 
     private function buildAccessConditions(): string

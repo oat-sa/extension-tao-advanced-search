@@ -67,6 +67,7 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
                     service(SessionService::SERVICE_ID),
                     service(IndexPrefixer::class),
                     service(UseAclSpecification::class),
+                    service(ElasticSearchConfig::class),
                 ]
             )->public();
 

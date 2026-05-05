@@ -27,12 +27,14 @@ use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\TaoOntology;
 use Elastic\Elasticsearch\Client;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
+use oat\tao\model\search\index\DocumentBuilder\PropertyIndexReferenceFactory;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchIndexer;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use PHPUnit\Framework\MockObject\MockObject;
 use ArrayIterator;
 use DG\BypassFinals;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 class ElasticSearchIndexerTest extends TestCase
 {
@@ -143,9 +145,12 @@ class ElasticSearchIndexerTest extends TestCase
                         '_index' => IndexerInterface::ITEMS_INDEX,
                         '_id' => 'some_id'
                     ]],
-                    ['type' => [
-                        TaoOntology::CLASS_URI_ITEM
-                    ]],
+                    [
+                        'type' => [
+                            TaoOntology::CLASS_URI_ITEM,
+                        ],
+                        'attributes' => [],
+                    ],
                 ]
             ])
             ->willReturn(['bulk_response']);
@@ -153,6 +158,49 @@ class ElasticSearchIndexerTest extends TestCase
         $count = $this->sut->buildIndex($iterator);
 
         $this->assertSame(1, $count);
+    }
+
+    public function testBuildAttributesIncludesRawValueWhenRawFieldPresent(): void
+    {
+        $field = 'RadioBox_http_2_prop';
+        $rawField = $field . PropertyIndexReferenceFactory::RAW_SUFFIX;
+
+        $buildAttributes = (new ReflectionClass(ElasticSearchIndexer::class))
+            ->getMethod('buildAttributes');
+        $buildAttributes->setAccessible(true);
+
+        $out = $buildAttributes->invoke(
+            $this->sut,
+            [
+                $field => ['enc1', 'enc2'],
+                $rawField => ['Label one, Label two'],
+            ]
+        );
+
+        $this->assertCount(2, $out);
+        $this->assertSame('enc1', $out[0]['value']);
+        $this->assertSame('Label one, Label two', $out[0]['raw_value']);
+        $this->assertSame('enc2', $out[1]['value']);
+        $this->assertSame('Label one, Label two', $out[1]['raw_value']);
+    }
+
+    public function testBuildAttributesOmitsRawValueWhenNotProvided(): void
+    {
+        $field = 'TextBox_http_2_only';
+
+        $buildAttributes = (new ReflectionClass(ElasticSearchIndexer::class))
+            ->getMethod('buildAttributes');
+        $buildAttributes->setAccessible(true);
+
+        $out = $buildAttributes->invoke(
+            $this->sut,
+            [
+                $field => ['x'],
+            ]
+        );
+
+        $this->assertCount(1, $out);
+        $this->assertArrayNotHasKey('raw_value', $out[0]);
     }
 
     private function createIterator(array $items = []): MockObject
