@@ -177,11 +177,9 @@ class ElasticSearchIndexerTest extends TestCase
             ]
         );
 
-        $this->assertCount(2, $out);
-        $this->assertSame('enc1', $out[0]['value']);
+        $this->assertCount(1, $out);
+        $this->assertSame(['enc1', 'enc2'], $out[0]['value']);
         $this->assertSame('Label one, Label two', $out[0]['raw_value']);
-        $this->assertSame('enc2', $out[1]['value']);
-        $this->assertSame('Label one, Label two', $out[1]['raw_value']);
     }
 
     public function testBuildAttributesOmitsRawValueWhenNotProvided(): void
@@ -200,6 +198,7 @@ class ElasticSearchIndexerTest extends TestCase
         );
 
         $this->assertCount(1, $out);
+        $this->assertSame(['x'], $out[0]['value']);
         $this->assertArrayNotHasKey('raw_value', $out[0]);
     }
 

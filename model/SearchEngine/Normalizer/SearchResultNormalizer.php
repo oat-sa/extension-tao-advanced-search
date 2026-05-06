@@ -115,11 +115,7 @@ class SearchResultNormalizer
             if (array_key_exists('value', $attr)) {
                 $this->appendMergedFieldValue($result, $baseField, $attr['value']);
             }
-            if (
-                isset($attr['raw_value'])
-                && $attr['raw_value'] !== ''
-                && $attr['raw_value'] !== null
-            ) {
+            if (array_key_exists('raw_value', $attr) && !$this->isEmptyRawValue($attr['raw_value'])) {
                 $this->appendMergedFieldValue(
                     $result,
                     $baseField . PropertyIndexReferenceFactory::RAW_SUFFIX,
@@ -130,6 +126,18 @@ class SearchResultNormalizer
         unset($result['attributes']);
 
         return $result;
+    }
+
+    /**
+     * @param mixed $rawValue
+     */
+    private function isEmptyRawValue($rawValue): bool
+    {
+        if ($rawValue === null || $rawValue === '') {
+            return true;
+        }
+
+        return is_array($rawValue) && $rawValue === [];
     }
 
     private function appendMergedFieldValue(array &$result, string $fieldName, $value): void

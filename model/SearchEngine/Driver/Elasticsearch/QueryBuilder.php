@@ -46,6 +46,7 @@ class QueryBuilder
     private const ATTRIBUTES_KEY_FIELD = 'attributes.key';
     private const ATTRIBUTES_TYPE_FIELD = 'attributes.type';
     private const ATTRIBUTES_VALUE_FIELD = 'attributes.value.raw';
+    private const ATTRIBUTES_VALUE_TEXT_FIELD = 'attributes.value';
 
     public const STRUCTURE_TO_INDEX_MAP = [
         'results' => IndexerInterface::DELIVERY_RESULTS_INDEX,
@@ -388,17 +389,9 @@ class QueryBuilder
 
     private function buildNestedAttributeCondition(QueryBlock $queryBlock): array
     {
-        $should = [];
+        $typeShould = [];
         foreach (self::CUSTOM_FIELDS as $customField) {
-            $should[] = [
-                'bool' => [
-                    'must' => [
-                        ['term' => [self::ATTRIBUTES_KEY_FIELD => $queryBlock->getField()]],
-                        ['term' => [self::ATTRIBUTES_TYPE_FIELD => $customField]],
-                        ['term' => [self::ATTRIBUTES_VALUE_FIELD => $queryBlock->getTerm()]],
-                    ]
-                ]
-            ];
+            $typeShould[] = ['term' => [self::ATTRIBUTES_TYPE_FIELD => $customField]];
         }
 
         return [
@@ -406,11 +399,43 @@ class QueryBuilder
                 'path' => self::ATTRIBUTES_FIELD,
                 'query' => [
                     'bool' => [
-                        'should' => $should,
-                        'minimum_should_match' => 1,
-                    ]
-                ]
-            ]
+                        'must' => [
+                            ['term' => [self::ATTRIBUTES_KEY_FIELD => $queryBlock->getField()]],
+                            [
+                                'bool' => [
+                                    'should' => $typeShould,
+                                    'minimum_should_match' => 1,
+                                ],
+                            ],
+                            $this->buildNestedAttributeValueClause($queryBlock->getTerm()),
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Matches custom metadata the same way as legacy flat fields: analyzed {@code attributes.value} for tokens
+     * (e.g. query "text" hits stored "text text") plus exact {@code attributes.value.raw} for keyword/URI matches.
+     */
+    private function buildNestedAttributeValueClause(string $term): array
+    {
+        return [
+            'bool' => [
+                'should' => [
+                    ['term' => [self::ATTRIBUTES_VALUE_FIELD => $term]],
+                    [
+                        'match' => [
+                            self::ATTRIBUTES_VALUE_TEXT_FIELD => [
+                                'query' => $term,
+                                'operator' => 'and',
+                            ],
+                        ],
+                    ],
+                ],
+                'minimum_should_match' => 1,
+            ],
         ];
     }
 

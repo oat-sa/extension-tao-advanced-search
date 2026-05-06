@@ -84,7 +84,7 @@ class SearchResultNormalizerTest extends TestCase
                         [
                             'key' => 'my_prop_key',
                             'type' => 'TextBox',
-                            'value' => 'stored_value',
+                            'value' => ['stored_value'],
                             'raw_value' => 'Human readable',
                         ],
                     ],

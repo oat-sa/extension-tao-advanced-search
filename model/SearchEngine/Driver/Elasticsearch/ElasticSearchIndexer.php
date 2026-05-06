@@ -275,35 +275,47 @@ class ElasticSearchIndexer implements IndexerInterface
                 $rawValues = array_values($dynamicProperties[$rawFieldName]);
             }
 
-            foreach (array_values($values) as $idx => $value) {
-                $row = [
-                    'key' => $key,
-                    'type' => $type,
-                    'value' => (string) $value,
-                ];
-                $rawString = $this->resolveRawValueForIndex($rawValues, $idx);
-                if ($rawString !== null) {
-                    $row['raw_value'] = $rawString;
-                }
-                $attributes[] = $row;
+            $stringValues = array_map(static fn ($v): string => (string) $v, array_values($values));
+            if ($stringValues === []) {
+                continue;
             }
+
+            $row = [
+                'key' => $key,
+                'type' => $type,
+                'value' => $stringValues,
+            ];
+
+            $rawPayload = $this->resolveRawValuesForIndexedAttribute($rawValues, $stringValues);
+            if ($rawPayload !== null) {
+                $row['raw_value'] = $rawPayload;
+            }
+
+            $attributes[] = $row;
         }
 
         return $attributes;
     }
 
     /**
-     * Pairs main dynamic-field values with parallel {@see PropertyIndexReferenceFactory::createRaw} values.
-     * When only one raw chunk exists (typical for multi-select imploded into one string), it applies to every row.
+     * Aligns parallel {@see PropertyIndexReferenceFactory::createRaw} values with indexed {@code value} entries.
+     * When only one raw entry exists (e.g. multi-select labels imploded into one string), it is stored once on the
+     * same nested object as the full {@code value} array.
+     *
+     * @param list<string> $rawValues
+     * @param list<string> $stringValues
+     * @return list<string>|string|null
      */
-    private function resolveRawValueForIndex(array $rawValues, int $valueIndex): ?string
+    private function resolveRawValuesForIndexedAttribute(array $rawValues, array $stringValues): array|string|null
     {
         if ($rawValues === []) {
             return null;
         }
 
-        if (isset($rawValues[$valueIndex])) {
-            return (string) $rawValues[$valueIndex];
+        if (count($rawValues) === count($stringValues)) {
+            $parts = array_map(static fn ($v): string => (string) $v, array_values($rawValues));
+
+            return count($parts) === 1 ? $parts[0] : $parts;
         }
 
         if (count($rawValues) === 1) {
