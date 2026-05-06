@@ -44,7 +44,6 @@ class QueryBuilder
     private const READ_ACCESS_FIELD = 'read_access';
     private const ATTRIBUTES_FIELD = 'attributes';
     private const ATTRIBUTES_KEY_FIELD = 'attributes.key';
-    private const ATTRIBUTES_TYPE_FIELD = 'attributes.type';
     private const ATTRIBUTES_VALUE_FIELD = 'attributes.value.raw';
     private const ATTRIBUTES_VALUE_TEXT_FIELD = 'attributes.value';
 
@@ -389,11 +388,6 @@ class QueryBuilder
 
     private function buildNestedAttributeCondition(QueryBlock $queryBlock): array
     {
-        $typeShould = [];
-        foreach (self::CUSTOM_FIELDS as $customField) {
-            $typeShould[] = ['term' => [self::ATTRIBUTES_TYPE_FIELD => $customField]];
-        }
-
         return [
             'nested' => [
                 'path' => self::ATTRIBUTES_FIELD,
@@ -401,12 +395,6 @@ class QueryBuilder
                     'bool' => [
                         'must' => [
                             ['term' => [self::ATTRIBUTES_KEY_FIELD => $queryBlock->getField()]],
-                            [
-                                'bool' => [
-                                    'should' => $typeShould,
-                                    'minimum_should_match' => 1,
-                                ],
-                            ],
                             $this->buildNestedAttributeValueClause($queryBlock->getTerm()),
                         ],
                     ],
