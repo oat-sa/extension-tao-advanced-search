@@ -349,7 +349,7 @@ class QueryBuilderTest extends TestCase
         static $cache;
 
         if ($cache === null) {
-            $path = __DIR__ . '/query-builder-expected-bodies.json';
+            $path = dirname(__DIR__, 4) . '/resources/query-builder-expected-bodies.json';
             $cache = json_decode((string) file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
         }
 
