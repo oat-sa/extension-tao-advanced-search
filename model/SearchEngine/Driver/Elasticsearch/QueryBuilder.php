@@ -448,21 +448,30 @@ class QueryBuilder
     {
         if (stripos($block, self::LOGIC_MODIFIERS['and']) !== false) {
             $logicBlocks = preg_split('/( ' . self::LOGIC_MODIFIERS['and'] . ' )/i', $block);
-            $conditions = array_map(fn (string $part): array => $this->buildCustomCompatibilityCondition($this->parseBlock($part)), $logicBlocks);
+            $conditions = array_map(
+                fn (string $part): array => $this->buildCustomCompatibilityCondition($this->parseBlock($part)),
+                $logicBlocks
+            );
 
             return ['bool' => ['must' => $conditions]];
         }
 
         if (stripos($block, self::LOGIC_MODIFIERS['or']) !== false) {
             $logicBlocks = preg_split('/( ' . self::LOGIC_MODIFIERS['or'] . ' )/i', $block);
-            $conditions = array_map(fn (string $part): array => $this->buildCustomCompatibilityCondition($this->parseBlock($part)), $logicBlocks);
+            $conditions = array_map(
+                fn (string $part): array => $this->buildCustomCompatibilityCondition($this->parseBlock($part)),
+                $logicBlocks
+            );
 
             return ['bool' => ['should' => $conditions, 'minimum_should_match' => 1]];
         }
 
         if (stripos($block, self::LOGIC_MODIFIERS['not']) !== false) {
             $logicBlocks = preg_split('/( ' . self::LOGIC_MODIFIERS['not'] . ' )/i', $block);
-            $conditions = array_map(fn (string $part): array => $this->buildCustomCompatibilityCondition($this->parseBlock($part)), $logicBlocks);
+            $conditions = array_map(
+                fn (string $part): array => $this->buildCustomCompatibilityCondition($this->parseBlock($part)),
+                $logicBlocks
+            );
 
             return ['bool' => ['must_not' => $conditions]];
         }
