@@ -337,7 +337,6 @@ class QueryBuilder
         } else {
             return $this->buildCustomConditions($queryBlock);
         }
-        return '';
     }
 
     private function isStandardField(string $field): bool
