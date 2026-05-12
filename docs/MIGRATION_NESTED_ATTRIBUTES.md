@@ -42,5 +42,5 @@ After migrating mappings and reindexing, remove the override or set it to `true`
 
 ### `{"type":"illegal_argument_exception","reason":"Limit of total fields [1000] has been exceeded while adding new fields [2]"}`
 Normally after migrating to `attributes` we do not create a new mapping per each new property defined, so not overflowing mapping with stale fields, 
-but, without manual re-indexation a number of mapped stale properties may already been close to default limit before code deployment.
+but, without manual re-indexation a number of mapped stale properties may already be close to the default limit before code deployment.
 In this case re-index using elasticsearch or re-create and re-populate as described above.
