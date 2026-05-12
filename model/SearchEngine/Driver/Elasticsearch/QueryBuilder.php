@@ -180,6 +180,10 @@ class QueryBuilder
     private function buildMainQuery(array $conditions): array
     {
         if (empty($conditions['nested'])) {
+            if (empty($conditions['legacy'])) {
+                return ['match_all' => (object)[]];
+            }
+
             return [
                 'query_string' => [
                     'default_operator' => 'AND',

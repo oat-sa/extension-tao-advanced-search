@@ -344,6 +344,23 @@ class QueryBuilderTest extends TestCase
         ];
     }
 
+    public function testGetSearchParamsResultsOnlyParentClassesUsesMatchAll(): void
+    {
+        $this->createAccessControlMock(false);
+
+        $params = $this->subject->getSearchParams(
+            'parent_classes:http://www.tao.lu/Ontologies/TAOResult.rdf#DeliveryResult',
+            'results',
+            0,
+            10,
+            '_id',
+            'DESC'
+        );
+
+        $body = json_decode($params['body'], true, 512, JSON_THROW_ON_ERROR);
+        $this->assertSame(['match_all' => []], $body['query']);
+    }
+
     private static function expectedBodies(): array
     {
         static $cache;
