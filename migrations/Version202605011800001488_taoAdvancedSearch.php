@@ -23,9 +23,11 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\migrations;
 
 use Doctrine\DBAL\Schema\Schema;
+use oat\oatbox\reporting\Report;
 use oat\tao\scripts\tools\migrations\AbstractMigration;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\scripts\tools\IndexMigration;
+use Throwable;
 
 /**
  * Adds nested `attributes` mapping (same shape as taoAdvancedSearch/config/*.conf.php) on all
@@ -58,15 +60,28 @@ final class Version202605011800001488_taoAdvancedSearch extends AbstractMigratio
     public function up(Schema $schema): void
     {
         foreach (self::INDEX_NAMES as $indexName) {
-            $this->runAction(
-                new IndexMigration(),
-                [
-                    '-i',
-                    $indexName,
-                    '-q',
-                    self::ATTRIBUTES_MAPPING_BODY,
-                ]
-            );
+            $this->addReport(Report::createInfo(sprintf('Updating nested attributes mapping for index "%s"', $indexName)));
+
+            try {
+                $this->runAction(
+                    new IndexMigration(),
+                    [
+                        '-i',
+                        $indexName,
+                        '-q',
+                        self::ATTRIBUTES_MAPPING_BODY,
+                    ]
+                );
+
+                $this->addReport(Report::createSuccess(sprintf('Updated nested attributes mapping for index "%s"', $indexName)));
+            } catch (Throwable $e) {
+                $this->addReport(
+                    Report::createError(
+                        sprintf('Failed updating nested attributes mapping for index "%s": %s', $indexName, $e->getMessage())
+                    )
+                );
+                throw $e;
+            }
         }
     }
 
