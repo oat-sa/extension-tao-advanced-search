@@ -298,9 +298,17 @@ class QueryBuilder
         $conditions = ['legacy' => [], 'nested' => []];
 
         foreach ($blocks as $block) {
-            if ($this->containsLogicalModifier($block) && $this->isLogicalCustomCondition($block)) {
-                $conditions['nested'][] = $this->buildLogicalCustomCondition($block);
-                continue;
+            if ($this->containsLogicalModifier($block)) {
+                if ($this->isLogicalCustomCondition($block)) {
+                    $conditions['nested'][] = $this->buildLogicalCustomCondition($block);
+                    continue;
+                }
+
+                $legacyLogicalCondition = $this->buildLogicCondition($block);
+                if ($legacyLogicalCondition !== null) {
+                    $conditions['legacy'][] = $legacyLogicalCondition;
+                    continue;
+                }
             }
 
             $queryBlock = $this->parseBlock($block);
