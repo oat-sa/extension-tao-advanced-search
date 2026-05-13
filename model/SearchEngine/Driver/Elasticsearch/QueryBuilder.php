@@ -46,6 +46,8 @@ class QueryBuilder
     private const ATTRIBUTES_KEY_FIELD = 'attributes.key';
     private const ATTRIBUTES_VALUE_FIELD = 'attributes.value.raw';
     private const ATTRIBUTES_VALUE_TEXT_FIELD = 'attributes.value';
+    private const ATTRIBUTES_RAW_VALUE_TEXT_FIELD = 'attributes.raw_value';
+    private const ATTRIBUTES_RAW_VALUE_FIELD = 'attributes.raw_value.raw';
 
     public const STRUCTURE_TO_INDEX_MAP = [
         'results' => IndexerInterface::DELIVERY_RESULTS_INDEX,
@@ -256,7 +258,7 @@ class QueryBuilder
             return $this->getResultsConditions($blocks);
         }
 
-        return $this->getResourceConditions($blocks);
+        return $this->getResourceConditions($type, $blocks);
     }
 
     private function containsLogicalModifier(string $block): bool
@@ -296,7 +298,7 @@ class QueryBuilder
         return null;
     }
 
-    private function getResourceConditions(array $blocks): array
+    private function getResourceConditions(string $index, array $blocks): array
     {
 
         $conditions = ['legacy' => [], 'nested' => []];
@@ -304,7 +306,7 @@ class QueryBuilder
         foreach ($blocks as $block) {
             if ($this->containsLogicalModifier($block)) {
                 if ($this->isLogicalCustomCondition($block)) {
-                    $conditions['nested'][] = $this->buildLogicalCustomCondition($block);
+                    $conditions['nested'][] = $this->buildLogicalCustomCondition($block, $index);
                     continue;
                 }
 
@@ -317,7 +319,18 @@ class QueryBuilder
 
             $queryBlock = $this->parseBlock($block);
             if ($this->isCustomFieldBlock($queryBlock)) {
-                $conditions['nested'][] = $this->buildCustomCompatibilityCondition($queryBlock);
+                $conditions['nested'][] = $this->buildCustomCompatibilityCondition($queryBlock, $index);
+                continue;
+            }
+
+            $term = $queryBlock->getTerm();
+            if (
+                empty($queryBlock->getField())
+                && $term !== ''
+                && $this->elasticSearchConfig->isNestedAttributesQueryEnabled()
+                && $this->indexUsesNestedAttributeDocuments($index)
+            ) {
+                $conditions['nested'][] = $this->buildFieldlessRootAndNestedAttributesCondition($term);
                 continue;
             }
 
@@ -325,6 +338,74 @@ class QueryBuilder
         }
 
         return $conditions;
+    }
+
+    /**
+     * Whether this index maps resources with nested {@code attributes} (see {@see IndexerInterface::INDEXES_USING_NESTED_ATTRIBUTES}).
+     * If false, custom-property queries use only legacy {@code query_string} on flat widget fields — no nested clause.
+     */
+    private function indexUsesNestedAttributeDocuments(string $index): bool
+    {
+        foreach (IndexerInterface::INDEXES_USING_NESTED_ATTRIBUTES as $baseIndex) {
+            if ($index === $baseIndex || str_ends_with($index, $baseIndex)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Field-less search: match the term on root fields (legacy query_string) OR inside nested {@code attributes}
+     * (aligned with {@see buildNestedAttributeValueClause} plus optional {@code raw_value} paths).
+     */
+    private function buildFieldlessRootAndNestedAttributesCondition(string $term): array
+    {
+        return [
+            'bool' => [
+                'should' => [
+                    [
+                        'query_string' => [
+                            'default_operator' => 'AND',
+                            'query' => sprintf('("%s")', $term),
+                        ],
+                    ],
+                    $this->buildNestedFieldlessAttributesClause($term),
+                ],
+                'minimum_should_match' => 1,
+            ],
+        ];
+    }
+
+    /**
+     * Field-less nested branch: exact {@code attributes.value.raw} (indexed token/URI) plus full-text and exact
+     * on {@code attributes.raw_value}. Unlike {@see buildNestedAttributeValueClause}, we do not run analyzed
+     * {@code match} on {@code attributes.value} here so free text favours human-readable {@code raw_value}.
+     */
+    private function buildNestedFieldlessAttributesClause(string $term): array
+    {
+        return [
+            'nested' => [
+                'path' => self::ATTRIBUTES_FIELD,
+                'query' => [
+                    'bool' => [
+                        'should' => [
+                            ['term' => [self::ATTRIBUTES_VALUE_FIELD => $term]],
+                            [
+                                'match' => [
+                                    self::ATTRIBUTES_RAW_VALUE_TEXT_FIELD => [
+                                        'query' => $term,
+                                        'operator' => 'and',
+                                    ],
+                                ],
+                            ],
+                            ['term' => [self::ATTRIBUTES_RAW_VALUE_FIELD => $term]],
+                        ],
+                        'minimum_should_match' => 1,
+                    ],
+                ],
+            ],
+        ];
     }
 
     private function buildConditionFromTheBlock(string $block): string
@@ -370,9 +451,12 @@ class QueryBuilder
         return !empty($queryBlock->getField()) && !$this->isStandardField($queryBlock->getField());
     }
 
-    private function buildCustomCompatibilityCondition(QueryBlock $queryBlock): array
+    private function buildCustomCompatibilityCondition(QueryBlock $queryBlock, string $index): array
     {
-        if (!$this->elasticSearchConfig->isNestedAttributesQueryEnabled()) {
+        if (
+            !$this->elasticSearchConfig->isNestedAttributesQueryEnabled()
+            || !$this->indexUsesNestedAttributeDocuments($index)
+        ) {
             return [
                 'query_string' => [
                     'default_operator' => 'AND',
@@ -455,12 +539,12 @@ class QueryBuilder
         return true;
     }
 
-    private function buildLogicalCustomCondition(string $block): array
+    private function buildLogicalCustomCondition(string $block, string $index): array
     {
         if (stripos($block, self::LOGIC_MODIFIERS['and']) !== false) {
             $logicBlocks = preg_split('/( ' . self::LOGIC_MODIFIERS['and'] . ' )/i', $block);
             $conditions = array_map(
-                fn (string $part): array => $this->buildCustomCompatibilityCondition($this->parseBlock($part)),
+                fn (string $part): array => $this->buildCustomCompatibilityCondition($this->parseBlock($part), $index),
                 $logicBlocks
             );
 
@@ -470,7 +554,7 @@ class QueryBuilder
         if (stripos($block, self::LOGIC_MODIFIERS['or']) !== false) {
             $logicBlocks = preg_split('/( ' . self::LOGIC_MODIFIERS['or'] . ' )/i', $block);
             $conditions = array_map(
-                fn (string $part): array => $this->buildCustomCompatibilityCondition($this->parseBlock($part)),
+                fn (string $part): array => $this->buildCustomCompatibilityCondition($this->parseBlock($part), $index),
                 $logicBlocks
             );
 
@@ -480,14 +564,14 @@ class QueryBuilder
         if (stripos($block, self::LOGIC_MODIFIERS['not']) !== false) {
             $logicBlocks = preg_split('/( ' . self::LOGIC_MODIFIERS['not'] . ' )/i', $block);
             $conditions = array_map(
-                fn (string $part): array => $this->buildCustomCompatibilityCondition($this->parseBlock($part)),
+                fn (string $part): array => $this->buildCustomCompatibilityCondition($this->parseBlock($part), $index),
                 $logicBlocks
             );
 
             return ['bool' => ['must_not' => $conditions]];
         }
 
-        return $this->buildCustomCompatibilityCondition($this->parseBlock($block));
+        return $this->buildCustomCompatibilityCondition($this->parseBlock($block), $index);
     }
 
     private function buildAccessConditions(): string

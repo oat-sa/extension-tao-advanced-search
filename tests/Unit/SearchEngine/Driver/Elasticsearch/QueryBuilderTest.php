@@ -130,25 +130,17 @@ class QueryBuilderTest extends TestCase
         return [
             'with user access control and role access control' => [
                 'test',
-                '{"query":{"query_string":{"default_operator":"AND","query":' .
-                '"(\\"test\\") AND (read_access:(\\"https:\\/\\/tao.docker.localhost\\/' .
-                'ontologies\\/tao.rdf#i5f64514f1c36110793759fc28c0105b\\" OR' .
-                ' \\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#BackOfficeRole\\" OR ' .
-                '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#ItemsManagerRole\\"))"}},' .
-                '"sort":{"_id":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":' .
-                '"_last","unmapped_type":"long"}}}'
+                trim(<<<'JSON'
+{"query":{"bool":{"must":[{"query_string":{"default_operator":"AND","query":"(read_access:(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},{"bool":{"should":[{"query_string":{"default_operator":"AND","query":"(\"test\")"}},{"nested":{"path":"attributes","query":{"bool":{"should":[{"term":{"attributes.value.raw":"test"}},{"match":{"attributes.raw_value":{"query":"test","operator":"and"}}},{"term":{"attributes.raw_value.raw":"test"}}],"minimum_should_match":1}}}}],"minimum_should_match":1}}]}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}
+JSON
+                ),
             ],
             'Simple query' => [
                 'test',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(\\"test\\") AND ' .
-                '(read_access:(\\"https:\\/\\/tao.docker.localhost\\/' .
-                'ontologies\\/tao.rdf#i5f64514f1c36110793759fc28c0105b\\" OR ' .
-                '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#BackOfficeRole\\" OR ' .
-                '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#ItemsManagerRole\\"))"}},' .
-                '"sort":{"_id":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"}}}'
+                trim(<<<'JSON'
+{"query":{"bool":{"must":[{"query_string":{"default_operator":"AND","query":"(read_access:(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},{"bool":{"should":[{"query_string":{"default_operator":"AND","query":"(\"test\")"}},{"nested":{"path":"attributes","query":{"bool":{"should":[{"term":{"attributes.value.raw":"test"}},{"match":{"attributes.raw_value":{"query":"test","operator":"and"}}},{"term":{"attributes.raw_value.raw":"test"}}],"minimum_should_match":1}}}}],"minimum_should_match":1}}]}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}
+JSON
+                ),
             ],
             'Query specific field' => [
                 'label:test',
@@ -208,14 +200,10 @@ class QueryBuilderTest extends TestCase
             ],
             'Query URIs' => [
                 'https://test-act.docker.localhost/ontologies/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(\"https:\/\/test-act.docker.localhost\/' .
-                'ontologies\/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a\") AND (read_access:' .
-                '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
-                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
-                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#' .
-                'ItemsManagerRole\"))"}},"sort":{"_id":{"order":"DESC",' .
-                '"missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"}}}'
+                trim(<<<'JSON'
+{"query":{"bool":{"must":[{"query_string":{"default_operator":"AND","query":"(read_access:(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},{"bool":{"should":[{"query_string":{"default_operator":"AND","query":"(\"https:\/\/test-act.docker.localhost\/ontologies\/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a\")"}},{"nested":{"path":"attributes","query":{"bool":{"should":[{"term":{"attributes.value.raw":"https:\/\/test-act.docker.localhost\/ontologies\/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a"}},{"match":{"attributes.raw_value":{"query":"https:\/\/test-act.docker.localhost\/ontologies\/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a","operator":"and"}}},{"term":{"attributes.raw_value.raw":"https:\/\/test-act.docker.localhost\/ontologies\/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a"}}],"minimum_should_match":1}}}}],"minimum_should_match":1}}]}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}
+JSON
+                ),
             ],
             'Query Field with URI' => [
                 'delivery: https://test-act.docker.localhost/ontologies/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a',
@@ -231,14 +219,10 @@ class QueryBuilderTest extends TestCase
             ],
             'Query term with a backslash' => [
                 'some\ term',
-                '{"query":{"query_string":{"default_operator":"AND","query":' .
-                '"(\"some\\\\\\\\ term\") AND (read_access:' .
-                '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
-                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
-                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},' .
-                '"sort":{"_id":{"order":"DESC",' .
-                '"missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"}}}'
+                trim(<<<'JSON'
+{"query":{"bool":{"must":[{"query_string":{"default_operator":"AND","query":"(read_access:(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},{"bool":{"should":[{"query_string":{"default_operator":"AND","query":"(\"some\\\\ term\")"}},{"nested":{"path":"attributes","query":{"bool":{"should":[{"term":{"attributes.value.raw":"some\\\\ term"}},{"match":{"attributes.raw_value":{"query":"some\\\\ term","operator":"and"}}},{"term":{"attributes.raw_value.raw":"some\\\\ term"}}],"minimum_should_match":1}}}}],"minimum_should_match":1}}]}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}
+JSON
+                ),
             ],
         ];
     }
@@ -269,11 +253,10 @@ class QueryBuilderTest extends TestCase
         return [
             'Simple query' => [
                 'test',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(\"test\")"}},' .
-                '"sort":{"_id":{"order":"DESC",' .
-                '"missing":"_last","unmapped_type":"long"},"label.raw":' .
-                '{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"}}}'
+                trim(<<<'JSON'
+{"query":{"bool":{"must":[{"bool":{"should":[{"query_string":{"default_operator":"AND","query":"(\"test\")"}},{"nested":{"path":"attributes","query":{"bool":{"should":[{"term":{"attributes.value.raw":"test"}},{"match":{"attributes.raw_value":{"query":"test","operator":"and"}}},{"term":{"attributes.raw_value.raw":"test"}}],"minimum_should_match":1}}}}],"minimum_should_match":1}}]}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}
+JSON
+                ),
             ],
             'Query specific field' => [
                 'label:test',
@@ -328,10 +311,10 @@ class QueryBuilderTest extends TestCase
             ],
             'Query URIs' => [
                 'https://test-act.docker.localhost/ontologies/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a',
-                '{"query":{"query_string":{"default_operator":"AND","query":"(\"https:\/\/test-act.docker.localhost' .
-                '\/ontologies\/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a\")"}},' .
-                '"sort":{"_id":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
+                trim(<<<'JSON'
+{"query":{"bool":{"must":[{"bool":{"should":[{"query_string":{"default_operator":"AND","query":"(\"https:\/\/test-act.docker.localhost\/ontologies\/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a\")"}},{"nested":{"path":"attributes","query":{"bool":{"should":[{"term":{"attributes.value.raw":"https:\/\/test-act.docker.localhost\/ontologies\/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a"}},{"match":{"attributes.raw_value":{"query":"https:\/\/test-act.docker.localhost\/ontologies\/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a","operator":"and"}}},{"term":{"attributes.raw_value.raw":"https:\/\/test-act.docker.localhost\/ontologies\/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a"}}],"minimum_should_match":1}}}}],"minimum_should_match":1}}]}},"sort":{"_id":{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}
+JSON
+                ),
             ],
             'Query Field with URI' => [
                 'delivery: https://test-act.docker.localhost/ontologies/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a',
