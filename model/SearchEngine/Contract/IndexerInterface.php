@@ -60,6 +60,21 @@ interface IndexerInterface
         self::TEST_TAKERS_INDEX
     ];
 
+    /**
+     * Logical index names whose Elasticsearch mapping stores custom metadata as nested {@code attributes}.
+     * Indexing and query construction must treat this list as the single source of truth.
+     *
+     * @var list<string>
+     */
+    public const INDEXES_USING_NESTED_ATTRIBUTES = [
+        self::ITEMS_INDEX,
+        self::TESTS_INDEX,
+        self::DELIVERIES_INDEX,
+        self::GROUPS_INDEX,
+        self::ASSETS_INDEX,
+        self::TEST_TAKERS_INDEX,
+    ];
+
     public function getIndexNameByDocument(IndexDocument $document): string;
 
     public function buildIndex(Iterator $documents): int;

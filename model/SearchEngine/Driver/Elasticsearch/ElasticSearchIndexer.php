@@ -39,14 +39,6 @@ class ElasticSearchIndexer implements IndexerInterface
 
     private const INDEXING_BLOCK_SIZE = 100;
     private const ATTRIBUTES_FIELD = 'attributes';
-    private const INDEXES_USING_NESTED_ATTRIBUTES = [
-        IndexerInterface::ITEMS_INDEX,
-        IndexerInterface::TESTS_INDEX,
-        IndexerInterface::DELIVERIES_INDEX,
-        IndexerInterface::GROUPS_INDEX,
-        IndexerInterface::ASSETS_INDEX,
-        IndexerInterface::TEST_TAKERS_INDEX,
-    ];
 
     /** @var Client */
     private $client;
@@ -245,7 +237,7 @@ class ElasticSearchIndexer implements IndexerInterface
 
     private function shouldUseNestedAttributes(string $indexName): bool
     {
-        foreach (self::INDEXES_USING_NESTED_ATTRIBUTES as $index) {
+        foreach (IndexerInterface::INDEXES_USING_NESTED_ATTRIBUTES as $index) {
             if ($indexName === $index || str_ends_with($indexName, $index)) {
                 return true;
             }

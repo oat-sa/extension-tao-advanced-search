@@ -6,7 +6,7 @@ Custom metadata was historically indexed as dynamic top-level Elasticsearch fiel
 
 ## Affected indices
 
-Items, tests, deliveries, groups, assets, and test-takers (see `ElasticSearchIndexer::INDEXES_USING_NESTED_ATTRIBUTES`).
+Items, tests, deliveries, groups, assets, and test-takers (see `IndexerInterface::INDEXES_USING_NESTED_ATTRIBUTES`).
 
 ## Index mapping
 
