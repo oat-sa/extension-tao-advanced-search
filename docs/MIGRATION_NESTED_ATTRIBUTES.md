@@ -10,8 +10,7 @@ Items, tests, deliveries, groups, assets, and test-takers (see `IndexerInterface
 
 ## Index mapping
 
-Ensure each index definition includes nested `attributes` (already present under `taoAdvancedSearch/config/*.conf.php`). After upgrading code, ensure that [Version202605011800001488_taoAdvancedSearch.php](../migrations/Version202605011800001488_taoAdvancedSearch.php) applied without errors
-
+Ensure each index definition includes nested `attributes` (already present under `taoAdvancedSearch/config/*.conf.php`). After upgrading code, ensure that [Version202605011800001488_taoAdvancedSearch.php](../migrations/Version202605011800001488_taoAdvancedSearch.php) was applied without errors.
 ## Normal deployment
 
 1. Stop Queue workers to avoid mixed-state batches during cutover.
