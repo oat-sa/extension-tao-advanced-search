@@ -127,6 +127,7 @@ class QueryBuilderTest extends TestCase
 
     public function queryResultsWithAccessControl(): array
     {
+        // phpcs:disable Generic.Files.LineLength.TooLong -- embedded full JSON bodies for assertSame
         return [
             'with user access control and role access control' => [
                 'test',
@@ -225,6 +226,7 @@ JSON
                 ),
             ],
         ];
+        // phpcs:enable Generic.Files.LineLength.TooLong
     }
 
     /**
@@ -250,6 +252,7 @@ JSON
 
     public function queryResultsWithoutAccessControl(): array
     {
+        // phpcs:disable Generic.Files.LineLength.TooLong -- embedded full JSON bodies for assertSame
         return [
             'Simple query' => [
                 'test',
@@ -325,6 +328,7 @@ JSON
                 '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
             ],
         ];
+        // phpcs:enable Generic.Files.LineLength.TooLong
     }
 
     public function testGetSearchParamsResultsOnlyParentClassesUsesMatchAll(): void

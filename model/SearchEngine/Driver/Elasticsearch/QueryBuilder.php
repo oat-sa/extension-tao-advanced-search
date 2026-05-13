@@ -341,7 +341,8 @@ class QueryBuilder
     }
 
     /**
-     * Whether this index maps resources with nested {@code attributes} (see {@see IndexerInterface::INDEXES_USING_NESTED_ATTRIBUTES}).
+     * Whether this index maps resources with nested {@code attributes}
+     * (see {@see IndexerInterface::INDEXES_USING_NESTED_ATTRIBUTES}).
      * If false, custom-property queries use only legacy {@code query_string} on flat widget fields — no nested clause.
      */
     private function indexUsesNestedAttributeDocuments(string $index): bool
