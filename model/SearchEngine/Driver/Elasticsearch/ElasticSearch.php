@@ -34,6 +34,7 @@ use oat\taoAdvancedSearch\model\SearchEngine\AggregationQuery;
 use oat\taoAdvancedSearch\model\SearchEngine\AggregationResult;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\SearchInterface;
+use oat\taoAdvancedSearch\model\SearchEngine\IndexingResult;
 use oat\taoAdvancedSearch\model\SearchEngine\Normalizer\SearchResultNormalizer;
 use oat\taoAdvancedSearch\model\SearchEngine\Query;
 use oat\taoAdvancedSearch\model\SearchEngine\SearchResult;
@@ -62,6 +63,9 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
 
     /** @var SearchResultNormalizer */
     private $searchResultNormalizer;
+
+    /** @var IndexingResult|null */
+    private $lastIndexingResult;
 
     public function __construct(
         Client $client,
@@ -174,25 +178,51 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
 
     public function index($documents = []): int
     {
-        $documents = $documents instanceof Iterator
+        $this->lastIndexingResult = null;
+
+        $iterator = $documents instanceof Iterator
             ? $documents
             : new ArrayIterator($documents);
 
-        $cloneDocuments = clone $documents;
-        foreach ($cloneDocuments as $document) {
+        $validatedDocuments = [];
+        $skippedError = null;
+
+        foreach ($iterator as $document) {
             if (!$document instanceof IndexDocument) {
+                $actualType = is_object($document) ? get_class($document) : gettype($document);
                 throw new \InvalidArgumentException(
-                    'Expected an instance of IndexDocument, got ' . get_class($document)
+                    'Expected an instance of IndexDocument, got ' . $actualType
                 );
             }
+
             $indexName = $this->indexer->getIndexNameByDocument($document);
+
             if (!$this->isExistingIndex($indexName)) {
                 $this->createIndexes();
-                continue;
+
+                if (!$this->isExistingIndex($indexName)) {
+                    $skippedError = sprintf('Index "%s" does not exist after creation attempt', $indexName);
+                    $this->logger->warning($skippedError . ', skipping document');
+                    continue;
+                }
             }
+
+            $validatedDocuments[] = $document;
         }
 
-        return $this->indexer->buildIndex($documents);
+        if (empty($validatedDocuments)) {
+            $this->lastIndexingResult = new IndexingResult(0, $skippedError);
+            return 0;
+        }
+
+        $this->lastIndexingResult = $this->indexer->buildIndex(new ArrayIterator($validatedDocuments));
+
+        return $this->lastIndexingResult->getTotalIndexed();
+    }
+
+    public function getLastIndexingResult(): ?IndexingResult
+    {
+        return $this->lastIndexingResult;
     }
 
     public function remove($resourceId): bool

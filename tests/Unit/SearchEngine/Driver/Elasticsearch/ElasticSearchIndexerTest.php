@@ -150,9 +150,11 @@ class ElasticSearchIndexerTest extends TestCase
             ])
             ->willReturn(['bulk_response']);
 
-        $count = $this->sut->buildIndex($iterator);
+        $result = $this->sut->buildIndex($iterator);
 
-        $this->assertSame(1, $count);
+        $this->assertSame(1, $result->getTotalIndexed());
+        $this->assertNull($result->getErrorMessage());
+        $this->assertFalse($result->hasError());
     }
 
     private function createIterator(array $items = []): MockObject

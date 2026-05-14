@@ -24,6 +24,7 @@ namespace oat\taoAdvancedSearch\model\SearchEngine\Contract;
 
 use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\TaoOntology;
+use oat\taoAdvancedSearch\model\SearchEngine\IndexingResult;
 use oat\taoResultServer\models\classes\ResultService;
 use Iterator;
 
@@ -62,7 +63,7 @@ interface IndexerInterface
 
     public function getIndexNameByDocument(IndexDocument $document): string;
 
-    public function buildIndex(Iterator $documents): int;
+    public function buildIndex(Iterator $documents): IndexingResult;
 
     public function deleteDocument(string $id): bool;
 
