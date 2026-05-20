@@ -18,8 +18,8 @@ Ensure each index definition includes nested `attributes` (already present under
 
 ## Runtime compatibility
 
-- **Indexing**: `ElasticSearchIndexer` writes dynamic properties into `attributes` for the indexes listed above; legacy **flat** fields are no longer added for those documents.
-- **Search**: `QueryBuilder` keeps the same query string syntax; each custom-field predicate is executed as a `bool.should` between the legacy `query_string` on **flat** fields and a **nested** query on `attributes` (keyword match on `attributes.key`, `attributes.type`, and `attributes.value.raw`), so **old and new** documents **remain searchable**.
+- **Indexing**: `ElasticSearchIndexer` writes dynamic properties into `attributes` for the indexes listed above (unless `FEATURE_FLAG_ADVANCED_SEARCH_DISABLE_NESTED_ATTRIBUTES` is enabled).
+- **Search**: `QueryBuilder` keeps the same query string syntax; each custom-field predicate is executed as a `bool.should` between the legacy `query_string` on **flat** fields and a **nested** query on `attributes`, so **old and new** documents **remain searchable** (unless the disable flag is enabled).
 
 ## Operational checks
 
@@ -36,8 +36,8 @@ Elasticsearch only accepts `nested` queries when the mapping defines `attributes
 1. Drop and recreate indexes so nested field `attributes` mapping fixed
 2. Trigger a **Re-populate** (./taoAdvancedSearch/scripts/tools/IndexResources.sh) so existing RDF-backed properties are emitted only under `attributes` for new documents.
 
-**Temporary workaround (legacy flat fields only):** set environment variable `ELASTICSEARCH_USE_NESTED_ATTRIBUTES_QUERY=false` (or configure `use_nested_attributes_query` to `false` in Elasticsearch service options). Search then uses only the historic `query_string` on flat widget fields; documents indexed **only** under nested `attributes` may not match until indices are migrated.
-After migrating mappings and reindexing, remove the override or set it to `true` again (default).
+**Legacy mode (flat fields only for indexing and search):** enable feature flag `FEATURE_FLAG_ADVANCED_SEARCH_DISABLE_NESTED_ATTRIBUTES` (env `FEATURE_FLAG_ADVANCED_SEARCH_DISABLE_NESTED_ATTRIBUTES=true` or via TAO feature-flag storage). Index mappings are unchanged; only runtime indexing and query behaviour revert to pre-migration flat fields. Documents indexed **only** under nested `attributes` may not match while this flag is enabled.
+After migrating mappings and reindexing, disable the flag again (default).
 
 ### `{"type":"illegal_argument_exception","reason":"Limit of total fields [1000] has been exceeded while adding new fields [2]"}`
 Normally after migrating to `attributes` we do not create a new mapping per each new property defined, so not overflowing mapping with stale fields, 

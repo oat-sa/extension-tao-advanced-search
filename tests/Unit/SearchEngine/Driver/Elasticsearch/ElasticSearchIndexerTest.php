@@ -30,12 +30,14 @@ use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\tao\model\search\index\DocumentBuilder\PropertyIndexReferenceFactory;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchIndexer;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
+use oat\tao\model\featureFlag\FeatureFlagCheckerInterface;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesDocumentBuilder;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesFeature;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesIndexResolver;
 use PHPUnit\Framework\MockObject\MockObject;
 use ArrayIterator;
 use DG\BypassFinals;
 use PHPUnit\Framework\TestCase;
-use ReflectionClass;
-
 class ElasticSearchIndexerTest extends TestCase
 {
     /** @var Client|MockObject */
@@ -62,10 +64,18 @@ class ElasticSearchIndexerTest extends TestCase
             ->method('prefix')
             ->willReturnArgument(0);
 
+        $featureFlagChecker = $this->createMock(FeatureFlagCheckerInterface::class);
+        $featureFlagChecker
+            ->method('isEnabled')
+            ->with(NestedAttributesFeature::FEATURE_FLAG_DISABLE_NESTED_ATTRIBUTES)
+            ->willReturn(false);
+
         $this->sut = new ElasticSearchIndexer(
             $this->client,
             $this->logger,
-            $this->prefixer
+            $this->prefixer,
+            new NestedAttributesDocumentBuilder(),
+            new NestedAttributesFeature($featureFlagChecker, new NestedAttributesIndexResolver())
         );
     }
 
@@ -165,17 +175,11 @@ class ElasticSearchIndexerTest extends TestCase
         $field = 'RadioBox_http_2_prop';
         $rawField = $field . PropertyIndexReferenceFactory::RAW_SUFFIX;
 
-        $buildAttributes = (new ReflectionClass(ElasticSearchIndexer::class))
-            ->getMethod('buildAttributes');
-        $buildAttributes->setAccessible(true);
-
-        $out = $buildAttributes->invoke(
-            $this->sut,
-            [
-                $field => ['enc1', 'enc2'],
-                $rawField => ['Label one, Label two'],
-            ]
-        );
+        $builder = new NestedAttributesDocumentBuilder();
+        $out = $builder->buildFromDynamicProperties([
+            $field => ['enc1', 'enc2'],
+            $rawField => ['Label one, Label two'],
+        ]);
 
         $this->assertCount(1, $out);
         $this->assertSame(['enc1', 'enc2'], $out[0]['value']);
@@ -186,16 +190,10 @@ class ElasticSearchIndexerTest extends TestCase
     {
         $field = 'TextBox_http_2_only';
 
-        $buildAttributes = (new ReflectionClass(ElasticSearchIndexer::class))
-            ->getMethod('buildAttributes');
-        $buildAttributes->setAccessible(true);
-
-        $out = $buildAttributes->invoke(
-            $this->sut,
-            [
-                $field => ['x'],
-            ]
-        );
+        $builder = new NestedAttributesDocumentBuilder();
+        $out = $builder->buildFromDynamicProperties([
+            $field => ['x'],
+        ]);
 
         $this->assertCount(1, $out);
         $this->assertSame(['x'], $out[0]['value']);

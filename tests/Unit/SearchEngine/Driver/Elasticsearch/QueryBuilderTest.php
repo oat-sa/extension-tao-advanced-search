@@ -28,9 +28,12 @@ use oat\generis\test\MockObject;
 use oat\oatbox\log\LoggerService;
 use oat\oatbox\session\SessionService;
 use oat\oatbox\user\User;
-use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
+use oat\tao\model\featureFlag\FeatureFlagCheckerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\QueryBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesFeature;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesIndexResolver;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesQueryService;
 use oat\taoAdvancedSearch\model\SearchEngine\Specification\UseAclSpecification;
 use PHPUnit\Framework\TestCase;
 
@@ -58,9 +61,6 @@ class QueryBuilderTest extends TestCase
     /** @var IndexPrefixer|MockObject */
     private $prefixer;
 
-    /** @var ElasticSearchConfig|MockObject */
-    private $elasticSearchConfig;
-
     /** @var User|MockObject */
     private $user;
 
@@ -75,8 +75,18 @@ class QueryBuilderTest extends TestCase
         $this->user = $this->createMock(User::class);
         $this->useAclSpecification = $this->createMock(UseAclSpecification::class);
         $this->prefixer = $this->createMock(IndexPrefixer::class);
-        $this->elasticSearchConfig = $this->createMock(ElasticSearchConfig::class);
-        $this->elasticSearchConfig->method('isNestedAttributesQueryEnabled')->willReturn(true);
+        $featureFlagChecker = $this->createMock(FeatureFlagCheckerInterface::class);
+        $featureFlagChecker
+            ->method('isEnabled')
+            ->with(NestedAttributesFeature::FEATURE_FLAG_DISABLE_NESTED_ATTRIBUTES)
+            ->willReturn(false);
+
+        $nestedAttributesQueryService = new NestedAttributesQueryService(
+            new NestedAttributesFeature(
+                $featureFlagChecker,
+                new NestedAttributesIndexResolver()
+            )
+        );
 
         $this->useAclSpecification
             ->method('isSatisfiedBy')
@@ -90,7 +100,7 @@ class QueryBuilderTest extends TestCase
             $this->sessionServiceMock,
             $this->prefixer,
             $this->useAclSpecification,
-            $this->elasticSearchConfig
+            $nestedAttributesQueryService
         );
 
         $this->sessionServiceMock

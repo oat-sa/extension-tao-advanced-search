@@ -22,11 +22,12 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch;
 
-use oat\tao\model\search\index\DocumentBuilder\PropertyIndexReferenceFactory;
 use oat\tao\model\search\index\IndexDocument;
 use Elastic\Elasticsearch\Client;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesDocumentBuilder;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesFeature;
 use Psr\Log\LoggerInterface;
 use Exception;
 use Iterator;
@@ -49,11 +50,24 @@ class ElasticSearchIndexer implements IndexerInterface
     /** @var IndexPrefixer */
     private $prefixer;
 
-    public function __construct(Client $client, LoggerInterface $logger, IndexPrefixer $prefixer)
-    {
+    /** @var NestedAttributesDocumentBuilder */
+    private $nestedAttributesDocumentBuilder;
+
+    /** @var NestedAttributesFeature */
+    private $nestedAttributesFeature;
+
+    public function __construct(
+        Client $client,
+        LoggerInterface $logger,
+        IndexPrefixer $prefixer,
+        NestedAttributesDocumentBuilder $nestedAttributesDocumentBuilder,
+        NestedAttributesFeature $nestedAttributesFeature
+    ) {
         $this->client = $client;
         $this->logger = $logger;
         $this->prefixer = $prefixer;
+        $this->nestedAttributesDocumentBuilder = $nestedAttributesDocumentBuilder;
+        $this->nestedAttributesFeature = $nestedAttributesFeature;
     }
 
     public function getIndexNameByDocument(IndexDocument $document): string
@@ -218,8 +232,9 @@ class ElasticSearchIndexer implements IndexerInterface
 
         $body = $document->getBody();
         $dynamicProperties = (array) $document->getDynamicProperties();
-        if ($this->shouldUseNestedAttributes($indexName)) {
-            $body[self::ATTRIBUTES_FIELD] = $this->buildAttributes($dynamicProperties);
+        if ($this->nestedAttributesFeature->shouldUseNestedAttributes($indexName)) {
+            $body[self::ATTRIBUTES_FIELD] = $this->nestedAttributesDocumentBuilder
+                ->buildFromDynamicProperties($dynamicProperties);
         } else {
             $body = array_merge($body, $dynamicProperties);
         }
@@ -233,87 +248,5 @@ class ElasticSearchIndexer implements IndexerInterface
         $params['body'][] = $body;
 
         return $params;
-    }
-
-    private function shouldUseNestedAttributes(string $indexName): bool
-    {
-        foreach (IndexerInterface::INDEXES_USING_NESTED_ATTRIBUTES as $index) {
-            if ($indexName === $index || str_ends_with($indexName, $index)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function buildAttributes(array $dynamicProperties): array
-    {
-        $attributes = [];
-        $rawSuffix = PropertyIndexReferenceFactory::RAW_SUFFIX;
-
-        foreach ($dynamicProperties as $fieldName => $values) {
-            if (!is_array($values) || strpos($fieldName, '_') === false) {
-                continue;
-            }
-
-            [$type, $key] = explode('_', $fieldName, 2);
-            if ($key === '' || substr($key, -strlen($rawSuffix)) === $rawSuffix) {
-                continue;
-            }
-
-            $rawFieldName = $fieldName . $rawSuffix;
-            $rawValues = [];
-            if (isset($dynamicProperties[$rawFieldName]) && is_array($dynamicProperties[$rawFieldName])) {
-                $rawValues = array_values($dynamicProperties[$rawFieldName]);
-            }
-
-            $stringValues = array_map(static fn ($v): string => (string) $v, array_values($values));
-            if ($stringValues === []) {
-                continue;
-            }
-
-            $row = [
-                'key' => $key,
-                'type' => $type,
-                'value' => $stringValues,
-            ];
-
-            $rawPayload = $this->resolveRawValuesForIndexedAttribute($rawValues, $stringValues);
-            if ($rawPayload !== null) {
-                $row['raw_value'] = $rawPayload;
-            }
-
-            $attributes[] = $row;
-        }
-
-        return $attributes;
-    }
-
-    /**
-     * Aligns parallel {@see PropertyIndexReferenceFactory::createRaw} values with indexed {@code value} entries.
-     * When only one raw entry exists (e.g. multi-select labels imploded into one string), it is stored once on the
-     * same nested object as the full {@code value} array.
-     *
-     * @param list<string> $rawValues
-     * @param list<string> $stringValues
-     * @return list<string>|string|null
-     */
-    private function resolveRawValuesForIndexedAttribute(array $rawValues, array $stringValues): array|string|null
-    {
-        if ($rawValues === []) {
-            return null;
-        }
-
-        if (count($rawValues) === count($stringValues)) {
-            $parts = array_map(static fn ($v): string => (string) $v, array_values($rawValues));
-
-            return count($parts) === 1 ? $parts[0] : $parts;
-        }
-
-        if (count($rawValues) === 1) {
-            return (string) $rawValues[0];
-        }
-
-        return null;
     }
 }
