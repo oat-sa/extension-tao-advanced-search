@@ -25,7 +25,10 @@ namespace oat\taoAdvancedSearch\model\SearchEngine\Service;
 use oat\taoAdvancedSearch\model\SearchEngine\QueryBlock;
 
 /**
- * Builds Elasticsearch nested {@code attributes} query clauses and legacy/nested compatibility wrappers.
+ * Elasticsearch clauses for nested {@code attributes} and temporary flat custom-metadata compatibility.
+ *
+ * When all documents are reindexed, remove {@see buildUnreindexedFlatCustomMetadataClause()} and its
+ * use from {@see buildCustomFieldSearchQuery()}.
  */
 class NestedAttributesQueryService
 {
@@ -36,41 +39,15 @@ class NestedAttributesQueryService
     private const ATTRIBUTES_RAW_VALUE_TEXT_FIELD = 'attributes.raw_value';
     private const ATTRIBUTES_RAW_VALUE_FIELD = 'attributes.raw_value.raw';
 
-    private NestedAttributesFeature $nestedAttributesFeature;
-
-    public function __construct(NestedAttributesFeature $nestedAttributesFeature)
+    /**
+     * Custom property search: nested {@code attributes} plus unreindexed flat {@code HTMLArea_*} / {@code TextBox_*} fields.
+     */
+    public function buildCustomFieldSearchQuery(QueryBlock $queryBlock, string $flatCustomMetadataQueryString): array
     {
-        $this->nestedAttributesFeature = $nestedAttributesFeature;
-    }
-
-    public function isNestedQueryEnabledForIndex(string $index): bool
-    {
-        return $this->nestedAttributesFeature->shouldUseNestedAttributes($index);
-    }
-
-    public function buildCustomCompatibilityCondition(
-        QueryBlock $queryBlock,
-        string $index,
-        string $legacyQueryString
-    ): array {
-        if (!$this->isNestedQueryEnabledForIndex($index)) {
-            return [
-                'query_string' => [
-                    'default_operator' => 'AND',
-                    'query' => $legacyQueryString,
-                ],
-            ];
-        }
-
         return [
             'bool' => [
                 'should' => [
-                    [
-                        'query_string' => [
-                            'default_operator' => 'AND',
-                            'query' => $legacyQueryString,
-                        ],
-                    ],
+                    $this->buildUnreindexedFlatCustomMetadataClause($flatCustomMetadataQueryString),
                     $this->buildNestedAttributeCondition($queryBlock),
                 ],
                 'minimum_should_match' => 1,
@@ -78,20 +55,31 @@ class NestedAttributesQueryService
         ];
     }
 
-    public function buildFieldlessRootAndNestedAttributesCondition(string $term): array
+    /**
+     * Fieldless search: standard root fields and nested {@code attributes}.
+     */
+    public function buildFieldlessSearchQuery(string $term, array $rootStandardFieldsClause): array
     {
         return [
             'bool' => [
                 'should' => [
-                    [
-                        'query_string' => [
-                            'default_operator' => 'AND',
-                            'query' => sprintf('("%s")', $term),
-                        ],
-                    ],
+                    $rootStandardFieldsClause,
                     $this->buildNestedFieldlessAttributesClause($term),
                 ],
                 'minimum_should_match' => 1,
+            ],
+        ];
+    }
+
+    /**
+     * @deprecated Remove when no documents store custom metadata as flat dynamic fields.
+     */
+    private function buildUnreindexedFlatCustomMetadataClause(string $flatCustomMetadataQueryString): array
+    {
+        return [
+            'query_string' => [
+                'default_operator' => 'AND',
+                'query' => $flatCustomMetadataQueryString,
             ],
         ];
     }
