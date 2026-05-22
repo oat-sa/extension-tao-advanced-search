@@ -38,6 +38,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use ArrayIterator;
 use DG\BypassFinals;
 use PHPUnit\Framework\TestCase;
+
 class ElasticSearchIndexerTest extends TestCase
 {
     /** @var Client|MockObject */

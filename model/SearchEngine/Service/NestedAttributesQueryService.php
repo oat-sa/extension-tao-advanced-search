@@ -40,7 +40,8 @@ class NestedAttributesQueryService
     private const ATTRIBUTES_RAW_VALUE_FIELD = 'attributes.raw_value.raw';
 
     /**
-     * Custom property search: nested {@code attributes} plus unreindexed flat {@code HTMLArea_*} / {@code TextBox_*} fields.
+     * Custom property search: nested {@code attributes} plus unreindexed flat {@code HTMLArea_*} /
+     * {@code TextBox_*} fields.
      */
     public function buildCustomFieldSearchQuery(QueryBlock $queryBlock, string $flatCustomMetadataQueryString): array
     {

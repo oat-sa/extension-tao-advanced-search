@@ -26,8 +26,9 @@ use oat\tao\model\featureFlag\FeatureFlagCheckerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 
 /**
- * When {@see FEATURE_FLAG_DISABLE_NESTED_ATTRIBUTES} is enabled, indexing and search use legacy flat metadata fields only.
- * Index mappings may still define nested {@code attributes}; only runtime read/write behaviour changes.
+ * When {@see FEATURE_FLAG_DISABLE_NESTED_ATTRIBUTES} is enabled, indexing and search use legacy flat
+ * metadata fields only. Index mappings may still define nested {@code attributes}; only runtime
+ * read/write behaviour changes.
  */
 class NestedAttributesFeature
 {
