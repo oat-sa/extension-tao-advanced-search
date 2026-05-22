@@ -37,7 +37,7 @@ Elasticsearch only accepts `nested` queries when the mapping defines `attributes
 1. Drop and recreate indexes so nested field `attributes` mapping fixed
 2. Trigger a **Re-populate** (./taoAdvancedSearch/scripts/tools/IndexResources.sh) so existing RDF-backed properties are emitted only under `attributes` for new documents.
 
-**Legacy mode (flat fields only for indexing and search):** enable feature flag `FEATURE_FLAG_ADVANCED_SEARCH_DISABLE_NESTED_ATTRIBUTES` (env `FEATURE_FLAG_ADVANCED_SEARCH_DISABLE_NESTED_ATTRIBUTES=true` or via TAO feature-flag storage). Index mappings are unchanged; only runtime indexing and query behaviour revert to pre-migration flat fields. Documents indexed **only** under nested `attributes` may not match while this flag is enabled.
+**Switch to legacy mode (flat fields only for indexing and search):** enable feature flag `FEATURE_FLAG_ADVANCED_SEARCH_DISABLE_NESTED_ATTRIBUTES` (env `FEATURE_FLAG_ADVANCED_SEARCH_DISABLE_NESTED_ATTRIBUTES=true`
 After migrating mappings and reindexing, disable the flag again (default).
 
 ### `{"type":"illegal_argument_exception","reason":"Limit of total fields [1000] has been exceeded while adding new fields [2]"}`

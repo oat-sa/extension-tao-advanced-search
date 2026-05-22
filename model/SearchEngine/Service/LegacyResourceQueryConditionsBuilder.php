@@ -13,7 +13,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * Foundation, Inc., 31 Milk St # 960789 Boston, MA 02196 USA
  *
  * Copyright (c) 2026 (original work) Open Assessment Technologies SA;
  */
@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\SearchEngine\Service;
 
 /**
- * Pre-nested-attributes query condition building: a single {@code query_string} per search (master behaviour).
+ * Pre-nested-attributes query condition building: a single {@code query_string} per search.
  * Used when nested attributes are disabled via feature flag or the index is not on the nested mapping list.
  */
 class LegacyResourceQueryConditionsBuilder

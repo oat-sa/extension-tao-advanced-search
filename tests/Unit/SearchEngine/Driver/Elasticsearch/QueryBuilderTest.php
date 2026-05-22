@@ -23,7 +23,6 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\tests\Unit\SearchEngine\Driver\Elasticsearch;
 
 use oat\generis\model\data\permission\PermissionInterface;
-use oat\generis\model\data\permission\ReverseRightLookupInterface;
 use oat\generis\test\MockObject;
 use oat\oatbox\log\LoggerService;
 use oat\oatbox\session\SessionService;

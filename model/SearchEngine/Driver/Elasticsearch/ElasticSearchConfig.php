@@ -35,7 +35,6 @@ class ElasticSearchConfig
     public const OPTION_HOSTS = 'hosts';
     public const OPTION_USERNAME = 'user';
     public const OPTION_PASSWORD = 'pass';
-    public const OPTION_USE_NESTED_ATTRIBUTES_QUERY = 'use_nested_attributes_query';
 
     public const ENV_OPTION_INDEX_PREFIX = 'ELASTICSEARCH_PREFIX';
     public const ENV_OPTION_ELASTIC_CLOUD_ID = 'ELASTICSEARCH_CLOUD_ID';
@@ -44,7 +43,6 @@ class ElasticSearchConfig
     public const ENV_OPTION_HOSTS = 'ELASTICSEARCH_HOSTS';
     public const ENV_OPTION_USERNAME = 'ELASTICSEARCH_USERNAME';
     public const ENV_OPTION_PASSWORD = 'ELASTICSEARCH_PASSWORD';
-    public const ENV_OPTION_USE_NESTED_ATTRIBUTES_QUERY = 'ELASTICSEARCH_USE_NESTED_ATTRIBUTES_QUERY';
 
     /** @var ServiceOptionsInterface */
     private ServiceOptionsInterface $serviceOptions;
@@ -98,26 +96,6 @@ class ElasticSearchConfig
             return getenv(self::ENV_OPTION_INDEX_PREFIX) ?: null;
         }
         return $this->serviceOptions->get(self::class, self::OPTION_INDEX_PREFIX);
-    }
-
-    /**
-     * When true (default), custom metadata queries include a nested clause on `attributes`.
-     * Disable only if Elasticsearch indices were not migrated to nested `attributes` yet
-     * (otherwise searches fail with "failed to find nested object under path [attributes]").
-     */
-    public function isNestedAttributesQueryEnabled(): bool
-    {
-        $env = getenv(self::ENV_OPTION_USE_NESTED_ATTRIBUTES_QUERY);
-        if ($env !== false && $env !== '') {
-            return filter_var($env, FILTER_VALIDATE_BOOLEAN);
-        }
-
-        $opt = $this->serviceOptions->get(self::class, self::OPTION_USE_NESTED_ATTRIBUTES_QUERY);
-        if ($opt !== null) {
-            return (bool) $opt;
-        }
-
-        return true;
     }
 
     public function getElasticCloudId(): ?string
