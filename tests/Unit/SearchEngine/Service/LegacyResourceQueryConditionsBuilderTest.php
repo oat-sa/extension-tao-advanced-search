@@ -38,4 +38,20 @@ class LegacyResourceQueryConditionsBuilderTest extends TestCase
         $this->assertStringContainsString('label:"test"', $conditions[0]);
         $this->assertStringContainsString('HTMLArea_custom_field:"foo"', $conditions[1]);
     }
+
+    /**
+     * Legacy path does not drop blocks: fieldless tokens and non-standard field names still become
+     * {@code query_string} fragments via {@see ResourceQueryBlockSupport::buildConditionFromTheBlock()}.
+     */
+    public function testBuildReturnsLegacyFragmentsForFieldlessAndCustomFieldBlocks(): void
+    {
+        $sut = new LegacyResourceQueryConditionsBuilder(new ResourceQueryBlockSupport());
+
+        $conditions = $sut->build(['badtoken', 'unsupported_field:val']);
+
+        $this->assertCount(2, $conditions);
+        $this->assertSame('("badtoken")', $conditions[0]);
+        $this->assertStringContainsString('HTMLArea_unsupported_field:"val"', $conditions[1]);
+        $this->assertStringContainsString('TextBox_unsupported_field:"val"', $conditions[1]);
+    }
 }
