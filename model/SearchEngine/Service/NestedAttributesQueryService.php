@@ -57,14 +57,15 @@ class NestedAttributesQueryService
     }
 
     /**
-     * Fieldless search: standard root fields and nested {@code attributes}.
+     * Fieldless search: legacy root {@code query_string} (all top-level fields, including unreindexed flat custom
+     * metadata) plus nested {@code attributes} for reindexed documents.
      */
-    public function buildFieldlessSearchQuery(string $term, array $rootStandardFieldsClause): array
+    public function buildFieldlessSearchQuery(string $term, string $fieldlessRootQueryString): array
     {
         return [
             'bool' => [
                 'should' => [
-                    $rootStandardFieldsClause,
+                    $this->buildUnreindexedFlatCustomMetadataClause($fieldlessRootQueryString),
                     $this->buildNestedFieldlessAttributesClause($term),
                 ],
                 'minimum_should_match' => 1,

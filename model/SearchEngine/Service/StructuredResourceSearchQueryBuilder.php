@@ -77,7 +77,7 @@ class StructuredResourceSearchQueryBuilder
             if (empty($queryBlock->getField()) && $term !== '') {
                 $mustClauses[] = $this->nestedAttributesQueryService->buildFieldlessSearchQuery(
                     $term,
-                    $this->blockSupport->buildFieldlessRootMustClause($term)
+                    $this->blockSupport->buildFieldlessQueryString($term)
                 );
                 continue;
             }
@@ -182,7 +182,7 @@ class StructuredResourceSearchQueryBuilder
         if (empty($queryBlock->getField()) && $term !== '') {
             return $this->nestedAttributesQueryService->buildFieldlessSearchQuery(
                 $term,
-                $this->blockSupport->buildFieldlessRootMustClause($term)
+                $this->blockSupport->buildFieldlessQueryString($term)
             );
         }
 

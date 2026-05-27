@@ -19,7 +19,7 @@ Ensure each index definition includes nested `attributes` (already present under
 ## Runtime compatibility
 
 - **Indexing**: `ElasticSearchIndexer` writes dynamic properties into `attributes` for the indexes listed above (unless `FEATURE_FLAG_ADVANCED_SEARCH_DISABLE_NESTED_ATTRIBUTES` is enabled).
-- **Search (flag on)**: `QueryBuilder` uses `StructuredResourceSearchQueryBuilder` (structured `bool.must` DSL). Standard fields use term/match clauses; custom metadata uses nested `attributes` plus a temporary flat-field `query_string` compatibility clause (`NestedAttributesQueryService::buildUnreindexedFlatCustomMetadataClause()` — remove when all documents are reindexed).
+- **Search (flag on)**: `QueryBuilder` uses `StructuredResourceSearchQueryBuilder` (structured `bool.must` DSL). Standard fields use term/match clauses; custom metadata uses nested `attributes` plus a temporary flat-field `query_string` compatibility clause (`NestedAttributesQueryService::buildUnreindexedFlatCustomMetadataClause()` — remove when all documents are reindexed). Fieldless search uses the same legacy root `query_string` fragment `("term")` (all top-level fields, including unreindexed flat custom metadata) plus nested `attributes`.
 - **Search (flag off)**: `LegacyResourceQueryConditionsBuilder` emits the same single top-level `query_string` as pre-migration (`master`) code. Unit tests in `legacy_acl` / `legacy_noacl` fixtures assert exact master JSON.
 
 ## Operational checks

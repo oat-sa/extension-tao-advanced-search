@@ -69,6 +69,8 @@ class QueryBuilderStructuredSearchTest extends TestCase
     /** @var User|MockObject */
     private $user;
 
+    private bool $includeAccessControl = false;
+
     protected function setUp(): void
     {
         $this->sessionServiceMock = $this->createMock(SessionService::class);
@@ -196,9 +198,10 @@ class QueryBuilderStructuredSearchTest extends TestCase
 
     private function createAccessControlMock(bool $includeAccessControl): void
     {
+        $this->includeAccessControl = $includeAccessControl;
         $this->useAclSpecification
             ->method('isSatisfiedBy')
-            ->willReturn($includeAccessControl);
+            ->willReturnCallback(fn (): bool => $this->includeAccessControl);
 
         $this->user
             ->expects($this->any())

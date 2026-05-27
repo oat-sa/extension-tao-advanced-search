@@ -112,6 +112,14 @@ class ResourceQueryBlockSupport
         return '(' . implode(' OR ', $conditions) . ')';
     }
 
+    /**
+     * Legacy fieldless {@code query_string} fragment: quoted phrase across all top-level index fields.
+     */
+    public function buildFieldlessQueryString(string $term): string
+    {
+        return sprintf('("%s")', $term);
+    }
+
     public function isStandardField(string $field): bool
     {
         return in_array(strtolower($field), self::STANDARD_FIELDS, true);
@@ -191,21 +199,6 @@ class ResourceQueryBlockSupport
                     ['match_phrase' => [$field => $term]],
                 ],
                 'minimum_should_match' => 1,
-            ],
-        ];
-    }
-
-    /**
-     * Structured root-level clause for fieldless terms (standard index fields only, not flat custom metadata).
-     */
-    public function buildFieldlessRootMustClause(string $term): array
-    {
-        return [
-            'multi_match' => [
-                'query' => $term,
-                'fields' => self::STANDARD_FIELDS,
-                'type' => 'phrase',
-                'operator' => 'and',
             ],
         ];
     }
