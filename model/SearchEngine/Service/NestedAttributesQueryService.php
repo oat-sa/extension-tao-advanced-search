@@ -65,7 +65,7 @@ class NestedAttributesQueryService
         return [
             'bool' => [
                 'should' => [
-                    $this->buildUnreindexedFlatCustomMetadataClause($fieldlessRootQueryString),
+                    $this->buildQueryStringClause($fieldlessRootQueryString),
                     $this->buildNestedFieldlessAttributesClause($term),
                 ],
                 'minimum_should_match' => 1,
@@ -74,16 +74,28 @@ class NestedAttributesQueryService
     }
 
     /**
-     * @deprecated Remove when no documents store custom metadata as flat dynamic fields.
+     * @return array{query_string: array{default_operator: string, query: string}}
      */
-    private function buildUnreindexedFlatCustomMetadataClause(string $flatCustomMetadataQueryString): array
+    private function buildQueryStringClause(string $query): array
     {
         return [
             'query_string' => [
                 'default_operator' => 'AND',
-                'query' => $flatCustomMetadataQueryString,
+                'query' => $query,
             ],
         ];
+    }
+
+    /**
+     * Flat custom-metadata compatibility only ({@code HTMLArea_<key>}, {@code TextBox_<key>}, etc.).
+     *
+     * @deprecated Remove when no documents store custom metadata as flat dynamic fields.
+     *
+     * @return array{query_string: array{default_operator: string, query: string}}
+     */
+    private function buildUnreindexedFlatCustomMetadataClause(string $flatCustomMetadataQueryString): array
+    {
+        return $this->buildQueryStringClause($flatCustomMetadataQueryString);
     }
 
     private function buildNestedAttributeCondition(QueryBlock $queryBlock): array
