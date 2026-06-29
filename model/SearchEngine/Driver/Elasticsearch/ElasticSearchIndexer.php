@@ -27,6 +27,8 @@ use Elastic\Elasticsearch\Client;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\IndexingResult;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesDocumentBuilder;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesFeature;
 use Psr\Log\LoggerInterface;
 use Exception;
 use Iterator;
@@ -38,6 +40,7 @@ class ElasticSearchIndexer implements IndexerInterface
     use LogIndexOperationsTrait;
 
     private const INDEXING_BLOCK_SIZE = 100;
+    private const ATTRIBUTES_FIELD = 'attributes';
 
     /** @var Client */
     private $client;
@@ -48,11 +51,24 @@ class ElasticSearchIndexer implements IndexerInterface
     /** @var IndexPrefixer */
     private $prefixer;
 
-    public function __construct(Client $client, LoggerInterface $logger, IndexPrefixer $prefixer)
-    {
+    /** @var NestedAttributesDocumentBuilder */
+    private $nestedAttributesDocumentBuilder;
+
+    /** @var NestedAttributesFeature */
+    private $nestedAttributesFeature;
+
+    public function __construct(
+        Client $client,
+        LoggerInterface $logger,
+        IndexPrefixer $prefixer,
+        NestedAttributesDocumentBuilder $nestedAttributesDocumentBuilder,
+        NestedAttributesFeature $nestedAttributesFeature
+    ) {
         $this->client = $client;
         $this->logger = $logger;
         $this->prefixer = $prefixer;
+        $this->nestedAttributesDocumentBuilder = $nestedAttributesDocumentBuilder;
+        $this->nestedAttributesFeature = $nestedAttributesFeature;
     }
 
     public function getIndexNameByDocument(IndexDocument $document): string
@@ -233,11 +249,16 @@ class ElasticSearchIndexer implements IndexerInterface
             return $params;
         }
 
-        $body = array_merge(
-            $document->getBody(),
-            (array)$document->getDynamicProperties(),
-            (array)$document->getAccessProperties()
-        );
+        $body = $document->getBody();
+        $dynamicProperties = (array) $document->getDynamicProperties();
+        if ($this->nestedAttributesFeature->shouldUseNestedAttributes($indexName)) {
+            $body[self::ATTRIBUTES_FIELD] = $this->nestedAttributesDocumentBuilder
+                ->buildFromDynamicProperties($dynamicProperties);
+        } else {
+            $body = array_merge($body, $dynamicProperties);
+        }
+
+        $body = array_merge($body, (array) $document->getAccessProperties());
 
         if ($action === 'update') {
             $body = ['doc' => $body];

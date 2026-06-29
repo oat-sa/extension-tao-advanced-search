@@ -34,9 +34,17 @@ use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchClientFactory;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchIndexer;
+use oat\tao\model\featureFlag\FeatureFlagChecker;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\QueryBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Normalizer\SearchResultNormalizer;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\LegacyResourceQueryConditionsBuilder;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesDocumentBuilder;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesFeature;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesIndexResolver;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesQueryService;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceQueryBlockSupport;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\StructuredResourceSearchQueryBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Specification\UseAclSpecification;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -59,6 +67,40 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
         $services->set(UseAclSpecification::class, UseAclSpecification::class)
             ->public();
 
+        $services->set(ResourceQueryBlockSupport::class, ResourceQueryBlockSupport::class)
+            ->public();
+
+        $services->set(NestedAttributesQueryService::class, NestedAttributesQueryService::class)
+            ->public();
+
+        $services->set(NestedAttributesIndexResolver::class, NestedAttributesIndexResolver::class)
+            ->public();
+
+        $services->set(NestedAttributesDocumentBuilder::class, NestedAttributesDocumentBuilder::class)
+            ->public();
+
+        $services->set(NestedAttributesFeature::class, NestedAttributesFeature::class)
+            ->args(
+                [
+                    service(FeatureFlagChecker::class),
+                    service(NestedAttributesIndexResolver::class),
+                ]
+            )
+            ->public();
+
+        $services->set(LegacyResourceQueryConditionsBuilder::class, LegacyResourceQueryConditionsBuilder::class)
+            ->args([service(ResourceQueryBlockSupport::class)])
+            ->public();
+
+        $services->set(StructuredResourceSearchQueryBuilder::class, StructuredResourceSearchQueryBuilder::class)
+            ->args(
+                [
+                    service(ResourceQueryBlockSupport::class),
+                    service(NestedAttributesQueryService::class),
+                ]
+            )
+            ->public();
+
         $services->set(QueryBuilder::class, QueryBuilder::class)
             ->args(
                 [
@@ -67,6 +109,10 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
                     service(SessionService::SERVICE_ID),
                     service(IndexPrefixer::class),
                     service(UseAclSpecification::class),
+                    service(NestedAttributesFeature::class),
+                    service(LegacyResourceQueryConditionsBuilder::class),
+                    service(StructuredResourceSearchQueryBuilder::class),
+                    service(ResourceQueryBlockSupport::class),
                 ]
             )->public();
 
@@ -107,6 +153,8 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
                     service(Client::class),
                     service(LoggerService::SERVICE_ID),
                     service(IndexPrefixer::class),
+                    service(NestedAttributesDocumentBuilder::class),
+                    service(NestedAttributesFeature::class),
                 ]
             )->public();
 

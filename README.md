@@ -106,6 +106,8 @@ This is necessary to optimize indexation:
 
 ## Index Migration
 
+For nested `attributes` indexing (replacing flat dynamic metadata fields), deployment steps, and runtime compatibility, see [Nested attributes migration](docs/MIGRATION_NESTED_ATTRIBUTES.md).
+
 To avoid having to delete and recreate all the indices, it is possible to migrate index mapping by executing the following: 
 
 ```shell

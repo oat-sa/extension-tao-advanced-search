@@ -61,6 +61,33 @@ return [
                         ]
                     ]
                 ],
+                'attributes' => [
+                    'type' => 'nested',
+                    'properties' => [
+                        'key' => [
+                            'type' => 'keyword',
+                        ],
+                        'type' => [
+                            'type' => 'keyword',
+                        ],
+                        'value' => [
+                            'type' => 'text',
+                            'fields' => [
+                                'raw' => [
+                                    'type' => 'keyword'
+                                ]
+                            ]
+                        ],
+                        'raw_value' => [
+                            'type' => 'text',
+                            'fields' => [
+                                'raw' => [
+                                    'type' => 'keyword'
+                                ]
+                            ]
+                        ],
+                    ],
+                ],
             ],
             'dynamic_templates' => require __DIR__ . '/dynamic-templates.conf.php',
         ],

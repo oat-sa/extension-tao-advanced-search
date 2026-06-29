@@ -23,19 +23,21 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\tests\Unit\SearchEngine\Driver\Elasticsearch;
 
 use oat\generis\model\data\permission\PermissionInterface;
-use oat\generis\model\data\permission\ReverseRightLookupInterface;
 use oat\generis\test\MockObject;
 use oat\oatbox\log\LoggerService;
 use oat\oatbox\session\SessionService;
 use oat\oatbox\user\User;
+use oat\tao\model\featureFlag\FeatureFlagCheckerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\QueryBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\LegacyResourceQueryConditionsBuilder;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesFeature;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesIndexResolver;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesQueryService;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceQueryBlockSupport;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\StructuredResourceSearchQueryBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Specification\UseAclSpecification;
 use PHPUnit\Framework\TestCase;
-
-interface PermissionMock extends PermissionInterface, ReverseRightLookupInterface
-{
-}
 
 class QueryBuilderTest extends TestCase
 {
@@ -69,13 +71,7 @@ class QueryBuilderTest extends TestCase
         $this->useAclSpecification = $this->createMock(UseAclSpecification::class);
         $this->prefixer = $this->createMock(IndexPrefixer::class);
 
-        $this->subject = new QueryBuilder(
-            $this->loggerService,
-            $this->permissionMock,
-            $this->sessionServiceMock,
-            $this->prefixer,
-            $this->useAclSpecification
-        );
+        $this->subject = $this->createQueryBuilderWithNestedAttributesDisabled();
 
         $this->sessionServiceMock
             ->expects($this->any())
@@ -518,6 +514,49 @@ class QueryBuilderTest extends TestCase
                 '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
             ],
         ];
+    }
+
+    /**
+     * Legacy flat query_string path (master behaviour). FEATURE_FLAG_ADVANCED_SEARCH_DISABLE_NESTED_ATTRIBUTES enabled.
+     */
+    private function createQueryBuilderWithNestedAttributesDisabled(): QueryBuilder
+    {
+        $featureFlagChecker = $this->createMock(FeatureFlagCheckerInterface::class);
+        $featureFlagChecker
+            ->method('isEnabled')
+            ->with(NestedAttributesFeature::FEATURE_FLAG_DISABLE_NESTED_ATTRIBUTES)
+            ->willReturn(true);
+
+        $blockSupport = new ResourceQueryBlockSupport();
+
+        return new QueryBuilder(
+            $this->loggerService,
+            $this->permissionMock,
+            $this->sessionServiceMock,
+            $this->prefixer,
+            $this->useAclSpecification,
+            new NestedAttributesFeature($featureFlagChecker, new NestedAttributesIndexResolver()),
+            new LegacyResourceQueryConditionsBuilder($blockSupport),
+            new StructuredResourceSearchQueryBuilder($blockSupport, new NestedAttributesQueryService()),
+            $blockSupport
+        );
+    }
+
+    public function testGetSearchParamsResultsOnlyParentClassesUsesMatchAll(): void
+    {
+        $this->createAccessControlMock(false);
+
+        $params = $this->subject->getSearchParams(
+            'parent_classes:http://www.tao.lu/Ontologies/TAOResult.rdf#DeliveryResult',
+            'results',
+            0,
+            10,
+            '_id',
+            'DESC'
+        );
+
+        $body = json_decode($params['body'], true, 512, JSON_THROW_ON_ERROR);
+        $this->assertSame(['match_all' => []], $body['query']);
     }
 
     private function createAccessControlMock(bool $includeAccessControl): void

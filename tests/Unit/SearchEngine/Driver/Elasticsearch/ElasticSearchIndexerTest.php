@@ -27,8 +27,13 @@ use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\TaoOntology;
 use Elastic\Elasticsearch\Client;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
+use oat\tao\model\search\index\DocumentBuilder\PropertyIndexReferenceFactory;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchIndexer;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
+use oat\tao\model\featureFlag\FeatureFlagCheckerInterface;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesDocumentBuilder;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesFeature;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesIndexResolver;
 use PHPUnit\Framework\MockObject\MockObject;
 use ArrayIterator;
 use DG\BypassFinals;
@@ -60,10 +65,18 @@ class ElasticSearchIndexerTest extends TestCase
             ->method('prefix')
             ->willReturnArgument(0);
 
+        $featureFlagChecker = $this->createMock(FeatureFlagCheckerInterface::class);
+        $featureFlagChecker
+            ->method('isEnabled')
+            ->with(NestedAttributesFeature::FEATURE_FLAG_DISABLE_NESTED_ATTRIBUTES)
+            ->willReturn(false);
+
         $this->sut = new ElasticSearchIndexer(
             $this->client,
             $this->logger,
-            $this->prefixer
+            $this->prefixer,
+            new NestedAttributesDocumentBuilder(),
+            new NestedAttributesFeature($featureFlagChecker, new NestedAttributesIndexResolver())
         );
     }
 
@@ -143,9 +156,12 @@ class ElasticSearchIndexerTest extends TestCase
                         '_index' => IndexerInterface::ITEMS_INDEX,
                         '_id' => 'some_id'
                     ]],
-                    ['type' => [
-                        TaoOntology::CLASS_URI_ITEM
-                    ]],
+                    [
+                        'type' => [
+                            TaoOntology::CLASS_URI_ITEM,
+                        ],
+                        'attributes' => [],
+                    ],
                 ]
             ])
             ->willReturn(['bulk_response']);
@@ -155,6 +171,36 @@ class ElasticSearchIndexerTest extends TestCase
         $this->assertSame(1, $result->getTotalIndexed());
         $this->assertNull($result->getErrorMessage());
         $this->assertFalse($result->hasError());
+    }
+
+    public function testBuildAttributesIncludesRawValueWhenRawFieldPresent(): void
+    {
+        $field = 'RadioBox_http_2_prop';
+        $rawField = $field . PropertyIndexReferenceFactory::RAW_SUFFIX;
+
+        $builder = new NestedAttributesDocumentBuilder();
+        $out = $builder->buildFromDynamicProperties([
+            $field => ['enc1', 'enc2'],
+            $rawField => ['Label one, Label two'],
+        ]);
+
+        $this->assertCount(1, $out);
+        $this->assertSame(['enc1', 'enc2'], $out[0]['value']);
+        $this->assertSame('Label one, Label two', $out[0]['raw_value']);
+    }
+
+    public function testBuildAttributesOmitsRawValueWhenNotProvided(): void
+    {
+        $field = 'TextBox_http_2_only';
+
+        $builder = new NestedAttributesDocumentBuilder();
+        $out = $builder->buildFromDynamicProperties([
+            $field => ['x'],
+        ]);
+
+        $this->assertCount(1, $out);
+        $this->assertSame(['x'], $out[0]['value']);
+        $this->assertArrayNotHasKey('raw_value', $out[0]);
     }
 
     private function createIterator(array $items = []): MockObject
