@@ -24,6 +24,7 @@ use oat\taoAdvancedSearch\model\Resource\ServiceProvider\ResourceServiceProvider
 use oat\taoAdvancedSearch\model\SearchEngine\ServiceProvider\SearchEngineProvider;
 use oat\taoAdvancedSearch\model\Test\ServiceProvider\TestServiceProvider;
 use oat\taoAdvancedSearch\scripts\install\RegisterEvents;
+use oat\taoAdvancedSearch\scripts\install\RegisterItemCommentElasticsearchAdapter;
 use oat\taoAdvancedSearch\scripts\install\RegisterItemRelationsService;
 use oat\taoAdvancedSearch\scripts\install\RegisterServices;
 use oat\taoAdvancedSearch\scripts\install\RegisterTaskQueueServices;
@@ -47,6 +48,7 @@ return [
             RegisterEvents::class,
             RegisterTaskQueueServices::class,
             RegisterItemRelationsService::class,
+            RegisterItemCommentElasticsearchAdapter::class,
         ],
         'rdf' => []
     ],
