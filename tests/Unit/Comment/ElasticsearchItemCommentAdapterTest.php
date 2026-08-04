@@ -26,6 +26,7 @@ use Elastic\Elasticsearch\Client;
 use Elastic\Elasticsearch\Response\Elasticsearch;
 use oat\generis\test\ServiceManagerMockTrait;
 use oat\taoAdvancedSearch\model\Comment\ElasticsearchItemCommentAdapter;
+use oat\taoAdvancedSearch\model\Comment\ItemCommentIndexManager;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use oat\taoItems\model\Comment\ItemComment;
 use DG\BypassFinals;
@@ -42,6 +43,9 @@ class ElasticsearchItemCommentAdapterTest extends TestCase
     /** @var IndexPrefixer|MockObject */
     private $prefixer;
 
+    /** @var ItemCommentIndexManager|MockObject */
+    private $indexManager;
+
     private ElasticsearchItemCommentAdapter $sut;
 
     protected function setUp(): void
@@ -54,12 +58,15 @@ class ElasticsearchItemCommentAdapterTest extends TestCase
                 return 'test-' . $name;
             }
         );
+        $this->indexManager = $this->createMock(ItemCommentIndexManager::class);
+        $this->indexManager->method('ensureIndexExists')->willReturn('test-item-comments');
 
         $this->sut = new ElasticsearchItemCommentAdapter();
         $this->sut->setServiceLocator(
             $this->getServiceManagerMock([
                 Client::class => $this->client,
                 IndexPrefixer::class => $this->prefixer,
+                ItemCommentIndexManager::SERVICE_ID => $this->indexManager,
             ])
         );
     }
@@ -78,6 +85,7 @@ class ElasticsearchItemCommentAdapterTest extends TestCase
         $response = $this->createMock(Elasticsearch::class);
         $response->method('asArray')->willReturn(['result' => 'created']);
 
+        $this->indexManager->expects($this->once())->method('ensureIndexExists');
         $this->client
             ->expects($this->once())
             ->method('index')
@@ -116,6 +124,9 @@ class ElasticsearchItemCommentAdapterTest extends TestCase
         $this->client
             ->expects($this->once())
             ->method('search')
+            ->with($this->callback(static function (array $params): bool {
+                return ($params['body']['query']['term']['itemUri'] ?? null) === 'item-1';
+            }))
             ->willReturn($response);
 
         $comments = $this->sut->findByItemUri('item-1');

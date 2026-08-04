@@ -30,6 +30,8 @@ use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
 use oat\generis\model\DependencyInjection\ServiceOptions;
 use oat\oatbox\log\LoggerService;
 use oat\oatbox\session\SessionService;
+use oat\taoAdvancedSearch\model\Comment\ElasticsearchItemCommentAdapter;
+use oat\taoAdvancedSearch\model\Comment\ItemCommentIndexManager;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchClientFactory;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
@@ -159,6 +161,12 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
             )->public();
 
         $services->set(SearchResultNormalizer::class, SearchResultNormalizer::class)
+            ->public();
+
+        $services->set(ItemCommentIndexManager::class, ItemCommentIndexManager::class)
+            ->public();
+
+        $services->set(ElasticsearchItemCommentAdapter::class, ElasticsearchItemCommentAdapter::class)
             ->public();
     }
 }
