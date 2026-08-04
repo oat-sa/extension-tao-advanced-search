@@ -23,11 +23,13 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\scripts\install;
 
 use oat\oatbox\extension\InstallAction;
+use oat\oatbox\reporting\Report;
 use oat\taoAdvancedSearch\model\Comment\ElasticsearchItemCommentAdapter;
+use oat\taoAdvancedSearch\model\Comment\ItemCommentIndexManager;
 use oat\taoItems\model\Comment\ItemCommentPersistenceProxy;
 
 /**
- * Replaces taoItems RDF comment persistence with Elasticsearch when AS is installed.
+ * Creates item-comments ES index and replaces taoItems RDF comment persistence with Elasticsearch.
  */
 class RegisterItemCommentElasticsearchAdapter extends InstallAction
 {
@@ -35,20 +37,28 @@ class RegisterItemCommentElasticsearchAdapter extends InstallAction
     {
         $serviceManager = $this->getServiceManager();
 
+        $indexManager = new ItemCommentIndexManager();
+        $serviceManager->propagate($indexManager);
+        $serviceManager->register(ItemCommentIndexManager::SERVICE_ID, $indexManager);
+
         $adapter = new ElasticsearchItemCommentAdapter();
         $serviceManager->propagate($adapter);
         $serviceManager->register(ElasticsearchItemCommentAdapter::SERVICE_ID, $adapter);
 
-        if (!$serviceManager->has(ItemCommentPersistenceProxy::SERVICE_ID)) {
-            return;
+        $indexName = $indexManager->ensureIndexExists();
+
+        if ($serviceManager->has(ItemCommentPersistenceProxy::SERVICE_ID)) {
+            /** @var ItemCommentPersistenceProxy $proxy */
+            $proxy = $serviceManager->get(ItemCommentPersistenceProxy::SERVICE_ID);
+            $proxy->setOption(
+                ItemCommentPersistenceProxy::OPTION_ACTIVE_ADAPTER,
+                ElasticsearchItemCommentAdapter::SERVICE_ID
+            );
+            $serviceManager->register(ItemCommentPersistenceProxy::SERVICE_ID, $proxy);
         }
 
-        /** @var ItemCommentPersistenceProxy $proxy */
-        $proxy = $serviceManager->get(ItemCommentPersistenceProxy::SERVICE_ID);
-        $proxy->setOption(
-            ItemCommentPersistenceProxy::OPTION_ACTIVE_ADAPTER,
-            ElasticsearchItemCommentAdapter::SERVICE_ID
+        return Report::createSuccess(
+            sprintf('Item comments persistence uses Elasticsearch index "%s"', $indexName)
         );
-        $serviceManager->register(ItemCommentPersistenceProxy::SERVICE_ID, $proxy);
     }
 }

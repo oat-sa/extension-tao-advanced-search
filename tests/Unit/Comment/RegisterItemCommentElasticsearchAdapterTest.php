@@ -22,27 +22,48 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\Comment;
 
-use oat\generis\test\ServiceManagerMockTrait;
+use Elastic\Elasticsearch\Client;
+use Elastic\Elasticsearch\Endpoints\Indices;
+use Elastic\Elasticsearch\Response\Elasticsearch;
 use oat\oatbox\service\ServiceManager;
 use oat\taoAdvancedSearch\model\Comment\ElasticsearchItemCommentAdapter;
+use oat\taoAdvancedSearch\model\Comment\ItemCommentIndexManager;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use oat\taoAdvancedSearch\scripts\install\RegisterItemCommentElasticsearchAdapter;
 use oat\taoItems\model\Comment\ItemCommentPersistenceProxy;
 use oat\taoItems\model\Comment\RdfItemCommentAdapter;
+use DG\BypassFinals;
 use PHPUnit\Framework\TestCase;
 
 class RegisterItemCommentElasticsearchAdapterTest extends TestCase
 {
-    use ServiceManagerMockTrait;
-
-    public function testReplacesActiveAdapterOnProxy(): void
+    public function testReplacesActiveAdapterOnProxyAndEnsuresIndex(): void
     {
+        BypassFinals::enable();
+
         $proxy = new ItemCommentPersistenceProxy([
             ItemCommentPersistenceProxy::OPTION_ACTIVE_ADAPTER => RdfItemCommentAdapter::SERVICE_ID,
         ]);
 
-        $services = [];
+        $existsResponse = $this->createMock(Elasticsearch::class);
+        $existsResponse->method('asBool')->willReturn(true);
+
+        $indices = $this->createMock(Indices::class);
+        $indices->expects($this->once())->method('exists')->willReturn($existsResponse);
+
+        $client = $this->createMock(Client::class);
+        $client->method('indices')->willReturn($indices);
+
+        $prefixer = $this->createMock(IndexPrefixer::class);
+        $prefixer->method('prefix')->willReturn('test-item-comments');
+
+        $services = [
+            Client::class => $client,
+            IndexPrefixer::class => $prefixer,
+            ItemCommentPersistenceProxy::SERVICE_ID => $proxy,
+        ];
+
         $serviceManager = $this->createMock(ServiceManager::class);
-        $serviceManager->method('propagate')->willReturnArgument(0);
         $serviceManager
             ->method('has')
             ->willReturnCallback(static function (string $id) use (&$services): bool {
@@ -55,16 +76,27 @@ class RegisterItemCommentElasticsearchAdapterTest extends TestCase
             });
         $serviceManager
             ->method('register')
-            ->willReturnCallback(static function (string $id, $service) use (&$services): void {
+            ->willReturnCallback(static function (string $id, $service) use (&$services, $serviceManager): void {
+                if (method_exists($service, 'setServiceLocator')) {
+                    $service->setServiceLocator($serviceManager);
+                }
                 $services[$id] = $service;
             });
-
-        $services[ItemCommentPersistenceProxy::SERVICE_ID] = $proxy;
+        $serviceManager
+            ->method('propagate')
+            ->willReturnCallback(static function ($service) use ($serviceManager) {
+                if (method_exists($service, 'setServiceLocator')) {
+                    $service->setServiceLocator($serviceManager);
+                }
+                return $service;
+            });
 
         $script = new RegisterItemCommentElasticsearchAdapter();
         $script->setServiceLocator($serviceManager);
-        $script([]);
+        $report = $script([]);
 
+        $this->assertNotNull($report);
+        $this->assertArrayHasKey(ItemCommentIndexManager::SERVICE_ID, $services);
         $this->assertArrayHasKey(ElasticsearchItemCommentAdapter::SERVICE_ID, $services);
         $this->assertSame(
             ElasticsearchItemCommentAdapter::SERVICE_ID,
