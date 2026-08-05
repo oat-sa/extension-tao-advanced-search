@@ -13,7 +13,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * Foundation, Inc., 31 Milk St # 960789 Boston, MA 02196 USA
  *
  * Copyright (c) 2026 (original work) Open Assessment Technologies SA;
  */
@@ -24,7 +24,6 @@ namespace oat\taoAdvancedSearch\tests\Unit\Comment;
 
 use Elastic\Elasticsearch\Client;
 use Elastic\Elasticsearch\Response\Elasticsearch;
-use oat\generis\test\ServiceManagerMockTrait;
 use oat\taoAdvancedSearch\model\Comment\ElasticsearchItemCommentAdapter;
 use oat\taoAdvancedSearch\model\Comment\ItemCommentIndexManager;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
@@ -35,8 +34,6 @@ use PHPUnit\Framework\TestCase;
 
 class ElasticsearchItemCommentAdapterTest extends TestCase
 {
-    use ServiceManagerMockTrait;
-
     /** @var Client|MockObject */
     private $client;
 
@@ -61,13 +58,10 @@ class ElasticsearchItemCommentAdapterTest extends TestCase
         $this->indexManager = $this->createMock(ItemCommentIndexManager::class);
         $this->indexManager->method('ensureIndexExists')->willReturn('test-item-comments');
 
-        $this->sut = new ElasticsearchItemCommentAdapter();
-        $this->sut->setServiceLocator(
-            $this->getServiceManagerMock([
-                Client::class => $this->client,
-                IndexPrefixer::class => $this->prefixer,
-                ItemCommentIndexManager::SERVICE_ID => $this->indexManager,
-            ])
+        $this->sut = new ElasticsearchItemCommentAdapter(
+            $this->client,
+            $this->prefixer,
+            $this->indexManager
         );
     }
 
@@ -92,7 +86,9 @@ class ElasticsearchItemCommentAdapterTest extends TestCase
             ->with($this->callback(static function (array $params): bool {
                 return $params['index'] === 'test-item-comments'
                     && $params['id'] === 'c1'
-                    && $params['body']['body'] === 'hello';
+                    && $params['body']['body'] === 'hello'
+                    && $params['body']['edited'] === false
+                    && $params['body']['resolved'] === false;
             }))
             ->willReturn($response);
 
@@ -115,6 +111,8 @@ class ElasticsearchItemCommentAdapterTest extends TestCase
                             'body' => 'hello',
                             'createdAt' => '2026-08-03T10:00:00+00:00',
                             'status' => 'active',
+                            'edited' => true,
+                            'resolved' => false,
                         ],
                     ],
                 ],
@@ -132,5 +130,7 @@ class ElasticsearchItemCommentAdapterTest extends TestCase
         $comments = $this->sut->findByItemUri('item-1');
         $this->assertCount(1, $comments);
         $this->assertSame('hello', $comments[0]->getBody());
+        $this->assertTrue($comments[0]->isEdited());
+        $this->assertFalse($comments[0]->isResolved());
     }
 }

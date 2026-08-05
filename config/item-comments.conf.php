@@ -13,7 +13,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * Foundation, Inc., 31 Milk St # 960789 Boston, MA 02196 USA
  *
  * Copyright (c) 2026 (original work) Open Assessment Technologies SA;
  */
@@ -56,12 +56,19 @@ return [
                     'type' => 'keyword',
                     'ignore_above' => 64,
                 ],
+                'edited' => [
+                    'type' => 'boolean',
+                ],
+                'resolved' => [
+                    'type' => 'boolean',
+                ],
             ],
         ],
         'settings' => [
             'index' => [
                 'number_of_shards' => '1',
-                'number_of_replicas' => '1',
+                // Single-node local/dev clusters cannot allocate replicas; keep 0 by default.
+                'number_of_replicas' => '0',
             ],
         ],
     ],

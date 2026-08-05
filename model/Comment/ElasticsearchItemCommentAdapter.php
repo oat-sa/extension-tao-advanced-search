@@ -13,7 +13,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * Foundation, Inc., 31 Milk St # 960789 Boston, MA 02196 USA
  *
  * Copyright (c) 2026 (original work) Open Assessment Technologies SA;
  */
@@ -23,24 +23,33 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\Comment;
 
 use Elastic\Elasticsearch\Client;
-use oat\generis\model\DependencyInjection\ServiceOptions;
-use oat\oatbox\service\ConfigurableService;
-use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchClientFactory;
-use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use oat\taoItems\model\Comment\ItemComment;
 use oat\taoItems\model\Comment\ItemCommentPersistenceInterface;
 use RuntimeException;
 use Throwable;
 
-class ElasticsearchItemCommentAdapter extends ConfigurableService implements ItemCommentPersistenceInterface
+class ElasticsearchItemCommentAdapter implements ItemCommentPersistenceInterface
 {
-    public const SERVICE_ID = 'taoAdvancedSearch/ElasticsearchItemCommentAdapter';
     public const INDEX_NAME = 'item-comments';
+
+    private Client $client;
+    private IndexPrefixer $indexPrefixer;
+    private ItemCommentIndexManager $indexManager;
+
+    public function __construct(
+        Client $client,
+        IndexPrefixer $indexPrefixer,
+        ItemCommentIndexManager $indexManager
+    ) {
+        $this->client = $client;
+        $this->indexPrefixer = $indexPrefixer;
+        $this->indexManager = $indexManager;
+    }
 
     public function create(ItemComment $comment): ItemComment
     {
-        $this->getIndexManager()->ensureIndexExists();
+        $this->indexManager->ensureIndexExists();
 
         $params = [
             'index' => $this->getIndexName(),
@@ -49,7 +58,7 @@ class ElasticsearchItemCommentAdapter extends ConfigurableService implements Ite
             'refresh' => true,
         ];
 
-        $response = $this->getClient()->index($params)->asArray();
+        $response = $this->client->index($params)->asArray();
         if (($response['result'] ?? null) !== 'created' && ($response['result'] ?? null) !== 'updated') {
             throw new RuntimeException('Failed to index item comment in Elasticsearch');
         }
@@ -59,7 +68,7 @@ class ElasticsearchItemCommentAdapter extends ConfigurableService implements Ite
 
     public function findByItemUri(string $itemUri): array
     {
-        $this->getIndexManager()->ensureIndexExists();
+        $this->indexManager->ensureIndexExists();
 
         $params = [
             'index' => $this->getIndexName(),
@@ -77,7 +86,7 @@ class ElasticsearchItemCommentAdapter extends ConfigurableService implements Ite
         ];
 
         try {
-            $response = $this->getClient()->search($params)->asArray();
+            $response = $this->client->search($params)->asArray();
         } catch (Throwable $exception) {
             throw new RuntimeException(
                 sprintf('Failed to search item comments in Elasticsearch: %s', $exception->getMessage()),
@@ -96,7 +105,9 @@ class ElasticsearchItemCommentAdapter extends ConfigurableService implements Ite
                 (string) ($source['authorLabel'] ?? ''),
                 (string) ($source['body'] ?? ''),
                 (string) ($source['createdAt'] ?? ''),
-                (string) ($source['status'] ?? ItemComment::STATUS_ACTIVE)
+                (string) ($source['status'] ?? ItemComment::STATUS_ACTIVE),
+                $this->toBool($source['edited'] ?? false),
+                $this->toBool($source['resolved'] ?? false)
             );
         }
 
@@ -105,7 +116,7 @@ class ElasticsearchItemCommentAdapter extends ConfigurableService implements Ite
 
     public function countByItemUri(string $itemUri): int
     {
-        $this->getIndexManager()->ensureIndexExists();
+        $this->indexManager->ensureIndexExists();
 
         $params = [
             'index' => $this->getIndexName(),
@@ -119,7 +130,7 @@ class ElasticsearchItemCommentAdapter extends ConfigurableService implements Ite
         ];
 
         try {
-            $response = $this->getClient()->count($params)->asArray();
+            $response = $this->client->count($params)->asArray();
         } catch (Throwable $exception) {
             throw new RuntimeException(
                 sprintf('Failed to count item comments in Elasticsearch: %s', $exception->getMessage()),
@@ -133,59 +144,22 @@ class ElasticsearchItemCommentAdapter extends ConfigurableService implements Ite
 
     private function getIndexName(): string
     {
-        return $this->getIndexPrefixer()->prefix(self::INDEX_NAME);
+        return $this->indexPrefixer->prefix(self::INDEX_NAME);
     }
 
-    private function getClient(): Client
+    /**
+     * @param mixed $value
+     */
+    private function toBool($value): bool
     {
-        $locator = $this->getServiceLocator();
-        if ($locator->has(Client::class)) {
-            return $locator->get(Client::class);
+        if (is_bool($value)) {
+            return $value;
         }
 
-        if (method_exists($locator, 'getContainer')) {
-            try {
-                return $locator->getContainer()->get(Client::class);
-            } catch (Throwable $exception) {
-                // Fall through to ServiceOptions factory.
-            }
+        if ($value === null || $value === '') {
+            return false;
         }
 
-        $serviceOptions = $locator->get(ServiceOptions::SERVICE_ID);
-
-        return (new ElasticSearchClientFactory(new ElasticSearchConfig($serviceOptions)))->create();
-    }
-
-    private function getIndexPrefixer(): IndexPrefixer
-    {
-        $locator = $this->getServiceLocator();
-        if ($locator->has(IndexPrefixer::class)) {
-            return $locator->get(IndexPrefixer::class);
-        }
-
-        if (method_exists($locator, 'getContainer')) {
-            try {
-                return $locator->getContainer()->get(IndexPrefixer::class);
-            } catch (Throwable $exception) {
-                // Fall through to ServiceOptions factory.
-            }
-        }
-
-        $serviceOptions = $locator->get(ServiceOptions::SERVICE_ID);
-
-        return new IndexPrefixer(new ElasticSearchConfig($serviceOptions));
-    }
-
-    private function getIndexManager(): ItemCommentIndexManager
-    {
-        $locator = $this->getServiceLocator();
-        if ($locator->has(ItemCommentIndexManager::SERVICE_ID)) {
-            return $locator->get(ItemCommentIndexManager::SERVICE_ID);
-        }
-
-        $manager = new ItemCommentIndexManager();
-        $manager->setServiceLocator($locator);
-
-        return $manager;
+        return in_array(strtolower(trim((string) $value)), ['1', 'true', 'yes'], true);
     }
 }

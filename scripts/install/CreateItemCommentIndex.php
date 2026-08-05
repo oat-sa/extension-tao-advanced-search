@@ -27,9 +27,9 @@ use oat\oatbox\reporting\Report;
 use oat\taoAdvancedSearch\model\Comment\ItemCommentIndexManager;
 
 /**
- * @deprecated Use CreateItemCommentIndex. Kept as an alias for older migrations.
+ * Ensures the item-comments Elasticsearch index exists (DI wires the adapter).
  */
-class RegisterItemCommentElasticsearchAdapter extends InstallAction
+class CreateItemCommentIndex extends InstallAction
 {
     public function __invoke($params = [])
     {
