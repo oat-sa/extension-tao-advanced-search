@@ -105,7 +105,6 @@ class ElasticsearchItemCommentAdapter implements ItemCommentPersistenceInterface
                 (string) ($source['authorLabel'] ?? ''),
                 (string) ($source['body'] ?? ''),
                 (string) ($source['createdAt'] ?? ''),
-                (string) ($source['status'] ?? ItemComment::STATUS_ACTIVE),
                 $this->toBool($source['edited'] ?? false),
                 $this->toBool($source['resolved'] ?? false)
             );
