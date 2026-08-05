@@ -114,34 +114,6 @@ class ElasticsearchItemCommentAdapter implements ItemCommentPersistenceInterface
         return $comments;
     }
 
-    public function countByItemUri(string $itemUri): int
-    {
-        $this->indexManager->ensureIndexExists();
-
-        $params = [
-            'index' => $this->getIndexName(),
-            'body' => [
-                'query' => [
-                    'term' => [
-                        'itemUri' => $itemUri,
-                    ],
-                ],
-            ],
-        ];
-
-        try {
-            $response = $this->client->count($params)->asArray();
-        } catch (Throwable $exception) {
-            throw new RuntimeException(
-                sprintf('Failed to count item comments in Elasticsearch: %s', $exception->getMessage()),
-                0,
-                $exception
-            );
-        }
-
-        return (int) ($response['count'] ?? 0);
-    }
-
     private function getIndexName(): string
     {
         return $this->indexPrefixer->prefix(self::INDEX_NAME);
