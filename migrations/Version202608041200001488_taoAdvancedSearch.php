@@ -29,15 +29,20 @@ use oat\taoAdvancedSearch\scripts\install\CreateItemCommentIndex;
 use Throwable;
 
 /**
- * Ensures item-comments Elasticsearch index exists (DI wires the adapter).
+ * Item Comments (NYSED-13): ensure ES index and drop legacy ServiceManager configs.
  *
  * phpcs:disable Squiz.Classes.ValidClassName
  */
 final class Version202608041200001488_taoAdvancedSearch extends AbstractMigration
 {
+    private const LEGACY_SERVICE_IDS = [
+        'taoAdvancedSearch/ElasticsearchItemCommentAdapter',
+        'taoAdvancedSearch/ItemCommentIndexManager',
+    ];
+
     public function getDescription(): string
     {
-        return 'Create item-comments ES index for Item Comments (NYSED-19)';
+        return 'Create item-comments ES index and unregister legacy comment configs (NYSED-13)';
     }
 
     public function up(Schema $schema): void
@@ -62,10 +67,21 @@ final class Version202608041200001488_taoAdvancedSearch extends AbstractMigratio
             );
             throw $exception;
         }
+
+        $serviceManager = $this->getServiceManager();
+        foreach (self::LEGACY_SERVICE_IDS as $serviceId) {
+            if ($serviceManager->has($serviceId)) {
+                $serviceManager->unregister($serviceId);
+            }
+        }
+
+        $this->addReport(
+            Report::createSuccess('Legacy Item Comment ServiceManager configs unregistered')
+        );
     }
 
     public function down(Schema $schema): void
     {
-        // Intentionally left empty: index remains for forward compatibility.
+        // Intentionally left empty: index remains; DI is the only supported wiring.
     }
 }
