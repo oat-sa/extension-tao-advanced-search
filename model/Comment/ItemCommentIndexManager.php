@@ -13,7 +13,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * Foundation, Inc., 31 Milk St # 960789 Boston, MA 02196 USA
  *
  * Copyright (c) 2026 (original work) Open Assessment Technologies SA;
  */
@@ -23,10 +23,6 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\Comment;
 
 use Elastic\Elasticsearch\Client;
-use oat\generis\model\DependencyInjection\ServiceOptions;
-use oat\oatbox\service\ConfigurableService;
-use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchClientFactory;
-use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use RuntimeException;
 use Throwable;
@@ -34,17 +30,23 @@ use Throwable;
 /**
  * Creates / ensures the dedicated item-comments Elasticsearch index.
  */
-class ItemCommentIndexManager extends ConfigurableService
+class ItemCommentIndexManager
 {
-    public const SERVICE_ID = 'taoAdvancedSearch/ItemCommentIndexManager';
+    private Client $client;
+    private IndexPrefixer $indexPrefixer;
+
+    public function __construct(Client $client, IndexPrefixer $indexPrefixer)
+    {
+        $this->client = $client;
+        $this->indexPrefixer = $indexPrefixer;
+    }
 
     public function ensureIndexExists(): string
     {
         $indexName = $this->getIndexName();
-        $client = $this->getClient();
 
         try {
-            $exists = $client->indices()->exists(['index' => $indexName])->asBool();
+            $exists = $this->client->indices()->exists(['index' => $indexName])->asBool();
         } catch (Throwable $exception) {
             throw new RuntimeException(
                 sprintf('Unable to check item-comments index existence: %s', $exception->getMessage()),
@@ -53,29 +55,29 @@ class ItemCommentIndexManager extends ConfigurableService
             );
         }
 
-        if ($exists) {
-            return $indexName;
+        if (!$exists) {
+            $definition = $this->getIndexDefinition();
+            $definition['index'] = $indexName;
+
+            try {
+                $this->client->indices()->create($definition);
+            } catch (Throwable $exception) {
+                throw new RuntimeException(
+                    sprintf('Unable to create item-comments index "%s": %s', $indexName, $exception->getMessage()),
+                    0,
+                    $exception
+                );
+            }
         }
 
-        $definition = $this->getIndexDefinition();
-        $definition['index'] = $indexName;
-
-        try {
-            $client->indices()->create($definition);
-        } catch (Throwable $exception) {
-            throw new RuntimeException(
-                sprintf('Unable to create item-comments index "%s": %s', $indexName, $exception->getMessage()),
-                0,
-                $exception
-            );
-        }
+        $this->assertIndexIsUsable($indexName);
 
         return $indexName;
     }
 
     public function getIndexName(): string
     {
-        return $this->getIndexPrefixer()->prefix(ElasticsearchItemCommentAdapter::INDEX_NAME);
+        return $this->indexPrefixer->prefix(ElasticsearchItemCommentAdapter::INDEX_NAME);
     }
 
     /**
@@ -94,43 +96,36 @@ class ItemCommentIndexManager extends ConfigurableService
         return $definition;
     }
 
-    private function getClient(): Client
+    private function assertIndexIsUsable(string $indexName): void
     {
-        $locator = $this->getServiceLocator();
-        if ($locator->has(Client::class)) {
-            return $locator->get(Client::class);
+        try {
+            $health = $this->client->cluster()->health([
+                'index' => $indexName,
+                'level' => 'indices',
+                'timeout' => '5s',
+            ])->asArray();
+        } catch (Throwable $exception) {
+            throw new RuntimeException(
+                sprintf(
+                    'Unable to verify item-comments index "%s" health: %s',
+                    $indexName,
+                    $exception->getMessage()
+                ),
+                0,
+                $exception
+            );
         }
 
-        if (method_exists($locator, 'getContainer')) {
-            try {
-                return $locator->getContainer()->get(Client::class);
-            } catch (Throwable $exception) {
-                // Fall through to ServiceOptions factory.
-            }
+        $status = strtolower((string) ($health['status'] ?? ''));
+        if ($status === 'red') {
+            throw new RuntimeException(
+                sprintf(
+                    'Item-comments index "%s" is red and cannot accept reads/writes. '
+                    . 'Check Elasticsearch disk watermarks / shard allocation '
+                    . '(cluster may be above cluster.routing.allocation.disk.watermark.high).',
+                    $indexName
+                )
+            );
         }
-
-        $serviceOptions = $locator->get(ServiceOptions::SERVICE_ID);
-
-        return (new ElasticSearchClientFactory(new ElasticSearchConfig($serviceOptions)))->create();
-    }
-
-    private function getIndexPrefixer(): IndexPrefixer
-    {
-        $locator = $this->getServiceLocator();
-        if ($locator->has(IndexPrefixer::class)) {
-            return $locator->get(IndexPrefixer::class);
-        }
-
-        if (method_exists($locator, 'getContainer')) {
-            try {
-                return $locator->getContainer()->get(IndexPrefixer::class);
-            } catch (Throwable $exception) {
-                // Fall through to ServiceOptions factory.
-            }
-        }
-
-        $serviceOptions = $locator->get(ServiceOptions::SERVICE_ID);
-
-        return new IndexPrefixer(new ElasticSearchConfig($serviceOptions));
     }
 }

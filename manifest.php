@@ -23,8 +23,8 @@ use oat\taoAdvancedSearch\model\Metadata\ServiceProvider\MetadataServiceProvider
 use oat\taoAdvancedSearch\model\Resource\ServiceProvider\ResourceServiceProvider;
 use oat\taoAdvancedSearch\model\SearchEngine\ServiceProvider\SearchEngineProvider;
 use oat\taoAdvancedSearch\model\Test\ServiceProvider\TestServiceProvider;
+use oat\taoAdvancedSearch\scripts\install\CreateItemCommentIndex;
 use oat\taoAdvancedSearch\scripts\install\RegisterEvents;
-use oat\taoAdvancedSearch\scripts\install\RegisterItemCommentElasticsearchAdapter;
 use oat\taoAdvancedSearch\scripts\install\RegisterItemRelationsService;
 use oat\taoAdvancedSearch\scripts\install\RegisterServices;
 use oat\taoAdvancedSearch\scripts\install\RegisterTaskQueueServices;
@@ -39,6 +39,9 @@ return [
     'license' => 'GPL-2.0',
     'author' => 'Open Assessment Technologies SA',
     'managementRole' => $managerRole,
+    'requires' => [
+        'taoItems' => '>=12.0.0',
+    ],
     'acl' => [
         ['grant', $managerRole, ['ext' => 'taoAdvancedSearch']],
     ],
@@ -48,7 +51,7 @@ return [
             RegisterEvents::class,
             RegisterTaskQueueServices::class,
             RegisterItemRelationsService::class,
-            RegisterItemCommentElasticsearchAdapter::class,
+            CreateItemCommentIndex::class,
         ],
         'rdf' => []
     ],

@@ -32,6 +32,7 @@ use oat\oatbox\log\LoggerService;
 use oat\oatbox\session\SessionService;
 use oat\taoAdvancedSearch\model\Comment\ElasticsearchItemCommentAdapter;
 use oat\taoAdvancedSearch\model\Comment\ItemCommentIndexManager;
+use oat\taoItems\model\Comment\ItemCommentPersistenceInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchClientFactory;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
@@ -163,10 +164,31 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
         $services->set(SearchResultNormalizer::class, SearchResultNormalizer::class)
             ->public();
 
-        $services->set(ItemCommentIndexManager::class, ItemCommentIndexManager::class)
-            ->public();
+        $services
+            ->set(ItemCommentIndexManager::class, ItemCommentIndexManager::class)
+            ->public()
+            ->args([
+                service(Client::class),
+                service(IndexPrefixer::class),
+            ]);
 
-        $services->set(ElasticsearchItemCommentAdapter::class, ElasticsearchItemCommentAdapter::class)
-            ->public();
+        $services
+            ->set(ElasticsearchItemCommentAdapter::class, ElasticsearchItemCommentAdapter::class)
+            ->public()
+            ->args([
+                service(Client::class),
+                service(IndexPrefixer::class),
+                service(ItemCommentIndexManager::class),
+            ]);
+
+        // When AS is installed, override taoItems RDF default with Elasticsearch.
+        $services
+            ->set(ItemCommentPersistenceInterface::class, ElasticsearchItemCommentAdapter::class)
+            ->public()
+            ->args([
+                service(Client::class),
+                service(IndexPrefixer::class),
+                service(ItemCommentIndexManager::class),
+            ]);
     }
 }

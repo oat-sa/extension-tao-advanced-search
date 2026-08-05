@@ -25,33 +25,40 @@ namespace oat\taoAdvancedSearch\migrations;
 use Doctrine\DBAL\Schema\Schema;
 use oat\oatbox\reporting\Report;
 use oat\tao\scripts\tools\migrations\AbstractMigration;
-use oat\taoAdvancedSearch\scripts\install\CreateItemCommentIndex;
 
 /**
+ * Removes legacy ServiceManager *.conf.php wiring for Item Comments (DI replaces it).
+ *
  * phpcs:disable Squiz.Classes.ValidClassName
  */
-final class Version202608031750001488_taoAdvancedSearch extends AbstractMigration
+final class Version202608041830001488_taoAdvancedSearch extends AbstractMigration
 {
+    private const LEGACY_SERVICE_IDS = [
+        'taoAdvancedSearch/ElasticsearchItemCommentAdapter',
+        'taoAdvancedSearch/ItemCommentIndexManager',
+    ];
+
     public function getDescription(): string
     {
-        return 'Ensure Item Comment Elasticsearch index exists (NYSED-19)';
+        return 'Unregister legacy Item Comment ConfigurableService configs (NYSED-19 DI)';
     }
 
     public function up(Schema $schema): void
     {
-        $script = new CreateItemCommentIndex();
-        $script->setServiceLocator($this->getServiceLocator());
-        $report = $script([]);
+        $serviceManager = $this->getServiceManager();
+        foreach (self::LEGACY_SERVICE_IDS as $serviceId) {
+            if ($serviceManager->has($serviceId)) {
+                $serviceManager->unregister($serviceId);
+            }
+        }
 
         $this->addReport(
-            $report instanceof Report
-                ? $report
-                : Report::createSuccess('Item Comment Elasticsearch index ensured')
+            Report::createSuccess('Legacy Item Comment ServiceManager configs unregistered')
         );
     }
 
     public function down(Schema $schema): void
     {
-        // Intentionally left empty.
+        // Intentionally left empty: DI is the only supported wiring.
     }
 }
