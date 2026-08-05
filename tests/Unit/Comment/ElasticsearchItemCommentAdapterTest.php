@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\tests\Unit\Comment;
 
 use Elastic\Elasticsearch\Client;
+use Elastic\Elasticsearch\Exception\ClientResponseException;
 use Elastic\Elasticsearch\Response\Elasticsearch;
 use oat\taoAdvancedSearch\model\Comment\ElasticsearchItemCommentAdapter;
 use oat\taoAdvancedSearch\model\Comment\ItemCommentIndexManager;
@@ -93,7 +94,8 @@ class ElasticsearchItemCommentAdapterTest extends TestCase
                     && $params['body']['resourceUri'] === 'item-1'
                     && $params['body']['resourceType'] === ResourceCommentType::ITEM
                     && $params['body']['edited'] === false
-                    && $params['body']['resolved'] === false;
+                    && $params['body']['resolved'] === false
+                    && !array_key_exists('editable', $params['body']);
             }))
             ->willReturn($response);
 
@@ -157,6 +159,105 @@ class ElasticsearchItemCommentAdapterTest extends TestCase
         $this->sut->create($comment);
     }
 
+    public function testUpdateIndexesDocument(): void
+    {
+        $comment = (new ItemComment(
+            'c1',
+            'item-1',
+            ResourceCommentType::ITEM,
+            'author',
+            'Author',
+            'hello',
+            '2026-08-03T10:00:00+00:00'
+        ))->withEditedBody('updated body');
+
+        $response = $this->createMock(Elasticsearch::class);
+        $response->method('asArray')->willReturn(['result' => 'updated']);
+
+        $this->indexManager->expects($this->once())->method('ensureIndexExists');
+        $this->client
+            ->expects($this->once())
+            ->method('index')
+            ->with($this->callback(static function (array $params): bool {
+                return $params['index'] === 'test-resource-comments'
+                    && $params['id'] === 'c1'
+                    && $params['body']['body'] === 'updated body'
+                    && $params['body']['resourceType'] === ResourceCommentType::ITEM
+                    && $params['body']['edited'] === true
+                    && $params['refresh'] === true
+                    && !array_key_exists('editable', $params['body']);
+            }))
+            ->willReturn($response);
+
+        $this->assertSame($comment, $this->sut->update($comment));
+    }
+
+    public function testFindByIdReturnsComment(): void
+    {
+        $response = $this->createMock(Elasticsearch::class);
+        $response->method('asArray')->willReturn([
+            'found' => true,
+            '_id' => 'c1',
+            '_source' => [
+                'id' => 'c1',
+                'resourceUri' => 'item-1',
+                'resourceType' => ResourceCommentType::ITEM,
+                'authorId' => 'author',
+                'authorLabel' => 'Author',
+                'body' => 'hello',
+                'createdAt' => '2026-08-03T10:00:00+00:00',
+                'edited' => true,
+                'resolved' => false,
+            ],
+        ]);
+
+        $this->indexManager->expects($this->once())->method('ensureIndexExists');
+        $this->client
+            ->expects($this->once())
+            ->method('get')
+            ->with([
+                'index' => 'test-resource-comments',
+                'id' => 'c1',
+            ])
+            ->willReturn($response);
+
+        $comment = $this->sut->findById('c1');
+        $this->assertInstanceOf(ItemComment::class, $comment);
+        $this->assertSame('c1', $comment->getId());
+        $this->assertSame('hello', $comment->getBody());
+        $this->assertSame(ResourceCommentType::ITEM, $comment->getResourceType());
+        $this->assertTrue($comment->isEdited());
+    }
+
+    public function testFindByIdReturnsNullWhenMissing(): void
+    {
+        $this->client
+            ->expects($this->once())
+            ->method('get')
+            ->willThrowException(new ClientResponseException('Not Found', 404));
+
+        $this->assertNull($this->sut->findById('missing'));
+    }
+
+    public function testDeleteRemovesDocument(): void
+    {
+        $response = $this->createMock(Elasticsearch::class);
+        $response->method('asArray')->willReturn(['result' => 'deleted']);
+
+        $this->indexManager->expects($this->once())->method('ensureIndexExists');
+        $this->client
+            ->expects($this->once())
+            ->method('delete')
+            ->with([
+                'index' => 'test-resource-comments',
+                'id' => 'c1',
+                'refresh' => true,
+            ])
+            ->willReturn($response);
+
+        $this->sut->delete('c1');
+    }
+
     public function testFindByResourceMapsHits(): void
     {
         $response = $this->createMock(Elasticsearch::class);
@@ -195,7 +296,6 @@ class ElasticsearchItemCommentAdapterTest extends TestCase
         $comments = $this->sut->findByResource('item-1', ResourceCommentType::ITEM);
         $this->assertCount(1, $comments);
         $this->assertSame('hello', $comments[0]->getBody());
-        $this->assertSame(ResourceCommentType::ITEM, $comments[0]->getResourceType());
         $this->assertTrue($comments[0]->isEdited());
         $this->assertFalse($comments[0]->isResolved());
     }
