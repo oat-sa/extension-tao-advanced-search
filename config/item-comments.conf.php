@@ -52,10 +52,6 @@ return [
                 'createdAt' => [
                     'type' => 'date',
                 ],
-                'status' => [
-                    'type' => 'keyword',
-                    'ignore_above' => 64,
-                ],
                 'edited' => [
                     'type' => 'boolean',
                 ],

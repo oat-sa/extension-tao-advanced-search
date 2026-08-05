@@ -110,7 +110,6 @@ class ElasticsearchItemCommentAdapterTest extends TestCase
                             'authorLabel' => 'Author',
                             'body' => 'hello',
                             'createdAt' => '2026-08-03T10:00:00+00:00',
-                            'status' => 'active',
                             'edited' => true,
                             'resolved' => false,
                         ],
