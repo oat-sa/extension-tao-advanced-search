@@ -39,9 +39,6 @@ return [
     'license' => 'GPL-2.0',
     'author' => 'Open Assessment Technologies SA',
     'managementRole' => $managerRole,
-    'requires' => [
-        'taoItems' => '>=12.0.0',
-    ],
     'acl' => [
         ['grant', $managerRole, ['ext' => 'taoAdvancedSearch']],
     ],
