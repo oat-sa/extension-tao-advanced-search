@@ -26,7 +26,6 @@ use Doctrine\DBAL\Schema\Schema;
 use oat\oatbox\reporting\Report;
 use oat\tao\scripts\tools\migrations\AbstractMigration;
 use oat\taoAdvancedSearch\scripts\install\CreateItemCommentIndex;
-use Throwable;
 
 /**
  * Item Comments (NYSED-13): ensure ES index and drop legacy ServiceManager configs.
@@ -47,26 +46,7 @@ final class Version202608041200001488_taoAdvancedSearch extends AbstractMigratio
 
     public function up(Schema $schema): void
     {
-        try {
-            $script = new CreateItemCommentIndex();
-            $script->setServiceLocator($this->getServiceLocator());
-            $report = $script([]);
-
-            if ($report instanceof Report) {
-                $this->addReport($report);
-            } else {
-                $this->addReport(
-                    Report::createSuccess('Item comments Elasticsearch index ensured')
-                );
-            }
-        } catch (Throwable $exception) {
-            $this->addReport(
-                Report::createError(
-                    sprintf('Failed ensuring item comments Elasticsearch index: %s', $exception->getMessage())
-                )
-            );
-            throw $exception;
-        }
+        $this->runAction(new CreateItemCommentIndex());
 
         $serviceManager = $this->getServiceManager();
         foreach (self::LEGACY_SERVICE_IDS as $serviceId) {
