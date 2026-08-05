@@ -23,6 +23,8 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\Comment;
 
 use Elastic\Elasticsearch\Client;
+use Elastic\Elasticsearch\Exception\ClientResponseException;
+use InvalidArgumentException;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use oat\taoItems\model\Comment\ItemComment;
 use oat\taoItems\model\Comment\ItemCommentPersistenceInterface;
@@ -55,7 +57,7 @@ class ElasticsearchItemCommentAdapter implements ItemCommentPersistenceInterface
         $params = [
             'index' => $this->getIndexName(),
             'id' => $comment->getId(),
-            'body' => $comment->toArray(),
+            'body' => $this->toDocument($comment),
             'refresh' => true,
         ];
 
@@ -80,6 +82,113 @@ class ElasticsearchItemCommentAdapter implements ItemCommentPersistenceInterface
         }
 
         return $comment;
+    }
+
+    public function update(ItemComment $comment): ItemComment
+    {
+        $this->indexManager->ensureIndexExists();
+
+        $params = [
+            'index' => $this->getIndexName(),
+            'id' => $comment->getId(),
+            'body' => $this->toDocument($comment),
+            'refresh' => true,
+        ];
+
+        try {
+            $response = $this->client->index($params)->asArray();
+        } catch (Throwable $exception) {
+            throw new RuntimeException(
+                sprintf('Failed to update resource comment in Elasticsearch: %s', $exception->getMessage()),
+                0,
+                $exception
+            );
+        }
+
+        if (!in_array($response['result'] ?? null, ['created', 'updated'], true)) {
+            throw new RuntimeException('Failed to update resource comment in Elasticsearch');
+        }
+
+        return $comment;
+    }
+
+    public function delete(string $commentId): void
+    {
+        $commentId = trim($commentId);
+        if ($commentId === '') {
+            throw new InvalidArgumentException('Comment id is required');
+        }
+
+        $this->indexManager->ensureIndexExists();
+
+        $params = [
+            'index' => $this->getIndexName(),
+            'id' => $commentId,
+            'refresh' => true,
+        ];
+
+        try {
+            $this->client->delete($params)->asArray();
+        } catch (ClientResponseException $exception) {
+            if ($exception->getCode() === 404) {
+                throw new InvalidArgumentException('Comment not found', 0, $exception);
+            }
+
+            throw new RuntimeException(
+                sprintf('Failed to delete resource comment from Elasticsearch: %s', $exception->getMessage()),
+                0,
+                $exception
+            );
+        } catch (Throwable $exception) {
+            throw new RuntimeException(
+                sprintf('Failed to delete resource comment from Elasticsearch: %s', $exception->getMessage()),
+                0,
+                $exception
+            );
+        }
+    }
+
+    public function findById(string $commentId): ?ItemComment
+    {
+        $commentId = trim($commentId);
+        if ($commentId === '') {
+            return null;
+        }
+
+        $this->indexManager->ensureIndexExists();
+
+        $params = [
+            'index' => $this->getIndexName(),
+            'id' => $commentId,
+        ];
+
+        try {
+            $response = $this->client->get($params)->asArray();
+        } catch (ClientResponseException $exception) {
+            if ($exception->getCode() === 404) {
+                return null;
+            }
+
+            throw new RuntimeException(
+                sprintf('Failed to get resource comment from Elasticsearch: %s', $exception->getMessage()),
+                0,
+                $exception
+            );
+        } catch (Throwable $exception) {
+            throw new RuntimeException(
+                sprintf('Failed to get resource comment from Elasticsearch: %s', $exception->getMessage()),
+                0,
+                $exception
+            );
+        }
+
+        if (!($response['found'] ?? false)) {
+            return null;
+        }
+
+        $source = $response['_source'] ?? [];
+
+        return $this->mapSource($source, (string) ($response['_id'] ?? $commentId));
     }
 
     public function findByResource(string $resourceUri, string $resourceType): array
@@ -127,6 +236,24 @@ class ElasticsearchItemCommentAdapter implements ItemCommentPersistenceInterface
     private function getIndexName(): string
     {
         return $this->indexPrefixer->prefix(self::INDEX_NAME);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function toDocument(ItemComment $comment): array
+    {
+        return [
+            'id' => $comment->getId(),
+            'resourceUri' => $comment->getResourceUri(),
+            'resourceType' => $comment->getResourceType(),
+            'authorId' => $comment->getAuthorId(),
+            'authorLabel' => $comment->getAuthorLabel(),
+            'body' => $comment->getBody(),
+            'createdAt' => $comment->getCreatedAt(),
+            'edited' => $comment->isEdited(),
+            'resolved' => $comment->isResolved(),
+        ];
     }
 
     /**
