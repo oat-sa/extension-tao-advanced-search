@@ -33,7 +33,7 @@
     "oat-sa/extension-tao-outcome": ">=13.0.0",
     "oat-sa/extension-tao-test": ">=16.4.0",
     "oat-sa/extension-tao-mediamanager": ">=12.32.1",
-    "oat-sa/extension-tao-item": ">=12.0.0",
+    "oat-sa/extension-tao-item": "dev-feat/NYSED-13/item-comments",
     "elasticsearch/elasticsearch": "^8.0"
   },
   "require-dev": {
