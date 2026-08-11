@@ -23,45 +23,29 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\migrations;
 
 use Doctrine\DBAL\Schema\Schema;
-use oat\oatbox\reporting\Report;
 use oat\tao\scripts\tools\migrations\AbstractMigration;
 use oat\taoAdvancedSearch\scripts\install\CreateItemCommentIndex;
 
 /**
- * Item Comments (NYSED-13): ensure ES index and drop legacy ServiceManager configs.
+ * Item Comments (NYSED-13): ensure item-comments Elasticsearch index exists.
  *
  * phpcs:disable Squiz.Classes.ValidClassName
  */
 final class Version202608041200001488_taoAdvancedSearch extends AbstractMigration
 {
-    private const LEGACY_SERVICE_IDS = [
-        'taoAdvancedSearch/ElasticsearchItemCommentAdapter',
-        'taoAdvancedSearch/ItemCommentIndexManager',
-    ];
-
     public function getDescription(): string
     {
-        return 'Create item-comments ES index and unregister legacy comment configs (NYSED-13)';
+        return 'Create item-comments ES index (NYSED-13)';
     }
 
     public function up(Schema $schema): void
     {
         $this->runAction(new CreateItemCommentIndex());
-
-        $serviceManager = $this->getServiceManager();
-        foreach (self::LEGACY_SERVICE_IDS as $serviceId) {
-            if ($serviceManager->has($serviceId)) {
-                $serviceManager->unregister($serviceId);
-            }
-        }
-
-        $this->addReport(
-            Report::createSuccess('Legacy Item Comment ServiceManager configs unregistered')
-        );
     }
 
     public function down(Schema $schema): void
     {
-        // Intentionally left empty: index remains; DI is the only supported wiring.
+        // Elasticsearch index provisioning is not automatically reversible.
+        $this->throwIrreversibleMigrationException();
     }
 }
