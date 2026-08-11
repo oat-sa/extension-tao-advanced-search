@@ -34,6 +34,7 @@ class ItemCommentIndexManager
 {
     private Client $client;
     private IndexPrefixer $indexPrefixer;
+    private ?string $verifiedIndexName = null;
 
     public function __construct(Client $client, IndexPrefixer $indexPrefixer)
     {
@@ -43,6 +44,10 @@ class ItemCommentIndexManager
 
     public function ensureIndexExists(): string
     {
+        if ($this->verifiedIndexName !== null) {
+            return $this->verifiedIndexName;
+        }
+
         $indexName = $this->getIndexName();
 
         try {
@@ -71,6 +76,8 @@ class ItemCommentIndexManager
         }
 
         $this->assertIndexIsUsable($indexName);
+
+        $this->verifiedIndexName = $indexName;
 
         return $indexName;
     }

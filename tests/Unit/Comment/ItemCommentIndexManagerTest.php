@@ -109,6 +109,18 @@ class ItemCommentIndexManagerTest extends TestCase
         $this->sut->ensureIndexExists();
     }
 
+    public function testEnsureIndexExistsMemoizesVerifiedIndexName(): void
+    {
+        $existsResponse = $this->createMock(Elasticsearch::class);
+        $existsResponse->method('asBool')->willReturn(true);
+        $this->indices->expects($this->once())->method('exists')->willReturn($existsResponse);
+        $this->indices->expects($this->never())->method('create');
+        $this->mockHealthyIndex();
+
+        $this->assertSame('test-item-comments', $this->sut->ensureIndexExists());
+        $this->assertSame('test-item-comments', $this->sut->ensureIndexExists());
+    }
+
     private function mockHealthyIndex(): void
     {
         $healthResponse = $this->createMock(Elasticsearch::class);
