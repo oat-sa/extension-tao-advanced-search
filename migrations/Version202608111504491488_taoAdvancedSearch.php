@@ -29,9 +29,12 @@ use oat\taoAdvancedSearch\scripts\install\CreateItemCommentIndex;
 /**
  * Authoring comments (NYSED-13): ensure shared resource-comments Elasticsearch index exists.
  *
+ * Replaces Version202608041200001488_taoAdvancedSearch so environments that already ran the
+ * older migration can provision resource-comments via a new version id.
+ *
  * phpcs:disable Squiz.Classes.ValidClassName
  */
-final class Version202608041200001488_taoAdvancedSearch extends AbstractMigration
+final class Version202608111504491488_taoAdvancedSearch extends AbstractMigration
 {
     public function getDescription(): string
     {
