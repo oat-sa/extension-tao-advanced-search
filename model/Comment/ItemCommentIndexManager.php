@@ -28,7 +28,7 @@ use RuntimeException;
 use Throwable;
 
 /**
- * Creates / ensures the dedicated item-comments Elasticsearch index.
+ * Creates / ensures the shared resource-comments Elasticsearch index.
  */
 class ItemCommentIndexManager
 {
@@ -54,7 +54,7 @@ class ItemCommentIndexManager
             $exists = $this->client->indices()->exists(['index' => $indexName])->asBool();
         } catch (Throwable $exception) {
             throw new RuntimeException(
-                sprintf('Unable to check item-comments index existence: %s', $exception->getMessage()),
+                sprintf('Unable to check resource-comments index existence: %s', $exception->getMessage()),
                 0,
                 $exception
             );
@@ -68,7 +68,7 @@ class ItemCommentIndexManager
                 $this->client->indices()->create($definition);
             } catch (Throwable $exception) {
                 throw new RuntimeException(
-                    sprintf('Unable to create item-comments index "%s": %s', $indexName, $exception->getMessage()),
+                    sprintf('Unable to create resource-comments index "%s": %s', $indexName, $exception->getMessage()),
                     0,
                     $exception
                 );
@@ -92,9 +92,9 @@ class ItemCommentIndexManager
      */
     public function getIndexDefinition(): array
     {
-        $file = dirname(__DIR__, 2) . '/config/item-comments.conf.php';
+        $file = dirname(__DIR__, 2) . '/config/resource-comments.conf.php';
         if (!is_readable($file)) {
-            throw new RuntimeException(sprintf('Item comments index config not readable: %s', $file));
+            throw new RuntimeException(sprintf('Resource comments index config not readable: %s', $file));
         }
 
         /** @var array{index: string, body: array} $definition */
@@ -114,7 +114,7 @@ class ItemCommentIndexManager
         } catch (Throwable $exception) {
             throw new RuntimeException(
                 sprintf(
-                    'Unable to verify item-comments index "%s" health: %s',
+                    'Unable to verify resource-comments index "%s" health: %s',
                     $indexName,
                     $exception->getMessage()
                 ),
@@ -127,7 +127,7 @@ class ItemCommentIndexManager
         if ($status === 'red') {
             throw new RuntimeException(
                 sprintf(
-                    'Item-comments index "%s" is red and cannot accept reads/writes. '
+                    'Resource-comments index "%s" is red and cannot accept reads/writes. '
                     . 'Check Elasticsearch disk watermarks / shard allocation '
                     . '(cluster may be above cluster.routing.allocation.disk.watermark.high).',
                     $indexName

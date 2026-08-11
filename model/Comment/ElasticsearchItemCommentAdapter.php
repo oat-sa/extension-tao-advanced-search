@@ -26,12 +26,13 @@ use Elastic\Elasticsearch\Client;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use oat\taoItems\model\Comment\ItemComment;
 use oat\taoItems\model\Comment\ItemCommentPersistenceInterface;
+use oat\taoItems\model\Comment\ResourceCommentType;
 use RuntimeException;
 use Throwable;
 
 class ElasticsearchItemCommentAdapter implements ItemCommentPersistenceInterface
 {
-    public const INDEX_NAME = 'item-comments';
+    public const INDEX_NAME = 'resource-comments';
 
     private Client $client;
     private IndexPrefixer $indexPrefixer;
@@ -63,7 +64,7 @@ class ElasticsearchItemCommentAdapter implements ItemCommentPersistenceInterface
         } catch (Throwable $exception) {
             throw new RuntimeException(
                 sprintf(
-                    'Failed to index item comment "%s" in Elasticsearch: %s',
+                    'Failed to index resource comment "%s" in Elasticsearch: %s',
                     $comment->getId(),
                     $exception->getMessage()
                 ),
@@ -74,15 +75,16 @@ class ElasticsearchItemCommentAdapter implements ItemCommentPersistenceInterface
 
         if (!in_array($response['result'] ?? null, ['created', 'updated'], true)) {
             throw new RuntimeException(
-                sprintf('Failed to index item comment "%s" in Elasticsearch', $comment->getId())
+                sprintf('Failed to index resource comment "%s" in Elasticsearch', $comment->getId())
             );
         }
 
         return $comment;
     }
 
-    public function findByItemUri(string $itemUri): array
+    public function findByResource(string $resourceUri, string $resourceType): array
     {
+        $resourceType = ResourceCommentType::assertValid($resourceType);
         $this->indexManager->ensureIndexExists();
 
         $params = [
@@ -93,8 +95,11 @@ class ElasticsearchItemCommentAdapter implements ItemCommentPersistenceInterface
                     ['createdAt' => ['order' => 'asc']],
                 ],
                 'query' => [
-                    'term' => [
-                        'itemUri' => $itemUri,
+                    'bool' => [
+                        'filter' => [
+                            ['term' => ['resourceUri' => $resourceUri]],
+                            ['term' => ['resourceType' => $resourceType]],
+                        ],
                     ],
                 ],
             ],
@@ -104,7 +109,7 @@ class ElasticsearchItemCommentAdapter implements ItemCommentPersistenceInterface
             $response = $this->client->search($params)->asArray();
         } catch (Throwable $exception) {
             throw new RuntimeException(
-                sprintf('Failed to search item comments in Elasticsearch: %s', $exception->getMessage()),
+                sprintf('Failed to search resource comments in Elasticsearch: %s', $exception->getMessage()),
                 0,
                 $exception
             );
@@ -113,16 +118,7 @@ class ElasticsearchItemCommentAdapter implements ItemCommentPersistenceInterface
         $comments = [];
         foreach ($response['hits']['hits'] ?? [] as $hit) {
             $source = $hit['_source'] ?? [];
-            $comments[] = new ItemComment(
-                (string) ($source['id'] ?? $hit['_id'] ?? ''),
-                (string) ($source['itemUri'] ?? ''),
-                (string) ($source['authorId'] ?? ''),
-                (string) ($source['authorLabel'] ?? ''),
-                (string) ($source['body'] ?? ''),
-                (string) ($source['createdAt'] ?? ''),
-                $this->toBool($source['edited'] ?? false),
-                $this->toBool($source['resolved'] ?? false)
-            );
+            $comments[] = $this->mapSource($source, (string) ($hit['_id'] ?? ''));
         }
 
         return $comments;
@@ -131,6 +127,24 @@ class ElasticsearchItemCommentAdapter implements ItemCommentPersistenceInterface
     private function getIndexName(): string
     {
         return $this->indexPrefixer->prefix(self::INDEX_NAME);
+    }
+
+    /**
+     * @param array<string, mixed> $source
+     */
+    private function mapSource(array $source, string $fallbackId): ItemComment
+    {
+        return new ItemComment(
+            (string) ($source['id'] ?? $fallbackId),
+            (string) ($source['resourceUri'] ?? ''),
+            (string) ($source['resourceType'] ?? ResourceCommentType::ITEM),
+            (string) ($source['authorId'] ?? ''),
+            (string) ($source['authorLabel'] ?? ''),
+            (string) ($source['body'] ?? ''),
+            (string) ($source['createdAt'] ?? ''),
+            $this->toBool($source['edited'] ?? false),
+            $this->toBool($source['resolved'] ?? false)
+        );
     }
 
     /**

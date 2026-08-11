@@ -57,7 +57,7 @@ class ItemCommentIndexManagerTest extends TestCase
         $this->client->method('cluster')->willReturn($this->cluster);
 
         $prefixer = $this->createMock(IndexPrefixer::class);
-        $prefixer->method('prefix')->willReturn('test-item-comments');
+        $prefixer->method('prefix')->willReturn('test-resource-comments');
 
         $this->sut = new ItemCommentIndexManager($this->client, $prefixer);
     }
@@ -70,7 +70,7 @@ class ItemCommentIndexManagerTest extends TestCase
         $this->indices->expects($this->never())->method('create');
         $this->mockHealthyIndex();
 
-        $this->assertSame('test-item-comments', $this->sut->ensureIndexExists());
+        $this->assertSame('test-resource-comments', $this->sut->ensureIndexExists());
     }
 
     public function testEnsureIndexExistsCreatesMissingIndex(): void
@@ -83,15 +83,17 @@ class ItemCommentIndexManagerTest extends TestCase
             ->expects($this->once())
             ->method('create')
             ->with($this->callback(static function (array $definition): bool {
-                return $definition['index'] === 'test-item-comments'
-                    && isset($definition['body']['mappings']['properties']['itemUri'])
-                    && $definition['body']['mappings']['properties']['itemUri']['type'] === 'keyword'
+                return $definition['index'] === 'test-resource-comments'
+                    && isset($definition['body']['mappings']['properties']['resourceUri'])
+                    && $definition['body']['mappings']['properties']['resourceUri']['type'] === 'keyword'
+                    && isset($definition['body']['mappings']['properties']['resourceType'])
+                    && $definition['body']['mappings']['properties']['resourceType']['type'] === 'keyword'
                     && $definition['body']['mappings']['properties']['createdAt']['type'] === 'date'
                     && $definition['body']['settings']['index']['number_of_replicas'] === '0';
             }));
         $this->mockHealthyIndex();
 
-        $this->assertSame('test-item-comments', $this->sut->ensureIndexExists());
+        $this->assertSame('test-resource-comments', $this->sut->ensureIndexExists());
     }
 
     public function testEnsureIndexExistsThrowsWhenIndexIsRed(): void
@@ -117,8 +119,8 @@ class ItemCommentIndexManagerTest extends TestCase
         $this->indices->expects($this->never())->method('create');
         $this->mockHealthyIndex();
 
-        $this->assertSame('test-item-comments', $this->sut->ensureIndexExists());
-        $this->assertSame('test-item-comments', $this->sut->ensureIndexExists());
+        $this->assertSame('test-resource-comments', $this->sut->ensureIndexExists());
+        $this->assertSame('test-resource-comments', $this->sut->ensureIndexExists());
     }
 
     private function mockHealthyIndex(): void

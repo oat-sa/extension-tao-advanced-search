@@ -27,7 +27,7 @@ use oat\tao\scripts\tools\migrations\AbstractMigration;
 use oat\taoAdvancedSearch\scripts\install\CreateItemCommentIndex;
 
 /**
- * Item Comments (NYSED-13): ensure item-comments Elasticsearch index exists.
+ * Authoring comments (NYSED-13): ensure shared resource-comments Elasticsearch index exists.
  *
  * phpcs:disable Squiz.Classes.ValidClassName
  */
@@ -35,7 +35,7 @@ final class Version202608041200001488_taoAdvancedSearch extends AbstractMigratio
 {
     public function getDescription(): string
     {
-        return 'Create item-comments ES index (NYSED-13)';
+        return 'Create shared resource-comments ES index (NYSED-13)';
     }
 
     public function up(Schema $schema): void
