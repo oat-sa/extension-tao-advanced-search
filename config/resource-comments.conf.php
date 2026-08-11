@@ -21,7 +21,7 @@
 declare(strict_types=1);
 
 return [
-    'index' => 'item-comments',
+    'index' => 'resource-comments',
     'body' => [
         'mappings' => [
             'properties' => [
@@ -29,9 +29,13 @@ return [
                     'type' => 'keyword',
                     'ignore_above' => 256,
                 ],
-                'itemUri' => [
+                'resourceUri' => [
                     'type' => 'keyword',
                     'ignore_above' => 512,
+                ],
+                'resourceType' => [
+                    'type' => 'keyword',
+                    'ignore_above' => 32,
                 ],
                 'authorId' => [
                     'type' => 'keyword',

@@ -27,7 +27,7 @@ use oat\oatbox\reporting\Report;
 use oat\taoAdvancedSearch\model\Comment\ItemCommentIndexManager;
 
 /**
- * Ensures the item-comments Elasticsearch index exists (DI wires the adapter).
+ * Ensures the shared resource-comments Elasticsearch index exists (DI wires the adapter).
  */
 class CreateItemCommentIndex extends InstallAction
 {
@@ -38,7 +38,7 @@ class CreateItemCommentIndex extends InstallAction
         $indexName = $indexManager->ensureIndexExists();
 
         return Report::createSuccess(
-            sprintf('Item comments Elasticsearch index "%s" is ready', $indexName)
+            sprintf('Resource comments Elasticsearch index "%s" is ready', $indexName)
         );
     }
 }

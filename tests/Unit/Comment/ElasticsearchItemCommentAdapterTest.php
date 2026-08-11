@@ -28,6 +28,7 @@ use oat\taoAdvancedSearch\model\Comment\ElasticsearchItemCommentAdapter;
 use oat\taoAdvancedSearch\model\Comment\ItemCommentIndexManager;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use oat\taoItems\model\Comment\ItemComment;
+use oat\taoItems\model\Comment\ResourceCommentType;
 use DG\BypassFinals;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -57,7 +58,7 @@ class ElasticsearchItemCommentAdapterTest extends TestCase
             }
         );
         $this->indexManager = $this->createMock(ItemCommentIndexManager::class);
-        $this->indexManager->method('ensureIndexExists')->willReturn('test-item-comments');
+        $this->indexManager->method('ensureIndexExists')->willReturn('test-resource-comments');
 
         $this->sut = new ElasticsearchItemCommentAdapter(
             $this->client,
@@ -71,6 +72,7 @@ class ElasticsearchItemCommentAdapterTest extends TestCase
         $comment = new ItemComment(
             'c1',
             'item-1',
+            ResourceCommentType::ITEM,
             'author',
             'Author',
             'hello',
@@ -85,9 +87,11 @@ class ElasticsearchItemCommentAdapterTest extends TestCase
             ->expects($this->once())
             ->method('index')
             ->with($this->callback(static function (array $params): bool {
-                return $params['index'] === 'test-item-comments'
+                return $params['index'] === 'test-resource-comments'
                     && $params['id'] === 'c1'
                     && $params['body']['body'] === 'hello'
+                    && $params['body']['resourceUri'] === 'item-1'
+                    && $params['body']['resourceType'] === ResourceCommentType::ITEM
                     && $params['body']['edited'] === false
                     && $params['body']['resolved'] === false;
             }))
@@ -101,6 +105,7 @@ class ElasticsearchItemCommentAdapterTest extends TestCase
         $comment = new ItemComment(
             'c1',
             'item-1',
+            ResourceCommentType::ITEM,
             'author',
             'Author',
             'hello',
@@ -118,7 +123,7 @@ class ElasticsearchItemCommentAdapterTest extends TestCase
             $this->fail('Expected RuntimeException');
         } catch (RuntimeException $exception) {
             $this->assertStringContainsString(
-                'Failed to index item comment "c1" in Elasticsearch',
+                'Failed to index resource comment "c1" in Elasticsearch',
                 $exception->getMessage()
             );
             $this->assertStringContainsString('transport down', $exception->getMessage());
@@ -131,6 +136,7 @@ class ElasticsearchItemCommentAdapterTest extends TestCase
         $comment = new ItemComment(
             'c1',
             'item-1',
+            ResourceCommentType::ITEM,
             'author',
             'Author',
             'hello',
@@ -146,12 +152,12 @@ class ElasticsearchItemCommentAdapterTest extends TestCase
             ->willReturn($response);
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Failed to index item comment "c1" in Elasticsearch');
+        $this->expectExceptionMessage('Failed to index resource comment "c1" in Elasticsearch');
 
         $this->sut->create($comment);
     }
 
-    public function testFindByItemUriMapsHits(): void
+    public function testFindByResourceMapsHits(): void
     {
         $response = $this->createMock(Elasticsearch::class);
         $response->method('asArray')->willReturn([
@@ -161,7 +167,8 @@ class ElasticsearchItemCommentAdapterTest extends TestCase
                         '_id' => 'c1',
                         '_source' => [
                             'id' => 'c1',
-                            'itemUri' => 'item-1',
+                            'resourceUri' => 'item-1',
+                            'resourceType' => ResourceCommentType::ITEM,
                             'authorId' => 'author',
                             'authorLabel' => 'Author',
                             'body' => 'hello',
@@ -178,13 +185,17 @@ class ElasticsearchItemCommentAdapterTest extends TestCase
             ->expects($this->once())
             ->method('search')
             ->with($this->callback(static function (array $params): bool {
-                return ($params['body']['query']['term']['itemUri'] ?? null) === 'item-1';
+                $filters = $params['body']['query']['bool']['filter'] ?? [];
+
+                return ($filters[0]['term']['resourceUri'] ?? null) === 'item-1'
+                    && ($filters[1]['term']['resourceType'] ?? null) === ResourceCommentType::ITEM;
             }))
             ->willReturn($response);
 
-        $comments = $this->sut->findByItemUri('item-1');
+        $comments = $this->sut->findByResource('item-1', ResourceCommentType::ITEM);
         $this->assertCount(1, $comments);
         $this->assertSame('hello', $comments[0]->getBody());
+        $this->assertSame(ResourceCommentType::ITEM, $comments[0]->getResourceType());
         $this->assertTrue($comments[0]->isEdited());
         $this->assertFalse($comments[0]->isResolved());
     }
