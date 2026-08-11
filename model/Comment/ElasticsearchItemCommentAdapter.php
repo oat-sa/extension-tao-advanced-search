@@ -58,9 +58,24 @@ class ElasticsearchItemCommentAdapter implements ItemCommentPersistenceInterface
             'refresh' => true,
         ];
 
-        $response = $this->client->index($params)->asArray();
-        if (($response['result'] ?? null) !== 'created' && ($response['result'] ?? null) !== 'updated') {
-            throw new RuntimeException('Failed to index item comment in Elasticsearch');
+        try {
+            $response = $this->client->index($params)->asArray();
+        } catch (Throwable $exception) {
+            throw new RuntimeException(
+                sprintf(
+                    'Failed to index item comment "%s" in Elasticsearch: %s',
+                    $comment->getId(),
+                    $exception->getMessage()
+                ),
+                0,
+                $exception
+            );
+        }
+
+        if (!in_array($response['result'] ?? null, ['created', 'updated'], true)) {
+            throw new RuntimeException(
+                sprintf('Failed to index item comment "%s" in Elasticsearch', $comment->getId())
+            );
         }
 
         return $comment;

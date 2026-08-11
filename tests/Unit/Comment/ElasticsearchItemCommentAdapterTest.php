@@ -31,6 +31,7 @@ use oat\taoItems\model\Comment\ItemComment;
 use DG\BypassFinals;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 class ElasticsearchItemCommentAdapterTest extends TestCase
 {
@@ -93,6 +94,61 @@ class ElasticsearchItemCommentAdapterTest extends TestCase
             ->willReturn($response);
 
         $this->assertSame($comment, $this->sut->create($comment));
+    }
+
+    public function testCreateWrapsClientIndexFailures(): void
+    {
+        $comment = new ItemComment(
+            'c1',
+            'item-1',
+            'author',
+            'Author',
+            'hello',
+            '2026-08-03T10:00:00+00:00'
+        );
+        $previous = new RuntimeException('transport down');
+
+        $this->client
+            ->expects($this->once())
+            ->method('index')
+            ->willThrowException($previous);
+
+        try {
+            $this->sut->create($comment);
+            $this->fail('Expected RuntimeException');
+        } catch (RuntimeException $exception) {
+            $this->assertStringContainsString(
+                'Failed to index item comment "c1" in Elasticsearch',
+                $exception->getMessage()
+            );
+            $this->assertStringContainsString('transport down', $exception->getMessage());
+            $this->assertSame($previous, $exception->getPrevious());
+        }
+    }
+
+    public function testCreateThrowsWhenIndexResultUnexpected(): void
+    {
+        $comment = new ItemComment(
+            'c1',
+            'item-1',
+            'author',
+            'Author',
+            'hello',
+            '2026-08-03T10:00:00+00:00'
+        );
+
+        $response = $this->createMock(Elasticsearch::class);
+        $response->method('asArray')->willReturn(['result' => 'noop']);
+
+        $this->client
+            ->expects($this->once())
+            ->method('index')
+            ->willReturn($response);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Failed to index item comment "c1" in Elasticsearch');
+
+        $this->sut->create($comment);
     }
 
     public function testFindByItemUriMapsHits(): void
