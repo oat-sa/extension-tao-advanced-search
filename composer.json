@@ -37,7 +37,7 @@
   },
   "require-dev": {
     "php-http/mock-client": "^1.6",
-    "dg/bypass-finals": "^1.7",
+    "dg/bypass-finals": "^1.7"
   },
   "autoload": {
     "psr-4": {
