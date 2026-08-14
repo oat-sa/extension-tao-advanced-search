@@ -25,6 +25,7 @@ namespace oat\taoAdvancedSearch\scripts\install;
 use oat\oatbox\extension\InstallAction;
 use oat\oatbox\reporting\Report;
 use oat\taoAdvancedSearch\model\Comment\ItemCommentIndexManager;
+use Throwable;
 
 /**
  * Ensures the shared resource-comments Elasticsearch index exists (DI wires the adapter).
@@ -35,10 +36,21 @@ class CreateItemCommentIndex extends InstallAction
     {
         /** @var ItemCommentIndexManager $indexManager */
         $indexManager = $this->getServiceManager()->getContainer()->get(ItemCommentIndexManager::class);
-        $indexName = $indexManager->ensureIndexExists();
 
-        return Report::createSuccess(
-            sprintf('Resource comments Elasticsearch index "%s" is ready', $indexName)
-        );
+        try {
+            $indexName = $indexManager->ensureIndexExists();
+
+            return Report::createSuccess(
+                sprintf('Resource comments Elasticsearch index "%s" is ready', $indexName)
+            );
+        } catch (Throwable $exception) {
+            return Report::createError(
+                sprintf(
+                    'Resource comments Elasticsearch index is not available yet. '
+                    . 'Retry when Elasticsearch is ready. Details: %s',
+                    $exception->getMessage()
+                )
+            );
+        }
     }
 }
