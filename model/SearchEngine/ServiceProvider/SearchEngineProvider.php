@@ -44,7 +44,9 @@ use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesFeature;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesIndexResolver;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesQueryService;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceQueryBlockSupport;
-use oat\taoAdvancedSearch\model\SearchEngine\Service\StructuredResourceSearchQueryBuilder;
+use oat\tao\model\accessControl\PermissionChecker;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceManagerAssetIndexedSearchGateway;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceManagerAssetSearchQueryBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Specification\UseAclSpecification;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -97,6 +99,26 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
                 [
                     service(ResourceQueryBlockSupport::class),
                     service(NestedAttributesQueryService::class),
+                ]
+            )
+            ->public();
+
+        $services->set(ResourceManagerAssetSearchQueryBuilder::class, ResourceManagerAssetSearchQueryBuilder::class)
+            ->args(
+                [
+                    service(NestedAttributesQueryService::class),
+                    service(ResourceQueryBlockSupport::class),
+                ]
+            )
+            ->public();
+
+        $services->set('taoItems/AssetIndexedSearchGateway', ResourceManagerAssetIndexedSearchGateway::class)
+            ->args(
+                [
+                    service(ElasticSearch::class),
+                    service(ResourceManagerAssetSearchQueryBuilder::class),
+                    service(PermissionChecker::class),
+                    service(LoggerService::SERVICE_ID),
                 ]
             )
             ->public();
