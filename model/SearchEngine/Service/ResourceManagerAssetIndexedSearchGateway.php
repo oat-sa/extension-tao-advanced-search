@@ -34,7 +34,6 @@ use Psr\Log\LoggerInterface;
 
 class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGatewayInterface
 {
-    private const MAX_FETCH_BATCHES = 5;
     private const FETCH_MULTIPLIER = 3;
 
     /** @var ElasticSearch */
@@ -86,15 +85,13 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
 
             $pageSize = $query->getPageSize();
             $page = $query->getPage();
-            $targetOffset = ($page - 1) * $pageSize;
 
             $authorizedItems = [];
             $esTotal = 0;
             $esFrom = 0;
             $batchSize = max($pageSize * self::FETCH_MULTIPLIER, 20);
-            $batches = 0;
 
-            while ($batches < self::MAX_FETCH_BATCHES) {
+            while (true) {
                 $searchBody['from'] = $esFrom;
                 $searchBody['size'] = $batchSize;
 
@@ -120,7 +117,6 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                 }
 
                 $esFrom += $batchSize;
-                $batches++;
 
                 if ($esFrom >= $esTotal) {
                     break;
@@ -128,9 +124,9 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
             }
 
             $total = count($authorizedItems);
-            $pageItems = array_slice($authorizedItems, $targetOffset, $pageSize);
             $maxPage = max(1, (int)ceil($total / $pageSize) ?: 1);
-            $normalizedPage = min($page, $maxPage);
+            $normalizedPage = min(max(1, $page), $maxPage);
+            $pageItems = array_slice($authorizedItems, ($normalizedPage - 1) * $pageSize, $pageSize);
 
             return [
                 'items' => array_values($pageItems),
