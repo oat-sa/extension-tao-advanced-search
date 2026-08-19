@@ -339,7 +339,16 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
                 'body' => $body,
             ];
 
-            $this->logger->debug(sprintf('Elasticsearch raw body search %s', json_encode($params)));
+            $mustCount = count($body['query']['bool']['must'] ?? []);
+            $this->logger->debug(
+                sprintf(
+                    'Elasticsearch raw body search index=%s from=%s size=%s mustClauses=%d',
+                    $params['index'],
+                    $body['from'] ?? 0,
+                    $body['size'] ?? 10,
+                    $mustCount
+                )
+            );
 
             return $this->buildResultSet($this->client->search($params)->asArray());
         } catch (Exception $exception) {

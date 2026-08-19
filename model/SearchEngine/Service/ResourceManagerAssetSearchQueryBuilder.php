@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\SearchEngine\Service;
 
+use oat\taoAdvancedSearch\model\SearchEngine\QueryBlock;
 use oat\taoItems\model\media\AssetSearchQuery;
 
 /**
@@ -63,15 +64,21 @@ class ResourceManagerAssetSearchQueryBuilder
             $mustClauses[] = $this->buildScopeClause($scopeLocation);
         }
 
-        foreach ($this->tokenize($query->getQuery()) as $token) {
-            $mustClauses[] = $this->buildUniversalTokenClause($token);
+        $trimmedQuery = trim($query->getQuery());
+        $queryTokens = $this->tokenize($trimmedQuery);
+        if ($trimmedQuery !== '' && $queryTokens === []) {
+            $mustClauses[] = ['match_none' => (object)[]];
+        } else {
+            foreach ($queryTokens as $token) {
+                $mustClauses[] = $this->buildUniversalTokenClause($token);
+            }
         }
 
         $mimeTypes = array_values(array_filter($query->getFilter(), static function ($value): bool {
             return is_string($value) && $value !== '';
         }));
         if ($mimeTypes !== []) {
-            $mustClauses[] = ['terms' => ['type' => $mimeTypes]];
+            $mustClauses[] = ['terms' => ['mime_type' => $mimeTypes]];
         }
 
         foreach ($metadataCriteria as $propertyUri => $value) {
@@ -130,7 +137,7 @@ class ResourceManagerAssetSearchQueryBuilder
 
     private function buildMetadataClause(string $propertyUri, string $value): array
     {
-        $queryBlock = $this->resourceQueryBlockSupport->parseBlock($propertyUri . ':' . $value);
+        $queryBlock = new QueryBlock($propertyUri, $value);
 
         return $this->nestedAttributesQueryService->buildCustomFieldSearchQuery(
             $queryBlock,

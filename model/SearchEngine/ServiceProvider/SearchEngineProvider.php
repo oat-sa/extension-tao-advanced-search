@@ -44,6 +44,7 @@ use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesFeature;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesIndexResolver;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesQueryService;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceQueryBlockSupport;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\StructuredResourceSearchQueryBuilder;
 use oat\tao\model\accessControl\PermissionChecker;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceManagerAssetIndexedSearchGateway;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceManagerAssetSearchQueryBuilder;

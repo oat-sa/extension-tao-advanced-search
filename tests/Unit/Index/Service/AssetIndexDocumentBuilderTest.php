@@ -50,7 +50,7 @@ class AssetIndexDocumentBuilderTest extends TestCase
 
     public function testCreateDocumentFromResourceSetsMimeTypeForMediaAssets(): void
     {
-        $resource = $this->createMediaResource('image/png');
+        $resource = $this->createMediaResource(new core_kernel_classes_Literal('image/png'));
 
         $this->inner
             ->expects($this->once())
@@ -59,7 +59,7 @@ class AssetIndexDocumentBuilderTest extends TestCase
             ->willReturn(
                 new IndexDocument(
                     'media-uri',
-                    ['type' => ['http://ontology/class'], 'label' => 'photo.png'],
+                    ['type' => [IndexerInterface::MEDIA_CLASS_URI], 'label' => 'photo.png'],
                     [],
                     null,
                     null
@@ -68,8 +68,37 @@ class AssetIndexDocumentBuilderTest extends TestCase
 
         $document = $this->subject->createDocumentFromResource($resource);
 
-        $this->assertSame('image/png', $document->getBody()['type']);
+        $this->assertSame('image/png', $document->getBody()['mime_type']);
+        $this->assertSame([IndexerInterface::MEDIA_CLASS_URI], $document->getBody()['type']);
         $this->assertSame('photo.png', $document->getBody()['label']);
+    }
+
+    public function testCreateDocumentFromResourcePreservesTypeWhenMimeIsMissing(): void
+    {
+        $resource = $this->createMediaResource(null);
+
+        $expectedBody = ['type' => [IndexerInterface::MEDIA_CLASS_URI], 'label' => 'photo.png'];
+        $this->inner->method('createDocumentFromResource')->willReturn(
+            new IndexDocument('media-uri', $expectedBody, [], null, null)
+        );
+
+        $document = $this->subject->createDocumentFromResource($resource);
+
+        $this->assertSame($expectedBody, $document->getBody());
+    }
+
+    public function testCreateDocumentFromResourceIgnoresNonLiteralMimeValues(): void
+    {
+        $resource = $this->createMediaResource($this->createMock(core_kernel_classes_Resource::class));
+
+        $expectedBody = ['type' => [IndexerInterface::MEDIA_CLASS_URI], 'label' => 'photo.png'];
+        $this->inner->method('createDocumentFromResource')->willReturn(
+            new IndexDocument('media-uri', $expectedBody, [], null, null)
+        );
+
+        $document = $this->subject->createDocumentFromResource($resource);
+
+        $this->assertSame($expectedBody, $document->getBody());
     }
 
     public function testCreateDocumentFromResourceLeavesNonMediaDocumentsUntouched(): void
@@ -89,7 +118,10 @@ class AssetIndexDocumentBuilderTest extends TestCase
         $this->assertSame($expected, $this->subject->createDocumentFromResource($resource));
     }
 
-    private function createMediaResource(string $mimeType): core_kernel_classes_Resource
+    /**
+     * @param core_kernel_classes_Literal|core_kernel_classes_Resource|null $mimeValue
+     */
+    private function createMediaResource($mimeValue): core_kernel_classes_Resource
     {
         $resource = $this->createMock(core_kernel_classes_Resource::class);
         $mediaClass = $this->createMock(core_kernel_classes_Class::class);
@@ -101,7 +133,7 @@ class AssetIndexDocumentBuilderTest extends TestCase
         $resource
             ->method('getOnePropertyValue')
             ->with(new core_kernel_classes_Property(TaoMediaOntology::PROPERTY_MIME_TYPE))
-            ->willReturn(new core_kernel_classes_Literal($mimeType));
+            ->willReturn($mimeValue);
 
         return $resource;
     }

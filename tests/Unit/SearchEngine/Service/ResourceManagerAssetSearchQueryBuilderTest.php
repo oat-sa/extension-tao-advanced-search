@@ -73,10 +73,10 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
         $body = $this->subject->build($query, 'Assets');
 
         $mimeClause = end($body['query']['bool']['must']);
-        $this->assertSame(['video/mp4', 'image/png'], $mimeClause['terms']['type']);
+        $this->assertSame(['video/mp4', 'image/png'], $mimeClause['terms']['mime_type']);
     }
 
-    public function testBuildAddsMetadataPlaceholderClause(): void
+    public function testBuildAddsMetadataClauseWithPropertyUriAndValue(): void
     {
         $propertyUri = 'http://www.tao.lu/Ontologies/TAO.rdf#Keywords';
         $body = $this->subject->build(
@@ -85,9 +85,15 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
             [$propertyUri => 'science']
         );
 
-        $metadataClause = end($body['query']['bool']['must']);
-        $this->assertArrayHasKey('bool', $metadataClause);
-        $this->assertArrayHasKey('nested', $metadataClause['bool']['should'][1]);
+        $nestedQuery = $this->extractNestedMetadataQuery($body);
+        $this->assertSame(
+            ['term' => ['attributes.key' => $propertyUri]],
+            $nestedQuery['bool']['must'][0]
+        );
+        $this->assertSame(
+            ['term' => ['attributes.value.raw' => 'science']],
+            $nestedQuery['bool']['must'][1]['bool']['should'][0]
+        );
     }
 
     public function testBuildCombinesMetadataWithUniversalQueryUsingAnd(): void
@@ -102,7 +108,47 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
         $mustClauses = $body['query']['bool']['must'];
         $this->assertCount(3, $mustClauses);
         $this->assertSame(['prefix' => ['label.raw' => 'diagram']], $mustClauses[1]['bool']['should'][0]);
-        $this->assertArrayHasKey('nested', end($mustClauses)['bool']['should'][1]);
+
+        $nestedQuery = $this->extractNestedMetadataQuery($body);
+        $this->assertSame(['term' => ['attributes.key' => $propertyUri]], $nestedQuery['bool']['must'][0]);
+        $this->assertSame(
+            ['term' => ['attributes.value.raw' => 'Diagram']],
+            $nestedQuery['bool']['must'][1]['bool']['should'][0]
+        );
+    }
+
+    public function testBuildIgnoresInvalidMetadataCriteria(): void
+    {
+        $body = $this->subject->build(
+            $this->createQuery('clip'),
+            '',
+            [
+                123 => 'science',
+                'http://example.com/property' => '',
+            ]
+        );
+
+        $mustClauses = $body['query']['bool']['must'];
+        $this->assertCount(1, $mustClauses);
+        $this->assertSame(['prefix' => ['label.raw' => 'clip']], $mustClauses[0]['bool']['should'][0]);
+    }
+
+    public function testBuildReturnsNoMatchesForDelimiterOnlyQuery(): void
+    {
+        $body = $this->subject->build($this->createQuery('---'), 'Assets');
+
+        $this->assertArrayHasKey('match_none', end($body['query']['bool']['must']));
+    }
+
+    private function extractNestedMetadataQuery(array $body): array
+    {
+        foreach ($body['query']['bool']['must'] as $clause) {
+            if (isset($clause['bool']['should'][1]['nested']['query'])) {
+                return $clause['bool']['should'][1]['nested']['query'];
+            }
+        }
+
+        $this->fail('Nested metadata query not found');
     }
 
     private function createQuery(string $text, array $filter = []): AssetSearchQuery

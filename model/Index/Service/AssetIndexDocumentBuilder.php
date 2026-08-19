@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\Index\Service;
 
+use core_kernel_classes_Literal;
 use core_kernel_classes_Property;
 use core_kernel_classes_Resource;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
@@ -30,7 +31,7 @@ use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoMediaManager\model\TaoMediaOntology;
 
 /**
- * Ensures assets index documents store MIME type in the {@code type} keyword field.
+ * Ensures assets index documents store MIME type in the dedicated {@code mime_type} keyword field.
  */
 class AssetIndexDocumentBuilder implements IndexDocumentBuilderInterface
 {
@@ -50,14 +51,13 @@ class AssetIndexDocumentBuilder implements IndexDocumentBuilderInterface
             return $document;
         }
 
-        $body = $document->getBody();
-        $mimeType = (string)$resource->getOnePropertyValue(
-            new core_kernel_classes_Property(TaoMediaOntology::PROPERTY_MIME_TYPE)
-        );
-
-        if ($mimeType !== '') {
-            $body['type'] = $mimeType;
+        $mimeType = $this->resolveMimeType($resource);
+        if ($mimeType === null) {
+            return $document;
         }
+
+        $body = $document->getBody();
+        $body['mime_type'] = $mimeType;
 
         return new IndexDocument(
             $document->getId(),
@@ -71,6 +71,24 @@ class AssetIndexDocumentBuilder implements IndexDocumentBuilderInterface
     public function createDocumentFromArray(array $resourceData = []): IndexDocument
     {
         return $this->inner->createDocumentFromArray($resourceData);
+    }
+
+    private function resolveMimeType(core_kernel_classes_Resource $resource): ?string
+    {
+        $value = $resource->getOnePropertyValue(
+            new core_kernel_classes_Property(TaoMediaOntology::PROPERTY_MIME_TYPE)
+        );
+
+        if (!$value instanceof core_kernel_classes_Literal) {
+            return null;
+        }
+
+        $mimeType = trim((string)$value);
+        if ($mimeType === '') {
+            return null;
+        }
+
+        return $mimeType;
     }
 
     private function isMediaResource(core_kernel_classes_Resource $resource): bool

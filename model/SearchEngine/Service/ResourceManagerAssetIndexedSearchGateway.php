@@ -87,7 +87,6 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
             $pageSize = $query->getPageSize();
             $page = $query->getPage();
             $targetOffset = ($page - 1) * $pageSize;
-            $neededCount = $targetOffset + $pageSize;
 
             $authorizedItems = [];
             $esTotal = 0;
@@ -95,7 +94,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
             $batchSize = max($pageSize * self::FETCH_MULTIPLIER, 20);
             $batches = 0;
 
-            while (count($authorizedItems) < $neededCount && $batches < self::MAX_FETCH_BATCHES) {
+            while ($batches < self::MAX_FETCH_BATCHES) {
                 $searchBody['from'] = $esFrom;
                 $searchBody['size'] = $batchSize;
 
@@ -128,13 +127,14 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                 }
             }
 
+            $total = count($authorizedItems);
             $pageItems = array_slice($authorizedItems, $targetOffset, $pageSize);
-            $maxPage = max(1, (int)ceil($esTotal / $pageSize) ?: 1);
+            $maxPage = max(1, (int)ceil($total / $pageSize) ?: 1);
             $normalizedPage = min($page, $maxPage);
 
             return [
                 'items' => array_values($pageItems),
-                'total' => $esTotal,
+                'total' => $total,
                 'page' => $normalizedPage,
                 'pageSize' => $pageSize,
             ];
@@ -187,7 +187,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
             'uri' => (string)($hit['id'] ?? ''),
             'label' => $label,
             'name' => $label,
-            'mime' => (string)($hit['type'] ?? ''),
+            'mime' => (string)($hit['mime_type'] ?? $hit['type'] ?? ''),
             'location' => (string)($hit['location'] ?? ''),
             'updatedAt' => $hit['updated_at'] ?? null,
         ];
