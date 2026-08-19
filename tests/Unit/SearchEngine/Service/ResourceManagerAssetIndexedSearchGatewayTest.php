@@ -104,10 +104,11 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
                 2
             )
         );
-        $this->permissionChecker->method('hasReadAccess')->willReturnMap([
-            ['asset://allowed', true],
-            ['asset://denied', false],
-        ]);
+        $this->permissionChecker->method('hasReadAccess')->willReturnCallback(
+            static function (string $uri): bool {
+                return $uri === 'asset://allowed';
+            }
+        );
 
         $result = $this->subject->search($query);
 
