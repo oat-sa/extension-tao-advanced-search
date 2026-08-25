@@ -87,6 +87,21 @@ class AssetIndexDocumentBuilderTest extends TestCase
         $this->assertSame($expectedBody, $document->getBody());
     }
 
+    public function testCreateDocumentFromResourcePreservesBodyWhenMimeLiteralIsEmpty(): void
+    {
+        $resource = $this->createMediaResource(new core_kernel_classes_Literal('   '));
+
+        $expectedBody = ['type' => [IndexerInterface::MEDIA_CLASS_URI], 'label' => 'photo.png'];
+        $this->inner->method('createDocumentFromResource')->willReturn(
+            new IndexDocument('media-uri', $expectedBody, [], null, null)
+        );
+
+        $document = $this->subject->createDocumentFromResource($resource);
+
+        $this->assertSame($expectedBody, $document->getBody());
+        $this->assertArrayNotHasKey('mime_type', $document->getBody());
+    }
+
     public function testCreateDocumentFromResourceIgnoresNonLiteralMimeValues(): void
     {
         $resource = $this->createMediaResource($this->createMock(core_kernel_classes_Resource::class));

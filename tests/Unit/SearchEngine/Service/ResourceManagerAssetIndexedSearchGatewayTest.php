@@ -117,6 +117,89 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
         $this->assertSame('image/png', $result['items'][0]['mime']);
         $this->assertSame(1, $result['page']);
         $this->assertSame(10, $result['pageSize']);
+        $this->assertFalse($result['totalIsApproximate']);
+    }
+
+    public function testSearchMapsHitWithoutMimeTypeAndArrayMimeField(): void
+    {
+        $query = $this->createSearchQuery();
+        $mediaSource = $query->getAsset()->getMediaSource();
+
+        $mediaSource->method('getDirectories')->willReturn([
+            'path' => 'taomedia://mediamanager/Assets',
+            'label' => 'Assets',
+            'children' => [],
+        ]);
+
+        $this->queryBuilder->method('build')->willReturn(['query' => ['bool' => ['must' => []]]]);
+        $this->elasticSearch->method('searchWithBody')->willReturn(
+            new SearchResult(
+                [
+                    [
+                        'id' => 'asset://allowed-array-mime',
+                        'label' => ['Array Label'],
+                        'mime_type' => ['image/png'],
+                    ],
+                    [
+                        'id' => 'asset://allowed-missing-mime',
+                        'label' => 'Missing Mime',
+                    ],
+                    [
+                        'id' => 'asset://denied',
+                        'label' => 'Denied',
+                        'mime_type' => 'image/png',
+                    ],
+                ],
+                3
+            )
+        );
+        $this->permissionChecker->method('hasReadAccess')->willReturnCallback(
+            static function (string $uri): bool {
+                return $uri !== 'asset://denied';
+            }
+        );
+
+        $result = $this->subject->search($query);
+
+        $this->assertSame(2, $result['total']);
+        $this->assertSame('asset://allowed-array-mime', $result['items'][0]['uri']);
+        $this->assertSame('Array Label', $result['items'][0]['label']);
+        $this->assertSame('image/png', $result['items'][0]['mime']);
+        $this->assertSame('asset://allowed-missing-mime', $result['items'][1]['uri']);
+        $this->assertSame('', $result['items'][1]['mime']);
+        $this->assertFalse($result['totalIsApproximate']);
+    }
+
+    public function testSearchMapsHttpResourceIdToMediaBrowserUri(): void
+    {
+        $query = $this->createSearchQuery();
+        $mediaSource = $query->getAsset()->getMediaSource();
+
+        $mediaSource->method('getDirectories')->willReturn([
+            'path' => 'taomedia://mediamanager/Assets',
+            'label' => 'Assets',
+            'children' => [],
+        ]);
+
+        $resourceUri = 'https://backoffice.ngs.test/ontologies/tao.rdf#i6a7ef51ec9e1c';
+
+        $this->queryBuilder->method('build')->willReturn(['query' => ['bool' => ['must' => []]]]);
+        $this->elasticSearch->method('searchWithBody')->willReturn(
+            new SearchResult(
+                [
+                    ['id' => $resourceUri, 'label' => 'Clip', 'mime_type' => 'video/mp4'],
+                ],
+                1
+            )
+        );
+        $this->permissionChecker->method('hasReadAccess')->willReturn(true);
+
+        $result = $this->subject->search($query);
+
+        $this->assertSame(
+            'taomedia://mediamanager/' . \tao_helpers_Uri::encode($resourceUri),
+            $result['items'][0]['uri']
+        );
     }
 
     public function testSearchWrapsElasticsearchFailures(): void

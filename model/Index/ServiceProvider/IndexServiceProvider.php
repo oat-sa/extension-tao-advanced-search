@@ -23,7 +23,6 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\Index\ServiceProvider;
 
 use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
-use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilder;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\taoAdvancedSearch\model\Index\Service\AdvancedSearchIndexDocumentBuilder;
 use oat\taoAdvancedSearch\model\Index\Service\AssetIndexDocumentBuilder;
@@ -45,7 +44,7 @@ class IndexServiceProvider implements ContainerServiceProviderInterface
 
         $services->set(AssetIndexDocumentBuilder::class, AssetIndexDocumentBuilder::class)
             ->args([
-                service(IndexDocumentBuilder::class),
+                service(IndexDocumentBuilderInterface::class),
             ])
             ->public();
 

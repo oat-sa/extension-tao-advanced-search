@@ -30,6 +30,7 @@ use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
 use oat\generis\model\DependencyInjection\ServiceOptions;
 use oat\oatbox\log\LoggerService;
 use oat\oatbox\session\SessionService;
+use oat\taoItems\model\media\AssetIndexedSearchGatewayInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchClientFactory;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
@@ -113,7 +114,10 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
             )
             ->public();
 
-        $services->set('taoItems/AssetIndexedSearchGateway', ResourceManagerAssetIndexedSearchGateway::class)
+        $services->set(
+            AssetIndexedSearchGatewayInterface::SERVICE_ID,
+            ResourceManagerAssetIndexedSearchGateway::class
+        )
             ->args(
                 [
                     service(ElasticSearch::class),

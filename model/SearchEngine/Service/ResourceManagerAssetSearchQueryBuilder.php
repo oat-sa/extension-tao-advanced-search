@@ -30,6 +30,8 @@ use oat\taoItems\model\media\AssetSearchQuery;
  */
 class ResourceManagerAssetSearchQueryBuilder
 {
+    public const PREFIX_MATCH_MIN_LENGTH = 3;
+
     private const SORT_FIELD_MAP = [
         AssetSearchQuery::SORT_LABEL => 'label.raw',
         AssetSearchQuery::SORT_LOCATION => 'location.raw',
@@ -78,7 +80,25 @@ class ResourceManagerAssetSearchQueryBuilder
             return is_string($value) && $value !== '';
         }));
         if ($mimeTypes !== []) {
-            $mustClauses[] = ['terms' => ['mime_type' => $mimeTypes]];
+            // Prefer keyword mapping from assets.conf.php. Some local/legacy indices
+            // still map mime_type as text+keyword (dynamic), so also match .keyword.
+            // Docs without mime_type are kept for PHP post-filter via ontology.
+            $mustClauses[] = [
+                'bool' => [
+                    'should' => [
+                        ['terms' => ['mime_type' => $mimeTypes]],
+                        ['terms' => ['mime_type.keyword' => $mimeTypes]],
+                        [
+                            'bool' => [
+                                'must_not' => [
+                                    ['exists' => ['field' => 'mime_type']],
+                                ],
+                            ],
+                        ],
+                    ],
+                    'minimum_should_match' => 1,
+                ],
+            ];
         }
 
         foreach ($metadataCriteria as $propertyUri => $value) {
@@ -116,16 +136,37 @@ class ResourceManagerAssetSearchQueryBuilder
 
     private function buildUniversalTokenClause(string $token): array
     {
+        $pattern = $this->buildTrailingTokenRegexp($token);
+
         return [
             'bool' => [
                 'should' => [
-                    ['prefix' => ['label.raw' => $token]],
-                    ['prefix' => ['location.raw' => $token]],
+                    [
+                        'regexp' => [
+                            'label.raw' => [
+                                'value' => $pattern,
+                                'case_insensitive' => true,
+                            ],
+                        ],
+                    ],
+                    [
+                        'regexp' => [
+                            'location.raw' => [
+                                'value' => $pattern,
+                                'case_insensitive' => true,
+                            ],
+                        ],
+                    ],
                     [
                         'nested' => [
                             'path' => 'attributes',
                             'query' => [
-                                'prefix' => ['attributes.raw_value.raw' => $token],
+                                'regexp' => [
+                                    'attributes.raw_value.raw' => [
+                                        'value' => $pattern,
+                                        'case_insensitive' => true,
+                                    ],
+                                ],
                             ],
                         ],
                     ],
@@ -135,14 +176,84 @@ class ResourceManagerAssetSearchQueryBuilder
         ];
     }
 
+    /**
+     * Trailing-token match aligned with AssetSearchBuilder::tokenize:
+     * split on non-alphanumeric, then prefix (>=3 chars) or exact (<3) on a token.
+     */
+    private function buildTrailingTokenRegexp(string $token): string
+    {
+        $escaped = $this->escapeLuceneRegexp($token);
+        $isPrefix = mb_strlen($token, 'UTF-8') >= self::PREFIX_MATCH_MIN_LENGTH;
+        $tokenBody = $isPrefix ? $escaped . '[A-Za-z0-9]*' : $escaped;
+        $afterToken = $isPrefix ? '.*' : '([^A-Za-z0-9].*)?';
+
+        // Whole-string Lucene regexp: token at start OR after a non-alnum delimiter.
+        return $tokenBody . $afterToken . '|.*[^A-Za-z0-9]' . $tokenBody . $afterToken;
+    }
+
+    private function escapeLuceneRegexp(string $value): string
+    {
+        return preg_replace('/([.\\+*?\\[\\]^$(){}=!<>|:-])/', '\\\\$1', $value) ?? $value;
+    }
+
     private function buildMetadataClause(string $propertyUri, string $value): array
     {
         $queryBlock = new QueryBlock($propertyUri, $value);
-
-        return $this->nestedAttributesQueryService->buildCustomFieldSearchQuery(
+        $legacyOrExact = $this->nestedAttributesQueryService->buildCustomFieldSearchQuery(
             $queryBlock,
             $this->resourceQueryBlockSupport->buildFlatCustomMetadataQueryString($queryBlock)
         );
+
+        // Text criteria often need trailing-token match (e.g. label "47" → "mp3_47.mp3"),
+        // while enum/URI values still match via exact term in $legacyOrExact.
+        // AC4: keeps existing exact-keyword OR analyzed-text semantics and AND-combines
+        // independently supplied criteria; trailing-token is an additive should clause.
+        $pattern = $this->buildTrailingTokenRegexp($value);
+        $trailingToken = [
+            'nested' => [
+                'path' => 'attributes',
+                'query' => [
+                    'bool' => [
+                        'must' => [
+                            ['term' => ['attributes.key' => $propertyUri]],
+                            [
+                                'bool' => [
+                                    'should' => [
+                                        [
+                                            'regexp' => [
+                                                'attributes.value.raw' => [
+                                                    'value' => $pattern,
+                                                    'case_insensitive' => true,
+                                                ],
+                                            ],
+                                        ],
+                                        [
+                                            'regexp' => [
+                                                'attributes.raw_value.raw' => [
+                                                    'value' => $pattern,
+                                                    'case_insensitive' => true,
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                    'minimum_should_match' => 1,
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        return [
+            'bool' => [
+                'should' => [
+                    $legacyOrExact,
+                    $trailingToken,
+                ],
+                'minimum_should_match' => 1,
+            ],
+        ];
     }
 
     /**

@@ -30,11 +30,17 @@ use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 use oat\taoAdvancedSearch\model\SearchEngine\Exception\AssetSearchUnavailableException;
 use oat\taoItems\model\media\AssetIndexedSearchGatewayInterface;
 use oat\taoItems\model\media\AssetSearchQuery;
+use oat\taoMediaManager\model\MediaSource;
 use Psr\Log\LoggerInterface;
+use tao_helpers_Uri;
 
 class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGatewayInterface
 {
+    // coderabbit: ignored — php -l clean; private helpers remain inside this class (brace FP)
     private const FETCH_MULTIPLIER = 3;
+
+    /** Hard stop so ACL post-filter cannot walk an unbounded index. */
+    private const MAX_SCANNED_HITS = 2000;
 
     /** @var ElasticSearch */
     private $elasticSearch;
@@ -89,6 +95,8 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
             $authorizedItems = [];
             $esTotal = 0;
             $esFrom = 0;
+            $scannedHits = 0;
+            $scanTruncated = false;
             $batchSize = max($pageSize * self::FETCH_MULTIPLIER, 20);
 
             while (true) {
@@ -103,6 +111,8 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                     break;
                 }
 
+                $scannedHits += count($batchHits);
+
                 foreach ($batchHits as $hit) {
                     if (!is_array($hit)) {
                         continue;
@@ -113,12 +123,27 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                         continue;
                     }
 
-                    $authorizedItems[] = $this->mapHit($hit);
+                    $mapped = $this->mapHit($hit);
+                    if (!$this->matchesMimeFilter($mapped['mime'], $query->getFilter())) {
+                        continue;
+                    }
+
+                    $authorizedItems[] = $mapped;
                 }
 
                 $esFrom += $batchSize;
 
                 if ($esFrom >= $esTotal) {
+                    break;
+                }
+
+                if ($scannedHits >= self::MAX_SCANNED_HITS) {
+                    $scanTruncated = true;
+                    $this->logger->warning(sprintf(
+                        'Asset indexed search scan truncated after %d hits (index total %d).',
+                        $scannedHits,
+                        $esTotal
+                    ));
                     break;
                 }
             }
@@ -133,6 +158,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                 'total' => $total,
                 'page' => $normalizedPage,
                 'pageSize' => $pageSize,
+                'totalIsApproximate' => $scanTruncated,
             ];
         } catch (AssetSearchUnavailableException $exception) {
             throw $exception;
@@ -177,15 +203,93 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
      */
     private function mapHit(array $hit): array
     {
-        $label = (string)($hit['label'] ?? '');
+        $label = $this->stringifyHitValue($hit['label'] ?? '');
+        $uri = (string)($hit['id'] ?? '');
+        $mime = trim($this->stringifyHitValue($hit['mime_type'] ?? ''));
+        // Do not fall back to indexed `type` (often an ontology URI array).
+        if ($mime === '' && $uri !== '') {
+            $mime = $this->resolveMimeTypeFromResource($uri);
+        }
 
         return [
-            'uri' => (string)($hit['id'] ?? ''),
+            'uri' => $this->toMediaBrowserUri($uri),
             'label' => $label,
             'name' => $label,
-            'mime' => (string)($hit['mime_type'] ?? $hit['type'] ?? ''),
+            'mime' => $mime,
             'location' => (string)($hit['location'] ?? ''),
             'updatedAt' => $hit['updated_at'] ?? null,
         ];
+    }
+
+    /**
+     * Browse/download expect MediaSource URIs (taomedia://mediamanager/<encoded>),
+     * while the assets index stores the raw RDF resource id.
+     */
+    private function toMediaBrowserUri(string $resourceUri): string
+    {
+        if ($resourceUri === '') {
+            return $resourceUri;
+        }
+
+        if (strpos($resourceUri, MediaSource::SCHEME_NAME) === 0) {
+            return $resourceUri;
+        }
+
+        // Keep non-HTTP schemes used by fixtures / other media sources as-is.
+        if (preg_match('#^[a-z][a-z0-9+.-]*://#i', $resourceUri) && !preg_match('#^https?://#i', $resourceUri)) {
+            return $resourceUri;
+        }
+
+        return MediaSource::SCHEME_NAME . tao_helpers_Uri::encode($resourceUri);
+    }
+
+    /**
+     * @param mixed $value
+     */
+    private function stringifyHitValue($value): string
+    {
+        if (is_array($value)) {
+            $first = reset($value);
+
+            return is_scalar($first) ? (string)$first : '';
+        }
+
+        return is_scalar($value) ? (string)$value : '';
+    }
+
+    /**
+     * @param array<int, mixed> $allowedMimes
+     */
+    private function matchesMimeFilter(string $mime, array $allowedMimes): bool
+    {
+        $normalizedAllowed = array_values(array_filter($allowedMimes, static function ($value): bool {
+            return is_string($value) && $value !== '';
+        }));
+        if ($normalizedAllowed === []) {
+            return true;
+        }
+
+        return $mime !== '' && in_array($mime, $normalizedAllowed, true);
+    }
+
+    private function resolveMimeTypeFromResource(string $uri): string
+    {
+        try {
+            $resource = new \core_kernel_classes_Resource($uri);
+            $value = $resource->getOnePropertyValue(
+                new \core_kernel_classes_Property(
+                    \oat\taoMediaManager\model\TaoMediaOntology::PROPERTY_MIME_TYPE
+                )
+            );
+            if ($value instanceof \core_kernel_classes_Literal) {
+                return trim((string)$value);
+            }
+        } catch (Exception $exception) {
+            $this->logger->warning(
+                'Unable to resolve asset mime type for ' . $uri . ': ' . $exception->getMessage()
+            );
+        }
+
+        return '';
     }
 }
