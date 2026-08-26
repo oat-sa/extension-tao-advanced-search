@@ -30,6 +30,7 @@ use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
 use oat\generis\model\DependencyInjection\ServiceOptions;
 use oat\oatbox\log\LoggerService;
 use oat\oatbox\session\SessionService;
+use oat\taoItems\model\media\AssetIndexedSearchGatewayInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchClientFactory;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
@@ -45,6 +46,11 @@ use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesIndexResolv
 use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesQueryService;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceQueryBlockSupport;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\StructuredResourceSearchQueryBuilder;
+use oat\tao\model\accessControl\PermissionChecker;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\OntologyAssetMimeTypeResolver;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceManagerAssetIndexedSearchGateway;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceManagerAssetSearchQueryBuilder;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\TaoAssetUriEncoder;
 use oat\taoAdvancedSearch\model\SearchEngine\Specification\UseAclSpecification;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -97,6 +103,42 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
                 [
                     service(ResourceQueryBlockSupport::class),
                     service(NestedAttributesQueryService::class),
+                ]
+            )
+            ->public();
+
+        $services->set(ResourceManagerAssetSearchQueryBuilder::class, ResourceManagerAssetSearchQueryBuilder::class)
+            ->args(
+                [
+                    service(NestedAttributesQueryService::class),
+                    service(ResourceQueryBlockSupport::class),
+                ]
+            )
+            ->public();
+
+        $services->set(OntologyAssetMimeTypeResolver::class, OntologyAssetMimeTypeResolver::class)
+            ->args(
+                [
+                    service(LoggerService::SERVICE_ID),
+                ]
+            )
+            ->public();
+
+        $services->set(TaoAssetUriEncoder::class, TaoAssetUriEncoder::class)
+            ->public();
+
+        $services->set(
+            AssetIndexedSearchGatewayInterface::SERVICE_ID,
+            ResourceManagerAssetIndexedSearchGateway::class
+        )
+            ->args(
+                [
+                    service(ElasticSearch::class),
+                    service(ResourceManagerAssetSearchQueryBuilder::class),
+                    service(PermissionChecker::class),
+                    service(LoggerService::SERVICE_ID),
+                    service(OntologyAssetMimeTypeResolver::class),
+                    service(TaoAssetUriEncoder::class),
                 ]
             )
             ->public();
