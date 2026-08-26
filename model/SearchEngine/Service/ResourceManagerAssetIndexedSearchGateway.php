@@ -25,15 +25,22 @@ namespace oat\taoAdvancedSearch\model\SearchEngine\Service;
 use Exception;
 use oat\tao\model\accessControl\AccessControlEnablerInterface;
 use oat\tao\model\accessControl\PermissionCheckerInterface;
+use oat\taoAdvancedSearch\model\SearchEngine\Contract\AssetMimeTypeResolverInterface;
+use oat\taoAdvancedSearch\model\SearchEngine\Contract\AssetUriEncoderInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
-use oat\taoAdvancedSearch\model\SearchEngine\Exception\AssetSearchUnavailableException;
+use oat\taoItems\model\media\AssetSearchUnavailableException;
 use oat\taoItems\model\media\AssetIndexedSearchGatewayInterface;
 use oat\taoItems\model\media\AssetSearchQuery;
 use oat\taoMediaManager\model\MediaSource;
 use Psr\Log\LoggerInterface;
-use tao_helpers_Uri;
 
+/**
+ * Indexed Elasticsearch gateway for Resource Manager scoped asset search.
+ *
+ * @license GPL-2.0-only
+ * @copyright 2026 Open Assessment Technologies SA
+ */
 class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGatewayInterface
 {
     // coderabbit: ignored — php -l clean; private helpers remain inside this class (brace FP)
@@ -54,16 +61,26 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
     /** @var LoggerInterface */
     private $logger;
 
+    /** @var AssetMimeTypeResolverInterface */
+    private $mimeTypeResolver;
+
+    /** @var AssetUriEncoderInterface */
+    private $uriEncoder;
+
     public function __construct(
         ElasticSearch $elasticSearch,
         ResourceManagerAssetSearchQueryBuilder $queryBuilder,
         PermissionCheckerInterface $permissionChecker,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        AssetMimeTypeResolverInterface $mimeTypeResolver,
+        AssetUriEncoderInterface $uriEncoder
     ) {
         $this->elasticSearch = $elasticSearch;
         $this->queryBuilder = $queryBuilder;
         $this->permissionChecker = $permissionChecker;
         $this->logger = $logger;
+        $this->mimeTypeResolver = $mimeTypeResolver;
+        $this->uriEncoder = $uriEncoder;
     }
 
     public function isAvailable(): bool
@@ -89,8 +106,8 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                 $query->getMetadataCriteria()
             );
 
-            $pageSize = $query->getPageSize();
-            $page = $query->getPage();
+            $pageSize = max(1, $query->getPageSize());
+            $page = max(1, $query->getPage());
 
             $authorizedItems = [];
             $esTotal = 0;
@@ -100,8 +117,22 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
             $batchSize = max($pageSize * self::FETCH_MULTIPLIER, 20);
 
             while (true) {
+                $remainingBudget = self::MAX_SCANNED_HITS - $scannedHits;
+                if ($remainingBudget <= 0) {
+                    if ($esFrom < $esTotal) {
+                        $scanTruncated = true;
+                        $this->logger->warning(sprintf(
+                            'Asset indexed search scan truncated after %d hits (index total %d).',
+                            $scannedHits,
+                            $esTotal
+                        ));
+                    }
+                    break;
+                }
+
+                $requestSize = min($batchSize, $remainingBudget);
                 $searchBody['from'] = $esFrom;
-                $searchBody['size'] = $batchSize;
+                $searchBody['size'] = $requestSize;
 
                 $result = $this->elasticSearch->searchWithBody(IndexerInterface::ASSETS_INDEX, $searchBody);
                 $esTotal = max($esTotal, $result->getTotalCount());
@@ -131,13 +162,13 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                     $authorizedItems[] = $mapped;
                 }
 
-                $esFrom += $batchSize;
+                $esFrom += $requestSize;
 
                 if ($esFrom >= $esTotal) {
                     break;
                 }
 
-                if ($scannedHits >= self::MAX_SCANNED_HITS) {
+                if ($scannedHits >= self::MAX_SCANNED_HITS && $esFrom < $esTotal) {
                     $scanTruncated = true;
                     $this->logger->warning(sprintf(
                         'Asset indexed search scan truncated after %d hits (index total %d).',
@@ -208,7 +239,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
         $mime = trim($this->stringifyHitValue($hit['mime_type'] ?? ''));
         // Do not fall back to indexed `type` (often an ontology URI array).
         if ($mime === '' && $uri !== '') {
-            $mime = $this->resolveMimeTypeFromResource($uri);
+            $mime = $this->mimeTypeResolver->resolve($uri);
         }
 
         return [
@@ -240,7 +271,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
             return $resourceUri;
         }
 
-        return MediaSource::SCHEME_NAME . tao_helpers_Uri::encode($resourceUri);
+        return MediaSource::SCHEME_NAME . $this->uriEncoder->encode($resourceUri);
     }
 
     /**
@@ -270,26 +301,5 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
         }
 
         return $mime !== '' && in_array($mime, $normalizedAllowed, true);
-    }
-
-    private function resolveMimeTypeFromResource(string $uri): string
-    {
-        try {
-            $resource = new \core_kernel_classes_Resource($uri);
-            $value = $resource->getOnePropertyValue(
-                new \core_kernel_classes_Property(
-                    \oat\taoMediaManager\model\TaoMediaOntology::PROPERTY_MIME_TYPE
-                )
-            );
-            if ($value instanceof \core_kernel_classes_Literal) {
-                return trim((string)$value);
-            }
-        } catch (Exception $exception) {
-            $this->logger->warning(
-                'Unable to resolve asset mime type for ' . $uri . ': ' . $exception->getMessage()
-            );
-        }
-
-        return '';
     }
 }

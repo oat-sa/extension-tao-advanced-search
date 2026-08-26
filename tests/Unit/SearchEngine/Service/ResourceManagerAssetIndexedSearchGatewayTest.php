@@ -26,8 +26,10 @@ use Exception;
 use oat\tao\model\accessControl\PermissionCheckerInterface;
 use oat\tao\model\media\MediaAsset;
 use oat\tao\model\media\MediaBrowser;
+use oat\taoAdvancedSearch\model\SearchEngine\Contract\AssetMimeTypeResolverInterface;
+use oat\taoAdvancedSearch\model\SearchEngine\Contract\AssetUriEncoderInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
-use oat\taoAdvancedSearch\model\SearchEngine\Exception\AssetSearchUnavailableException;
+use oat\taoItems\model\media\AssetSearchUnavailableException;
 use oat\taoAdvancedSearch\model\SearchEngine\SearchResult;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceManagerAssetIndexedSearchGateway;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceManagerAssetSearchQueryBuilder;
@@ -50,6 +52,12 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
     /** @var LoggerInterface|MockObject */
     private $logger;
 
+    /** @var AssetMimeTypeResolverInterface|MockObject */
+    private $mimeTypeResolver;
+
+    /** @var AssetUriEncoderInterface|MockObject */
+    private $uriEncoder;
+
     /** @var ResourceManagerAssetIndexedSearchGateway */
     private $subject;
 
@@ -59,12 +67,20 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
         $this->queryBuilder = $this->createMock(ResourceManagerAssetSearchQueryBuilder::class);
         $this->permissionChecker = $this->createMock(PermissionCheckerInterface::class);
         $this->logger = $this->createMock(LoggerInterface::class);
+        $this->mimeTypeResolver = $this->createMock(AssetMimeTypeResolverInterface::class);
+        $this->mimeTypeResolver->method('resolve')->willReturn('');
+        $this->uriEncoder = $this->createMock(AssetUriEncoderInterface::class);
+        $this->uriEncoder->method('encode')->willReturnCallback(static function (string $uri): string {
+            return \tao_helpers_Uri::encode($uri);
+        });
 
         $this->subject = new ResourceManagerAssetIndexedSearchGateway(
             $this->elasticSearch,
             $this->queryBuilder,
             $this->permissionChecker,
-            $this->logger
+            $this->logger,
+            $this->mimeTypeResolver,
+            $this->uriEncoder
         );
     }
 
@@ -122,6 +138,20 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
 
     public function testSearchMapsHitWithoutMimeTypeAndArrayMimeField(): void
     {
+        $this->mimeTypeResolver = $this->createMock(AssetMimeTypeResolverInterface::class);
+        $this->mimeTypeResolver->expects($this->once())
+            ->method('resolve')
+            ->with('asset://allowed-missing-mime')
+            ->willReturn('');
+        $this->subject = new ResourceManagerAssetIndexedSearchGateway(
+            $this->elasticSearch,
+            $this->queryBuilder,
+            $this->permissionChecker,
+            $this->logger,
+            $this->mimeTypeResolver,
+            $this->uriEncoder
+        );
+
         $query = $this->createSearchQuery();
         $mediaSource = $query->getAsset()->getMediaSource();
 
@@ -200,6 +230,83 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
             'taomedia://mediamanager/' . \tao_helpers_Uri::encode($resourceUri),
             $result['items'][0]['uri']
         );
+    }
+
+    public function testSearchPaginatesAuthorizedItemsAfterAclPostFilter(): void
+    {
+        $query = $this->createSearchQuery()->setPage(2)->setPageSize(1);
+        $mediaSource = $query->getAsset()->getMediaSource();
+        $mediaSource->method('getDirectories')->willReturn([
+            'path' => 'taomedia://mediamanager/Assets',
+            'label' => 'Assets',
+            'children' => [],
+        ]);
+
+        $this->queryBuilder->method('build')->willReturn(['query' => ['bool' => ['must' => []]]]);
+        $this->elasticSearch->method('searchWithBody')->willReturn(
+            new SearchResult(
+                [
+                    ['id' => 'asset://denied', 'label' => 'Denied', 'mime_type' => 'image/png'],
+                    ['id' => 'asset://alpha', 'label' => 'Alpha', 'mime_type' => 'image/png'],
+                    ['id' => 'asset://beta', 'label' => 'Beta', 'mime_type' => 'image/png'],
+                ],
+                3
+            )
+        );
+        $this->permissionChecker->method('hasReadAccess')->willReturnCallback(
+            static function (string $uri): bool {
+                return $uri !== 'asset://denied';
+            }
+        );
+
+        $result = $this->subject->search($query);
+
+        $this->assertSame(2, $result['total']);
+        $this->assertSame(2, $result['page']);
+        $this->assertSame(1, $result['pageSize']);
+        $this->assertSame('asset://beta', $result['items'][0]['uri']);
+        $this->assertFalse($result['totalIsApproximate']);
+    }
+
+    public function testSearchMarksTotalApproximateWhenScanBudgetExceeded(): void
+    {
+        $query = $this->createSearchQuery();
+        $mediaSource = $query->getAsset()->getMediaSource();
+        $mediaSource->method('getDirectories')->willReturn([
+            'path' => 'taomedia://mediamanager/Assets',
+            'label' => 'Assets',
+            'children' => [],
+        ]);
+
+        $allHits = [];
+        for ($i = 0; $i < 2500; $i++) {
+            $allHits[] = [
+                'id' => 'asset://hit-' . $i,
+                'label' => 'Hit ' . $i,
+                'mime_type' => 'image/png',
+            ];
+        }
+
+        $this->queryBuilder->method('build')->willReturn(['query' => ['bool' => ['must' => []]]]);
+        $this->elasticSearch->method('searchWithBody')->willReturnCallback(
+            static function ($index, array $body) use ($allHits): SearchResult {
+                $from = (int)($body['from'] ?? 0);
+                $size = (int)($body['size'] ?? 10);
+
+                return new SearchResult(array_slice($allHits, $from, $size), count($allHits));
+            }
+        );
+        $this->permissionChecker->method('hasReadAccess')->willReturnCallback(
+            static function (string $uri): bool {
+                return $uri !== 'asset://denied-mid-scan';
+            }
+        );
+
+        $result = $this->subject->search($query);
+
+        $this->assertTrue($result['totalIsApproximate']);
+        $this->assertSame(2000, $result['total']);
+        $this->assertCount(10, $result['items']);
     }
 
     public function testSearchWrapsElasticsearchFailures(): void

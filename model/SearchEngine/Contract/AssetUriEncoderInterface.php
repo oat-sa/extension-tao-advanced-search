@@ -20,13 +20,12 @@
 
 declare(strict_types=1);
 
-namespace oat\taoAdvancedSearch\model\SearchEngine\Exception;
-
-use RuntimeException;
+namespace oat\taoAdvancedSearch\model\SearchEngine\Contract;
 
 /**
- * Recoverable ElasticSearch failure for Resource Manager asset search.
+ * Encodes RDF/HTTP resource URIs for MediaSource browser paths.
  */
-class AssetSearchUnavailableException extends RuntimeException
+interface AssetUriEncoderInterface
 {
+    public function encode(string $uri): string;
 }

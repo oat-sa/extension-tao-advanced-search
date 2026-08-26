@@ -47,8 +47,10 @@ use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesQueryServic
 use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceQueryBlockSupport;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\StructuredResourceSearchQueryBuilder;
 use oat\tao\model\accessControl\PermissionChecker;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\OntologyAssetMimeTypeResolver;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceManagerAssetIndexedSearchGateway;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceManagerAssetSearchQueryBuilder;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\TaoAssetUriEncoder;
 use oat\taoAdvancedSearch\model\SearchEngine\Specification\UseAclSpecification;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -114,6 +116,17 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
             )
             ->public();
 
+        $services->set(OntologyAssetMimeTypeResolver::class, OntologyAssetMimeTypeResolver::class)
+            ->args(
+                [
+                    service(LoggerService::SERVICE_ID),
+                ]
+            )
+            ->public();
+
+        $services->set(TaoAssetUriEncoder::class, TaoAssetUriEncoder::class)
+            ->public();
+
         $services->set(
             AssetIndexedSearchGatewayInterface::SERVICE_ID,
             ResourceManagerAssetIndexedSearchGateway::class
@@ -124,6 +137,8 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
                     service(ResourceManagerAssetSearchQueryBuilder::class),
                     service(PermissionChecker::class),
                     service(LoggerService::SERVICE_ID),
+                    service(OntologyAssetMimeTypeResolver::class),
+                    service(TaoAssetUriEncoder::class),
                 ]
             )
             ->public();
