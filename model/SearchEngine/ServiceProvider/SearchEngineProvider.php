@@ -127,6 +127,10 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
         $services->set(TaoAssetUriEncoder::class, TaoAssetUriEncoder::class)
             ->public();
 
+        // Explicit registration: gateway constructor requires PermissionCheckerInterface.
+        $services->set(PermissionChecker::class, PermissionChecker::class)
+            ->public();
+
         $services->set(
             AssetIndexedSearchGatewayInterface::SERVICE_ID,
             ResourceManagerAssetIndexedSearchGateway::class

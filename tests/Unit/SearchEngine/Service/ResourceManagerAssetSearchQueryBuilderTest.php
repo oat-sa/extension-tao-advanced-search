@@ -252,6 +252,7 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
         }
 
         $this->fail('Exact nested metadata query not found');
+        throw new \RuntimeException('Unreachable');
     }
 
     private function extractTrailingTokenMetadataQuery(array $body): array
@@ -264,6 +265,7 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
         }
 
         $this->fail('Trailing-token metadata query not found');
+        throw new \RuntimeException('Unreachable');
     }
 
     private function createQuery(string $text, array $filter = []): AssetSearchQuery

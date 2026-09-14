@@ -193,7 +193,8 @@ class ResourceManagerAssetSearchQueryBuilder
 
     private function escapeLuceneRegexp(string $value): string
     {
-        return preg_replace('/([.\\+*?\\[\\]^$(){}=!<>|:-])/', '\\\\$1', $value) ?? $value;
+        // Lucene/ES regexp reserved chars, including optional operators (# @ & ~) and " \.
+        return preg_replace('/([\\\\."#@&~+*?\\[\\]^$(){}=!<>|:-])/', '\\\\$1', $value) ?? $value;
     }
 
     private function buildMetadataClause(string $propertyUri, string $value): array
