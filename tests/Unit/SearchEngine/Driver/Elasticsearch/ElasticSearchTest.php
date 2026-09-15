@@ -38,6 +38,7 @@ use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\QueryBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Normalizer\SearchResultNormalizer;
 use oat\taoAdvancedSearch\model\SearchEngine\Query;
 use oat\taoAdvancedSearch\model\SearchEngine\SearchResult;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexConfigurationProvider;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -88,7 +89,8 @@ class ElasticSearchTest extends TestCase
             $this->indexer,
             $this->prefixer,
             $this->logger,
-            $this->searchResultNormalizer
+            $this->searchResultNormalizer,
+            new IndexConfigurationProvider()
         );
 
         $this->sut->setIndexFile(__DIR__ . '/../../../../sample/testIndexes.conf.php');

@@ -27,6 +27,7 @@ use oat\oatbox\session\SessionService;
 use oat\taoAdvancedSearch\model\Metadata\Service\AdvancedSearchSettingsService;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\QueryBlock;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexDefaultSortFieldResolver;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\LegacyResourceQueryConditionsBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesFeature;
@@ -77,6 +78,7 @@ class QueryBuilder
     private LegacyResourceQueryConditionsBuilder $legacyResourceQueryConditionsBuilder;
     private StructuredResourceSearchQueryBuilder $structuredResourceSearchQueryBuilder;
     private ResourceQueryBlockSupport $resourceQueryBlockSupport;
+    private IndexDefaultSortFieldResolver $indexDefaultSortFieldResolver;
 
     public function __construct(
         LoggerInterface $logger,
@@ -87,7 +89,8 @@ class QueryBuilder
         NestedAttributesFeature $nestedAttributesFeature,
         LegacyResourceQueryConditionsBuilder $legacyResourceQueryConditionsBuilder,
         StructuredResourceSearchQueryBuilder $structuredResourceSearchQueryBuilder,
-        ResourceQueryBlockSupport $resourceQueryBlockSupport
+        ResourceQueryBlockSupport $resourceQueryBlockSupport,
+        IndexDefaultSortFieldResolver $indexDefaultSortFieldResolver
     ) {
         $this->logger = $logger;
         $this->permission = $permission;
@@ -98,6 +101,7 @@ class QueryBuilder
         $this->legacyResourceQueryConditionsBuilder = $legacyResourceQueryConditionsBuilder;
         $this->structuredResourceSearchQueryBuilder = $structuredResourceSearchQueryBuilder;
         $this->resourceQueryBlockSupport = $resourceQueryBlockSupport;
+        $this->indexDefaultSortFieldResolver = $indexDefaultSortFieldResolver;
     }
 
     public function getSearchParams(
@@ -250,7 +254,7 @@ class QueryBuilder
 
     /**
      * ES meta `_id` has no doc values; sorting it loads fielddata into heap.
-     * Map id/_id to an index-appropriate keyword field (no reindex).
+     * Map id/_id to the index conf {@code defaultSortField} (no reindex).
      */
     private function resolveSortField(string $order, string $index): string
     {
@@ -258,17 +262,7 @@ class QueryBuilder
             return $order;
         }
 
-        if ($this->isDeliveryResultsIndex($index)) {
-            return 'delivery_execution_start_time.raw';
-        }
-
-        return 'updated_at.raw';
-    }
-
-    private function isDeliveryResultsIndex(string $index): bool
-    {
-        return $index === IndexerInterface::DELIVERY_RESULTS_INDEX
-            || str_ends_with($index, IndexerInterface::DELIVERY_RESULTS_INDEX);
+        return $this->indexDefaultSortFieldResolver->resolveForIndex($index);
     }
 
     /**

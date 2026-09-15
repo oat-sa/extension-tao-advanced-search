@@ -29,6 +29,8 @@ use oat\oatbox\session\SessionService;
 use oat\oatbox\user\User;
 use oat\tao\model\featureFlag\FeatureFlagCheckerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\QueryBuilder;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexConfigurationProvider;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexDefaultSortFieldResolver;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\LegacyResourceQueryConditionsBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesFeature;
@@ -192,7 +194,8 @@ class QueryBuilderStructuredSearchTest extends TestCase
             new NestedAttributesFeature($featureFlagChecker, new NestedAttributesIndexResolver()),
             new LegacyResourceQueryConditionsBuilder($blockSupport),
             new StructuredResourceSearchQueryBuilder($blockSupport, new NestedAttributesQueryService()),
-            $blockSupport
+            $blockSupport,
+            new IndexDefaultSortFieldResolver(new IndexConfigurationProvider())
         );
     }
 

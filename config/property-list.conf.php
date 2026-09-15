@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 return [
     'index' => 'property-list',
+    'defaultSortField' => 'updated_at.raw',
     'body' => [
         'settings' => [
             'index' => [
