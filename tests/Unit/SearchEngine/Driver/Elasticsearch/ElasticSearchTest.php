@@ -394,7 +394,7 @@ class ElasticSearchTest extends TestCase
                     'ignore' => 404,
                 ],
             'body' => '{"query":{"query_string":{"default_operator":"AND","query":"(\\"item\\")"}},' .
-                '"sort":{"label.raw":{"order":"DESC"}}}',
+                '"sort":{"updated_at.raw":{"order":"DESC"},"label.raw":{"order":"DESC"}}}',
         ];
 
         $this->queryBuilder->expects($this->once())

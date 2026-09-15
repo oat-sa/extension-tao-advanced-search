@@ -118,7 +118,7 @@ class QueryBuilder
 
         $blocks = preg_split('/( AND )/i', $queryString);
         $index = $this->getIndexByType($type);
-        $order = $this->resolveSortField($order);
+        $order = $this->resolveSortField($order, $index);
         $sort = [
             $order => [
                 'order' => $dir,
@@ -241,20 +241,34 @@ class QueryBuilder
             return $this->prefixer->prefix(self::STRUCTURE_TO_INDEX_MAP[$type]);
         }
 
+        if (isset(IndexerInterface::AVAILABLE_INDEXES[$type])) {
+            return $this->prefixer->prefix(IndexerInterface::AVAILABLE_INDEXES[$type]);
+        }
+
         return IndexerInterface::UNCLASSIFIEDS_DOCUMENTS_INDEX;
     }
 
     /**
      * ES meta `_id` has no doc values; sorting it loads fielddata into heap.
-     * Map id/_id to an already-indexed keyword (label.raw) — no reindex needed.
+     * Map id/_id to an index-appropriate keyword field (no reindex).
      */
-    private function resolveSortField(string $order): string
+    private function resolveSortField(string $order, string $index): string
     {
-        if ($order === '_id' || $order === 'id') {
-            return AdvancedSearchSettingsService::DEFAULT_SORT_COLUMN;
+        if ($order !== '_id' && $order !== 'id') {
+            return $order;
         }
 
-        return $order;
+        if ($this->isDeliveryResultsIndex($index)) {
+            return 'delivery_execution_start_time.raw';
+        }
+
+        return 'updated_at.raw';
+    }
+
+    private function isDeliveryResultsIndex(string $index): bool
+    {
+        return $index === IndexerInterface::DELIVERY_RESULTS_INDEX
+            || str_ends_with($index, IndexerInterface::DELIVERY_RESULTS_INDEX);
     }
 
     /**
