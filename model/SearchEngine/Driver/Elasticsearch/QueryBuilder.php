@@ -118,20 +118,25 @@ class QueryBuilder
 
         $blocks = preg_split('/( AND )/i', $queryString);
         $index = $this->getIndexByType($type);
+        $order = $this->resolveSortField($order);
+        $sort = [
+            $order => [
+                'order' => $dir,
+                'missing' => '_last',
+                'unmapped_type' => 'keyword',
+            ],
+        ];
+        // Secondary tie-break when primary is not already the default column.
+        if ($order !== AdvancedSearchSettingsService::DEFAULT_SORT_COLUMN) {
+            $sort[AdvancedSearchSettingsService::DEFAULT_SORT_COLUMN] = [
+                'order' => $dir,
+                'missing' => '_last',
+                'unmapped_type' => 'keyword',
+            ];
+        }
         $query = [
             'query' => $this->buildRootQuery($index, $blocks),
-            'sort' => [
-                $order => [
-                    'order' => $dir,
-                    'missing' => '_last',
-                    'unmapped_type' => 'long',
-                ],
-                AdvancedSearchSettingsService::DEFAULT_SORT_COLUMN => [
-                    'order' => $dir,
-                    'missing' => '_last',
-                    'unmapped_type' => 'long',
-                ],
-            ],
+            'sort' => $sort,
         ];
 
         $params = [
@@ -237,6 +242,19 @@ class QueryBuilder
         }
 
         return IndexerInterface::UNCLASSIFIEDS_DOCUMENTS_INDEX;
+    }
+
+    /**
+     * ES meta `_id` has no doc values; sorting it loads fielddata into heap.
+     * Map id/_id to an already-indexed keyword (label.raw) — no reindex needed.
+     */
+    private function resolveSortField(string $order): string
+    {
+        if ($order === '_id' || $order === 'id') {
+            return AdvancedSearchSettingsService::DEFAULT_SORT_COLUMN;
+        }
+
+        return $order;
     }
 
     /**

@@ -145,12 +145,8 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
         return $this->buildAggregationSet($this->client->search($query)->asArray());
     }
 
-    public function query($queryString, $type, $start = 0, $count = 10, $order = '_id', $dir = 'DESC'): ResultSet
+    public function query($queryString, $type, $start = 0, $count = 10, $order = 'id', $dir = 'DESC'): ResultSet
     {
-        if ($order == 'id') {
-            $order = '_id';
-        }
-
         try {
             $query = $this->queryBuilder->getSearchParams($queryString, $type, $start, $count, $order, $dir);
             $this->logger->debug(sprintf('Elasticsearch Query %s', json_encode($query)));
