@@ -534,8 +534,9 @@ class QueryBuilderTest extends TestCase
     /**
      * Legacy flat query_string path (master behaviour). FEATURE_FLAG_ADVANCED_SEARCH_DISABLE_NESTED_ATTRIBUTES enabled.
      */
-    private function createQueryBuilderWithNestedAttributesDisabled(): QueryBuilder
-    {
+    private function createQueryBuilderWithNestedAttributesDisabled(
+        ?IndexConfigurationProvider $indexConfigurationProvider = null
+    ): QueryBuilder {
         $featureFlagChecker = $this->createMock(FeatureFlagCheckerInterface::class);
         $featureFlagChecker
             ->method('isEnabled')
@@ -554,7 +555,9 @@ class QueryBuilderTest extends TestCase
             new LegacyResourceQueryConditionsBuilder($blockSupport),
             new StructuredResourceSearchQueryBuilder($blockSupport, new NestedAttributesQueryService()),
             $blockSupport,
-            new IndexDefaultSortFieldResolver(new IndexConfigurationProvider())
+            new IndexDefaultSortFieldResolver(
+                $indexConfigurationProvider ?? new IndexConfigurationProvider()
+            )
         );
     }
 
@@ -644,6 +647,75 @@ class QueryBuilderTest extends TestCase
         );
         $this->assertArrayNotHasKey('updated_at.raw', $body['sort']);
         $this->assertArrayNotHasKey('_id', $body['sort']);
+    }
+
+    public function testPrefixedCanonicalDeliveryResultParentClassesUsesResultsPath(): void
+    {
+        $this->createAccessControlMock(false);
+
+        $this->prefixer = $this->createMock(IndexPrefixer::class);
+        $this->prefixer
+            ->expects($this->atLeastOnce())
+            ->method('prefix')
+            ->with(IndexerInterface::DELIVERY_RESULTS_INDEX)
+            ->willReturn('tenant_delivery-results');
+        $this->subject = $this->createQueryBuilderWithNestedAttributesDisabled();
+
+        $params = $this->subject->getSearchParams(
+            'parent_classes:http://www.tao.lu/Ontologies/TAOResult.rdf#DeliveryResult',
+            ResultService::DELIVERY_RESULT_CLASS_URI,
+            0,
+            10,
+            '_id',
+            'DESC'
+        );
+
+        $this->assertSame('tenant_delivery-results', $params['index']);
+
+        $body = json_decode($params['body'], true, 512, JSON_THROW_ON_ERROR);
+        $this->assertSame(['match_all' => []], $body['query']);
+        $this->assertSame(
+            ['delivery_execution_start_time.raw', 'label.raw'],
+            array_keys($body['sort'])
+        );
+        $this->assertArrayNotHasKey('bool', $body['query']);
+    }
+
+    public function testSetIndexFileRefreshesIdSortFieldOnSubsequentQuery(): void
+    {
+        $this->createAccessControlMock(false);
+
+        $provider = new IndexConfigurationProvider([
+            [
+                'index' => IndexerInterface::ITEMS_INDEX,
+                'defaultSortField' => 'updated_at.raw',
+            ],
+        ]);
+        $this->subject = $this->createQueryBuilderWithNestedAttributesDisabled($provider);
+
+        $params = $this->subject->getSearchParams('label:test', 'items', 0, 10, '_id', 'DESC');
+        $body = json_decode($params['body'], true, 512, JSON_THROW_ON_ERROR);
+        $this->assertSame(['updated_at.raw', 'label.raw'], array_keys($body['sort']));
+
+        $indexFile = tempnam(sys_get_temp_dir(), 'idx');
+        file_put_contents(
+            $indexFile,
+            '<?php return [[' .
+            "'index' => 'items'," .
+            "'defaultSortField' => 'custom_sort.raw'," .
+            ']];'
+        );
+
+        try {
+            $provider->setIndexFile($indexFile);
+            $params = $this->subject->getSearchParams('label:test', 'items', 0, 10, 'id', 'DESC');
+            $body = json_decode($params['body'], true, 512, JSON_THROW_ON_ERROR);
+            $this->assertSame(['custom_sort.raw', 'label.raw'], array_keys($body['sort']));
+            $this->assertArrayNotHasKey('_id', $body['sort']);
+            $this->assertArrayNotHasKey('updated_at.raw', $body['sort']);
+        } finally {
+            unlink($indexFile);
+        }
     }
 
     private function createAccessControlMock(bool $includeAccessControl): void

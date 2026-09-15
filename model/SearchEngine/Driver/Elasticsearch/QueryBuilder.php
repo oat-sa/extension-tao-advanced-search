@@ -162,7 +162,7 @@ class QueryBuilder
      */
     private function buildRootQuery(string $index, array $blocks): array
     {
-        if ($index === IndexerInterface::DELIVERY_RESULTS_INDEX) {
+        if ($this->isDeliveryResultsIndex($index)) {
             return $this->buildLegacyFlatQueryString($this->getResultsQueryStringFragments($blocks));
         }
 
@@ -250,6 +250,12 @@ class QueryBuilder
         }
 
         return IndexerInterface::UNCLASSIFIEDS_DOCUMENTS_INDEX;
+    }
+
+    private function isDeliveryResultsIndex(string $index): bool
+    {
+        return $index === IndexerInterface::DELIVERY_RESULTS_INDEX
+            || str_ends_with($index, IndexerInterface::DELIVERY_RESULTS_INDEX);
     }
 
     /**

@@ -22,8 +22,20 @@ declare(strict_types=1);
 
 return [
     'index' => 'property-list',
-    'defaultSortField' => 'updated_at.raw',
+    'defaultSortField' => 'label.raw',
     'body' => [
+        'mappings' => [
+            'properties' => [
+                'label' => [
+                    'type' => 'text',
+                    'fields' => [
+                        'raw' => [
+                            'type' => 'keyword'
+                        ]
+                    ]
+                ],
+            ],
+        ],
         'settings' => [
             'index' => [
                 'number_of_shards' => '1',

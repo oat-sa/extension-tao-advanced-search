@@ -55,4 +55,36 @@ class IndexDefaultSortFieldResolverTest extends TestCase
         $this->assertSame('updated_at.raw', $resolver->resolveForIndex(IndexerInterface::ITEMS_INDEX));
         $this->assertSame('updated_at.raw', $resolver->resolveForIndex('unknown-index'));
     }
+
+    public function testSetIndexFileRefreshesDefaultSortField(): void
+    {
+        $provider = new IndexConfigurationProvider([
+            [
+                'index' => IndexerInterface::ITEMS_INDEX,
+                'defaultSortField' => 'updated_at.raw',
+            ],
+        ]);
+        $resolver = new IndexDefaultSortFieldResolver($provider);
+
+        $this->assertSame('updated_at.raw', $resolver->resolveForIndex(IndexerInterface::ITEMS_INDEX));
+
+        $indexFile = tempnam(sys_get_temp_dir(), 'idx');
+        file_put_contents(
+            $indexFile,
+            '<?php return [[' .
+            "'index' => 'items'," .
+            "'defaultSortField' => 'custom_sort.raw'," .
+            ']];'
+        );
+
+        try {
+            $provider->setIndexFile($indexFile);
+            $this->assertSame(
+                'custom_sort.raw',
+                $resolver->resolveForIndex(IndexerInterface::ITEMS_INDEX)
+            );
+        } finally {
+            unlink($indexFile);
+        }
+    }
 }

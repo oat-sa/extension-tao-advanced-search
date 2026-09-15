@@ -25,39 +25,52 @@ namespace oat\taoAdvancedSearch\model\SearchEngine\Service;
 /**
  * Resolves the keyword field used when callers sort by id/_id.
  * Values come from each index conf's {@code defaultSortField} (not sent to ES).
+ * Reads the provider on each resolve so {@see IndexConfigurationProvider::setIndexFile}
+ * is picked up without rebuilding the resolver.
  */
 class IndexDefaultSortFieldResolver
 {
     private const FALLBACK = 'updated_at.raw';
 
-    /** @var array<string, string> */
-    private array $fieldsByIndex;
+    private IndexConfigurationProvider $indexConfigurationProvider;
 
     public function __construct(IndexConfigurationProvider $indexConfigurationProvider)
     {
-        $this->fieldsByIndex = [];
-
-        foreach ($indexConfigurationProvider->getIndexes() as $def) {
-            if (!is_array($def) || !isset($def['index'], $def['defaultSortField'])) {
-                continue;
-            }
-
-            $this->fieldsByIndex[$def['index']] = $def['defaultSortField'];
-        }
+        $this->indexConfigurationProvider = $indexConfigurationProvider;
     }
 
     public function resolveForIndex(string $index): string
     {
-        if (isset($this->fieldsByIndex[$index])) {
-            return $this->fieldsByIndex[$index];
+        $fieldsByIndex = $this->fieldsByIndex();
+
+        if (isset($fieldsByIndex[$index])) {
+            return $fieldsByIndex[$index];
         }
 
-        foreach ($this->fieldsByIndex as $logical => $field) {
+        foreach ($fieldsByIndex as $logical => $field) {
             if (str_ends_with($index, $logical)) {
                 return $field;
             }
         }
 
         return self::FALLBACK;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function fieldsByIndex(): array
+    {
+        $fieldsByIndex = [];
+
+        foreach ($this->indexConfigurationProvider->getIndexes() as $def) {
+            if (!is_array($def) || !isset($def['index'], $def['defaultSortField'])) {
+                continue;
+            }
+
+            $fieldsByIndex[$def['index']] = $def['defaultSortField'];
+        }
+
+        return $fieldsByIndex;
     }
 }
