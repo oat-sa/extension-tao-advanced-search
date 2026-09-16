@@ -256,6 +256,44 @@ class ElasticSearchTest extends TestCase
         $resultSet = $this->sut->query('item', $validType);
     }
 
+    public function testQueryAcceptsClassObjectAsType(): void
+    {
+        $typeUri = 'http://www.tao.lu/Ontologies/TAOItem.rdf#Item';
+        $class = $this->createMock(\core_kernel_classes_Class::class);
+        $class->expects($this->once())
+            ->method('getUri')
+            ->willReturn($typeUri);
+
+        $queryParams = [
+            'index' => 'items',
+            'size' => 30,
+            'from' => 0,
+            'client' => ['ignore' => 404],
+            'body' => '{}',
+        ];
+
+        $this->queryBuilder->expects($this->once())
+            ->method('getSearchParams')
+            ->with('adasd', $typeUri, 0, 30, 'id', 'DESC')
+            ->willReturn($queryParams);
+
+        $this->logger->expects($this->once())->method('debug');
+
+        $responseMock = $this->createMock(ResponseElasticsearch::class);
+        $responseMock->method('asArray')->willReturn([
+            'hits' => [
+                'hits' => [],
+                'total' => ['value' => 0],
+            ],
+        ]);
+        $this->client->expects($this->once())
+            ->method('search')
+            ->willReturn($responseMock);
+
+        $resultSet = $this->sut->query('adasd', $class, 0, '30', 'id', 'DESC');
+        $this->assertInstanceOf(ResultSet::class, $resultSet);
+    }
+
     public function testAggregate()
     {
         $aggQuery = new AggregationQuery(
