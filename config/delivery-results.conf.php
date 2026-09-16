@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 return [
     'index' => 'delivery-results',
+    'defaultSortField' => 'delivery_execution_start_time.raw',
     'body' => [
         'mappings' => [
             'properties' => [

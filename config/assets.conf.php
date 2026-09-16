@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 return [
     'index' => 'assets',
+    'defaultSortField' => 'updated_at.raw',
     'body' => [
         'mappings' => [
             'properties' => [

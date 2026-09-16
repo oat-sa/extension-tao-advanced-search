@@ -141,7 +141,7 @@ class IndexRecreateRepopulate extends ScriptAction
             if ($index['index'] == $chosenIndex) {
                 $index['index'] = $this->prefixer->prefix($index['index']);
                 $aliases[$chosenIndex] = current(array_keys($index['body']['aliases']));
-                unset($index['body']['aliases']);
+                unset($index['body']['aliases'], $index['defaultSortField']);
                 $this->client->indices()->create($index);
 
                 $this->client->indices()->updateAliases(
