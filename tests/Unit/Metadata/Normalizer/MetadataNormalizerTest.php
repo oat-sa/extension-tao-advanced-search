@@ -218,6 +218,7 @@ class MetadataNormalizerTest extends TestCase
         $this->assertEquals(
             [
                 'type' => 'property-list',
+                'label' => 'example Label',
                 'parentClass' => 'exampleParentClassUri',
                 'classPath' => [],
                 'propertiesTree' => [

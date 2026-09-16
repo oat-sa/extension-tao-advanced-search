@@ -27,6 +27,7 @@ use oat\oatbox\session\SessionService;
 use oat\taoAdvancedSearch\model\Metadata\Service\AdvancedSearchSettingsService;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\QueryBlock;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexDefaultSortFieldResolver;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\LegacyResourceQueryConditionsBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesFeature;
@@ -77,6 +78,7 @@ class QueryBuilder
     private LegacyResourceQueryConditionsBuilder $legacyResourceQueryConditionsBuilder;
     private StructuredResourceSearchQueryBuilder $structuredResourceSearchQueryBuilder;
     private ResourceQueryBlockSupport $resourceQueryBlockSupport;
+    private IndexDefaultSortFieldResolver $indexDefaultSortFieldResolver;
 
     public function __construct(
         LoggerInterface $logger,
@@ -87,7 +89,8 @@ class QueryBuilder
         NestedAttributesFeature $nestedAttributesFeature,
         LegacyResourceQueryConditionsBuilder $legacyResourceQueryConditionsBuilder,
         StructuredResourceSearchQueryBuilder $structuredResourceSearchQueryBuilder,
-        ResourceQueryBlockSupport $resourceQueryBlockSupport
+        ResourceQueryBlockSupport $resourceQueryBlockSupport,
+        IndexDefaultSortFieldResolver $indexDefaultSortFieldResolver
     ) {
         $this->logger = $logger;
         $this->permission = $permission;
@@ -98,6 +101,7 @@ class QueryBuilder
         $this->legacyResourceQueryConditionsBuilder = $legacyResourceQueryConditionsBuilder;
         $this->structuredResourceSearchQueryBuilder = $structuredResourceSearchQueryBuilder;
         $this->resourceQueryBlockSupport = $resourceQueryBlockSupport;
+        $this->indexDefaultSortFieldResolver = $indexDefaultSortFieldResolver;
     }
 
     public function getSearchParams(
@@ -118,20 +122,25 @@ class QueryBuilder
 
         $blocks = preg_split('/( AND )/i', $queryString);
         $index = $this->getIndexByType($type);
+        $order = $this->resolveSortField($order, $index);
+        $sort = [
+            $order => [
+                'order' => $dir,
+                'missing' => '_last',
+                'unmapped_type' => 'keyword',
+            ],
+        ];
+        // Secondary tie-break when primary is not already the default column.
+        if ($order !== AdvancedSearchSettingsService::DEFAULT_SORT_COLUMN) {
+            $sort[AdvancedSearchSettingsService::DEFAULT_SORT_COLUMN] = [
+                'order' => $dir,
+                'missing' => '_last',
+                'unmapped_type' => 'keyword',
+            ];
+        }
         $query = [
             'query' => $this->buildRootQuery($index, $blocks),
-            'sort' => [
-                $order => [
-                    'order' => $dir,
-                    'missing' => '_last',
-                    'unmapped_type' => 'long',
-                ],
-                AdvancedSearchSettingsService::DEFAULT_SORT_COLUMN => [
-                    'order' => $dir,
-                    'missing' => '_last',
-                    'unmapped_type' => 'long',
-                ],
-            ],
+            'sort' => $sort,
         ];
 
         $params = [
@@ -153,7 +162,7 @@ class QueryBuilder
      */
     private function buildRootQuery(string $index, array $blocks): array
     {
-        if ($index === IndexerInterface::DELIVERY_RESULTS_INDEX) {
+        if ($this->isDeliveryResultsIndex($index)) {
             return $this->buildLegacyFlatQueryString($this->getResultsQueryStringFragments($blocks));
         }
 
@@ -236,7 +245,30 @@ class QueryBuilder
             return $this->prefixer->prefix(self::STRUCTURE_TO_INDEX_MAP[$type]);
         }
 
+        if (isset(IndexerInterface::AVAILABLE_INDEXES[$type])) {
+            return $this->prefixer->prefix(IndexerInterface::AVAILABLE_INDEXES[$type]);
+        }
+
         return IndexerInterface::UNCLASSIFIEDS_DOCUMENTS_INDEX;
+    }
+
+    private function isDeliveryResultsIndex(string $index): bool
+    {
+        return $index === IndexerInterface::DELIVERY_RESULTS_INDEX
+            || str_ends_with($index, IndexerInterface::DELIVERY_RESULTS_INDEX);
+    }
+
+    /**
+     * ES meta `_id` has no doc values; sorting it loads fielddata into heap.
+     * Map id/_id to the index conf {@code defaultSortField} (no reindex).
+     */
+    private function resolveSortField(string $order, string $index): string
+    {
+        if ($order !== '_id' && $order !== 'id') {
+            return $order;
+        }
+
+        return $this->indexDefaultSortFieldResolver->resolveForIndex($index);
     }
 
     /**
