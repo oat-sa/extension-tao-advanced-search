@@ -151,7 +151,14 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
     public function query($queryString, $type, $start = 0, $count = 10, $order = 'id', $dir = 'DESC'): ResultSet
     {
         try {
-            $query = $this->queryBuilder->getSearchParams($queryString, $type, $start, $count, $order, $dir);
+            $query = $this->queryBuilder->getSearchParams(
+                (string) $queryString,
+                $this->normalizeQueryType($type),
+                (int) $start,
+                (int) $count,
+                (string) $order,
+                (string) $dir
+            );
             $this->logger->debug(sprintf('Elasticsearch Query %s', json_encode($query)));
 
             return $this->searchResultNormalizer->normalizeByByResultSet(
@@ -355,6 +362,20 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
     private function getIndexes(): array
     {
         return $this->indexConfigurationProvider->getIndexes();
+    }
+
+    /**
+     * SearchProxy / ListResourceLookup pass a Class; structure UIs pass a string.
+     *
+     * @param mixed $type
+     */
+    private function normalizeQueryType($type): string
+    {
+        if ($type instanceof \core_kernel_classes_Resource) {
+            return $type->getUri();
+        }
+
+        return (string) $type;
     }
 
     private function hasHitsDefined(array $elasticResult): bool
