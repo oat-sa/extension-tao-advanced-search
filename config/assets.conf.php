@@ -62,6 +62,10 @@ return [
                     'type' => 'keyword',
                     'ignore_above' => 256,
                 ],
+                'mime_type' => [
+                    'type' => 'keyword',
+                    'ignore_above' => 256,
+                ],
                 'read_access' => [
                     'type' => 'keyword',
                     'ignore_above' => 256,

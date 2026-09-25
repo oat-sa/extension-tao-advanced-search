@@ -25,6 +25,7 @@ namespace oat\taoAdvancedSearch\model\Index\ServiceProvider;
 use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\taoAdvancedSearch\model\Index\Service\AdvancedSearchIndexDocumentBuilder;
+use oat\taoAdvancedSearch\model\Index\Service\AssetIndexDocumentBuilder;
 use oat\taoAdvancedSearch\model\Test\Normalizer\TestNormalizer;
 use oat\taoMediaManager\model\relation\service\IdDiscoverService;
 use oat\taoQtiItem\model\qti\parser\ElementReferencesExtractor;
@@ -41,10 +42,16 @@ class IndexServiceProvider implements ContainerServiceProviderInterface
     {
         $services = $configurator->services();
 
+        $services->set(AssetIndexDocumentBuilder::class, AssetIndexDocumentBuilder::class)
+            ->args([
+                service(IndexDocumentBuilderInterface::class),
+            ])
+            ->public();
+
         $services->set(AdvancedSearchIndexDocumentBuilder::class, AdvancedSearchIndexDocumentBuilder::class)
             ->args([
                 service(ElementReferencesExtractor::class),
-                service(IndexDocumentBuilderInterface::class),
+                service(AssetIndexDocumentBuilder::class),
                 service(IdDiscoverService::class),
                 service(TestNormalizer::class),
             ])->public();

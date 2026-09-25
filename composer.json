@@ -12,6 +12,10 @@
     "issues": "http://forge.taotesting.com"
   },
   "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/oat-sa/extension-tao-item.git"
+    }
   ],
   "keywords": [
     "tao",
@@ -23,6 +27,7 @@
     "tao-extension-name": "taoAdvancedSearch"
   },
   "minimum-stability": "dev",
+  "prefer-stable": false,
   "require": {
     "oat-sa/oatbox-extension-installer": "~1.1||dev-master",
     "ext-json": "*",
@@ -33,6 +38,7 @@
     "oat-sa/extension-tao-outcome": ">=13.0.0",
     "oat-sa/extension-tao-test": ">=16.4.0",
     "oat-sa/extension-tao-mediamanager": ">=12.32.1",
+    "oat-sa/extension-tao-item": "dev-feat/AUT-4666-asset-search-api as 13.99.99",
     "elasticsearch/elasticsearch": "^8.0"
   },
   "require-dev": {
