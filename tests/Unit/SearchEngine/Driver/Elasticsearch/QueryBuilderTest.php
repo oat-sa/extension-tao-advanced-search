@@ -28,7 +28,10 @@ use oat\oatbox\log\LoggerService;
 use oat\oatbox\session\SessionService;
 use oat\oatbox\user\User;
 use oat\tao\model\featureFlag\FeatureFlagCheckerInterface;
+use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\QueryBuilder;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexConfigurationProvider;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexDefaultSortFieldResolver;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\LegacyResourceQueryConditionsBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesFeature;
@@ -37,6 +40,7 @@ use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesQueryServic
 use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceQueryBlockSupport;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\StructuredResourceSearchQueryBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Specification\UseAclSpecification;
+use oat\taoResultServer\models\classes\ResultService;
 use PHPUnit\Framework\TestCase;
 
 class QueryBuilderTest extends TestCase
@@ -115,9 +119,9 @@ class QueryBuilderTest extends TestCase
                 'ontologies\\/tao.rdf#i5f64514f1c36110793759fc28c0105b\\" OR' .
                 ' \\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#BackOfficeRole\\" OR ' .
                 '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#ItemsManagerRole\\"))"}},' .
-                '"sort":{"_id":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":' .
-                '"_last","unmapped_type":"long"}}}'
+                '"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"}}}'
             ],
             'Simple query' => [
                 'test',
@@ -126,9 +130,9 @@ class QueryBuilderTest extends TestCase
                 'ontologies\\/tao.rdf#i5f64514f1c36110793759fc28c0105b\\" OR ' .
                 '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#BackOfficeRole\\" OR ' .
                 '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#ItemsManagerRole\\"))"}},' .
-                '"sort":{"_id":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"}}}'
+                '"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"}}}'
             ],
             'Query specific field' => [
                 'label:test',
@@ -137,8 +141,9 @@ class QueryBuilderTest extends TestCase
                 'ontologies\\/tao.rdf#i5f64514f1c36110793759fc28c0105b\\" OR ' .
                 '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#BackOfficeRole\\" OR ' .
                 '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#ItemsManagerRole\\"))"}},' .
-                '"sort":{"_id":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
+                '"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"}}}'
             ],
             'Query specific field (variating case)' => [
                 'LaBeL:test',
@@ -147,8 +152,9 @@ class QueryBuilderTest extends TestCase
                 'ontologies\\/tao.rdf#i5f64514f1c36110793759fc28c0105b\\" OR ' .
                 '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#BackOfficeRole\\" OR ' .
                 '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#ItemsManagerRole\\"))"}},' .
-                '"sort":{"_id":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
+                '"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"}}}'
             ],
             'Query custom field (using underscore)' => [
                 'custom_field:test',
@@ -161,8 +167,9 @@ class QueryBuilderTest extends TestCase
                 'ontologies\\/tao.rdf#i5f64514f1c36110793759fc28c0105b\\" OR \\"http:\\/\\/www.tao.lu\\/Ontologies\\/' .
                 'TAOItem.rdf#BackOfficeRole\\" OR ' .
                 '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#ItemsManagerRole\\"))"}},' .
-                '"sort":{"_id":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
+                '"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"}}}'
             ],
             'Query custom field (using dash)' => [
                 'custom_field:test',
@@ -175,9 +182,9 @@ class QueryBuilderTest extends TestCase
                 'ontologies\\/tao.rdf#i5f64514f1c36110793759fc28c0105b\\" OR ' .
                 '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#BackOfficeRole\\" OR ' .
                 '\\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#ItemsManagerRole\\"))"}},' .
-                '"sort":{"_id":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"}}}'
+                '"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"}}}'
             ],
             'Query custom field (using space)' => [
                 'custom field:test',
@@ -192,9 +199,9 @@ class QueryBuilderTest extends TestCase
                     '#i5f64514f1c36110793759fc28c0105b\" OR ' .
                     '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" ' .
                     'OR \"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},' .
-                    '"sort":{"_id":{"order":"DESC",' .
-                    '"missing":"_last","unmapped_type":"long"},"label.raw":' .
-                    '{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
+                    '"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                    '"unmapped_type":"keyword"},"label.raw":{"order":"DESC",' .
+                    '"missing":"_last","unmapped_type":"keyword"}}}',
             ],
             'Query logic operator (Uppercase)' => [
                 'label:test AND custom_field:test',
@@ -208,9 +215,9 @@ class QueryBuilderTest extends TestCase
                 '\\/tao.docker.localhost\\/ontologies\\/tao.rdf#i5f64514f1c36110793759fc28c0105b\\"' .
                 ' OR \\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#' .
                 'BackOfficeRole\\" OR \\"http:\\/\\/www.tao.lu\\/Ontologies\\/TAOItem.rdf#ItemsManagerRole\\"))"}}' .
-                ',"sort":{"_id":{"order":"DESC",' .
-                '"missing":"_last","unmapped_type":"long"},"label.raw":' .
-                '{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
+                ',"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":{"order":"DESC",' .
+                '"missing":"_last","unmapped_type":"keyword"}}}'
             ],
             'Query logic operator (Lowercase)' => [
                 'label:test and custom_field:test',
@@ -223,9 +230,9 @@ class QueryBuilderTest extends TestCase
                 '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
                 '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
                 '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},' .
-                '"sort":{"_id":{"order":"DESC",' .
-                '"missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"}}}'
+                '"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":{"order":"DESC",' .
+                '"missing":"_last","unmapped_type":"keyword"}}}'
             ],
             'Query logic operator (Mixed)' => [
                 'label:test aNd custom_field:test',
@@ -238,9 +245,9 @@ class QueryBuilderTest extends TestCase
                 '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
                 '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
                 '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},' .
-                '"sort":{"_id":{"order":"DESC",' .
-                '"missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"}}}'
+                '"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":{"order":"DESC",' .
+                '"missing":"_last","unmapped_type":"keyword"}}}'
             ],
             'Query using OR logic operator to join list field values' => [
                 'label:test AND custom_field:test LOGIC_OR custom_field:test1 ',
@@ -258,9 +265,10 @@ class QueryBuilderTest extends TestCase
                 'OR Readonly_custom_field:\"test1\")) AND (read_access:' .
                 '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
                 '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
-                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":' .
-                '{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing"' .
-                ':"_last","unmapped_type":"long"}}}',
+                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},' .
+                '"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":' .
+                '{"order":"DESC","missing":"_last","unmapped_type":"keyword"}}}',
             ],
             'Query using AND logic operator to join list field values' => [
                 'label:test AND custom_field:test LOGIC_AND custom_field:test1 ',
@@ -278,9 +286,10 @@ class QueryBuilderTest extends TestCase
                 'OR Readonly_custom_field:\"test1\")) AND (read_access:' .
                 '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
                 '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
-                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":' .
-                '{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing"' .
-                ':"_last","unmapped_type":"long"}}}',
+                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},' .
+                '"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":' .
+                '{"order":"DESC","missing":"_last","unmapped_type":"keyword"}}}',
             ],
             'Query using NOT logic operator to join list field values' => [
                 'label:test AND custom_field:test LOGIC_NOT custom_field:test1 ',
@@ -299,9 +308,10 @@ class QueryBuilderTest extends TestCase
                 'OR Readonly_custom_field:\"test1\")) AND (read_access:' .
                 '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
                 '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
-                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},"sort":{"_id":' .
-                '{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing"' .
-                ':"_last","unmapped_type":"long"}}}',
+                '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},' .
+                '"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":' .
+                '{"order":"DESC","missing":"_last","unmapped_type":"keyword"}}}',
             ],
             'Query URIs' => [
                 'https://test-act.docker.localhost/ontologies/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a',
@@ -310,9 +320,9 @@ class QueryBuilderTest extends TestCase
                 '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
                 '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
                 '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#' .
-                'ItemsManagerRole\"))"}},"sort":{"_id":{"order":"DESC",' .
-                '"missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"}}}'
+                'ItemsManagerRole\"))"}},"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":{"order":"DESC",' .
+                '"missing":"_last","unmapped_type":"keyword"}}}'
             ],
             'Query Field with URI' => [
                 'delivery: https://test-act.docker.localhost/ontologies/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a',
@@ -322,9 +332,9 @@ class QueryBuilderTest extends TestCase
                 '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
                 '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
                 '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#' .
-                'ItemsManagerRole\"))"}},"sort":{"_id":{"order":"DESC",' .
-                '"missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"}}}'
+                'ItemsManagerRole\"))"}},"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":{"order":"DESC",' .
+                '"missing":"_last","unmapped_type":"keyword"}}}'
             ],
             'Query term with a backslash' => [
                 'some\ term',
@@ -333,9 +343,9 @@ class QueryBuilderTest extends TestCase
                 '(\"https:\/\/tao.docker.localhost\/ontologies\/tao.rdf#i5f64514f1c36110793759fc28c0105b\" OR ' .
                 '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#BackOfficeRole\" OR ' .
                 '\"http:\/\/www.tao.lu\/Ontologies\/TAOItem.rdf#ItemsManagerRole\"))"}},' .
-                '"sort":{"_id":{"order":"DESC",' .
-                '"missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"}}}'
+                '"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":{"order":"DESC",' .
+                '"missing":"_last","unmapped_type":"keyword"}}}'
             ],
         ];
     }
@@ -367,25 +377,23 @@ class QueryBuilderTest extends TestCase
             'Simple query' => [
                 'test',
                 '{"query":{"query_string":{"default_operator":"AND","query":"(\"test\")"}},' .
-                '"sort":{"_id":{"order":"DESC",' .
-                '"missing":"_last","unmapped_type":"long"},"label.raw":' .
-                '{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"}}}'
+                '"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":{"order":"DESC",' .
+                '"missing":"_last","unmapped_type":"keyword"}}}'
             ],
             'Query specific field' => [
                 'label:test',
                 '{"query":{"query_string":{"default_operator":"AND","query":' .
-                '"(label:\"test\")"}},"sort":{"_id":{"order":"DESC",' .
-                '"missing":"_last","unmapped_type":"long"},"label.raw":' .
-                '{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"}}}'
+                '"(label:\"test\")"}},"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":{"order":"DESC",' .
+                '"missing":"_last","unmapped_type":"keyword"}}}'
             ],
             'Query specific field (variating case)' => [
                 'LaBeL:test',
                 '{"query":{"query_string":{"default_operator":"AND","query"' .
-                ':"(label:\"test\")"}},"sort":{"_id":{"order":"DESC",' .
-                '"missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"}}}'
+                ':"(label:\"test\")"}},"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":{"order":"DESC",' .
+                '"missing":"_last","unmapped_type":"keyword"}}}'
             ],
             'Query custom field (using underscore)' => [
                 'custom_field:test',
@@ -396,9 +404,9 @@ class QueryBuilderTest extends TestCase
                 'OR CheckBox_custom_field:\"test\" OR RadioBox_custom_field:' .
                 '\"test\" OR SearchTextBox_custom_field:\"test\" ' .
                 'OR SearchDropdown_custom_field:\"test\" OR Readonly_custom_field:\"test\")"}},' .
-                '"sort":{"_id":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"},"label.raw":{"order":' .
-                '"DESC","missing":"_last","unmapped_type":"long"}}}'
+                '"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"}}}'
             ],
             'Query custom field (using dash)' => [
                 'custom_field:test',
@@ -406,8 +414,9 @@ class QueryBuilderTest extends TestCase
                 'TextArea_custom_field:\"test\" OR TextBox_custom_field:\"test\" OR ComboBox_custom_field:\"test\" ' .
                 'OR CheckBox_custom_field:\"test\" OR RadioBox_custom_field:' .
                 '\"test\" OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\" ' .
-                'OR Readonly_custom_field:\"test\")"}},"sort":{"_id":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
+                'OR Readonly_custom_field:\"test\")"}},"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"}}}'
             ],
             'Query custom field (using space)' => [
                 'custom field:test',
@@ -415,8 +424,10 @@ class QueryBuilderTest extends TestCase
                     'field:\"test\" OR TextArea_custom field:\"test\" OR TextBox_custom field:\"test\" ' .
                     'OR ComboBox_custom field:\"test\" OR CheckBox_custom field:\"test\" OR RadioBox_custom ' .
                     'field:\"test\" OR SearchTextBox_custom field:\"test\" OR SearchDropdown_custom field:' .
-                    '\"test\" OR Readonly_custom field:\"test\")"}},"sort":{"_id":{"order":"DESC","missing":"_last",' .
-                    '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}',
+                    '\"test\" OR Readonly_custom field:\"test\")"}},' .
+                    '"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                    '"unmapped_type":"keyword"},"label.raw":{"order":"DESC","missing":"_last",' .
+                    '"unmapped_type":"keyword"}}}',
             ],
             'Query logic operator (Uppercase)' => [
                 'label:test AND custom_field:test',
@@ -424,9 +435,10 @@ class QueryBuilderTest extends TestCase
                 'AND (HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR ' .
                 'TextBox_custom_field:\"test\" OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:' .
                 '\"test\" OR RadioBox_custom_field:\"test\" OR SearchTextBox_custom_field:\"test\" OR ' .
-                'SearchDropdown_custom_field:\"test\" OR Readonly_custom_field:\"test\")"}},"sort":{"_id":{"order":' .
-                '"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"}}}',
+                'SearchDropdown_custom_field:\"test\" OR Readonly_custom_field:\"test\")"}},' .
+                '"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":{"order":' .
+                '"DESC","missing":"_last","unmapped_type":"keyword"}}}',
             ],
             'Query logic operator (Lowercase)' => [
                 'label:test and custom_field:test',
@@ -434,9 +446,10 @@ class QueryBuilderTest extends TestCase
                 '(HTMLArea_custom_field:\"test\" OR TextArea_custom_field:\"test\" OR TextBox_custom_field:' .
                 '\"test\" OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\" OR ' .
                 'RadioBox_custom_field:\"test\" OR SearchTextBox_custom_field:\"test\" OR ' .
-                'SearchDropdown_custom_field:\"test\" OR Readonly_custom_field:\"test\")"}},"sort":{"_id":{"order":' .
-                '"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"}}}',
+                'SearchDropdown_custom_field:\"test\" OR Readonly_custom_field:\"test\")"}},' .
+                '"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":{"order":' .
+                '"DESC","missing":"_last","unmapped_type":"keyword"}}}',
             ],
             'Query logic operator (Mixed)' => [
                 'label:test aNd custom_field:test',
@@ -445,9 +458,9 @@ class QueryBuilderTest extends TestCase
                 'OR ComboBox_custom_field:\"test\" OR CheckBox_custom_field:\"test\"' .
                 ' OR RadioBox_custom_field:\"test\" ' .
                 'OR SearchTextBox_custom_field:\"test\" OR SearchDropdown_custom_field:\"test\" ' .
-                'OR Readonly_custom_field:\"test\")"}},"sort":{"_id":' .
-                '{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing"' .
-                ':"_last","unmapped_type":"long"}}}',
+                'OR Readonly_custom_field:\"test\")"}},"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":' .
+                '{"order":"DESC","missing":"_last","unmapped_type":"keyword"}}}',
             ],
             'Query using OR logic operator to join list field values' => [
                 'label:test AND custom_field:test LOGIC_OR custom_field:test1 ',
@@ -460,9 +473,9 @@ class QueryBuilderTest extends TestCase
                 'OR TextArea_custom_field:\"test1\" OR TextBox_custom_field:\"test1\" ' .
                 'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
                 ' OR RadioBox_custom_field:\"test1\" OR SearchTextBox_custom_field:\"test1\" ' .
-                'OR SearchDropdown_custom_field:\"test1\" OR Readonly_custom_field:\"test1\"))"}},"sort":{"_id":' .
-                '{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing"' .
-                ':"_last","unmapped_type":"long"}}}',
+                'OR SearchDropdown_custom_field:\"test1\" OR Readonly_custom_field:\"test1\"))"}},' .
+                '"sort":{"updated_at.raw":{"order":"DESC","missing":"_last","unmapped_type":"keyword"},"label.raw":' .
+                '{"order":"DESC","missing":"_last","unmapped_type":"keyword"}}}',
             ],
             'Query using AND logic operator to join list field values' => [
                 'label:test AND custom_field:test LOGIC_AND custom_field:test1 ',
@@ -477,9 +490,9 @@ class QueryBuilderTest extends TestCase
                 'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
                 ' OR RadioBox_custom_field:\"test1\" ' .
                 'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\" ' .
-                'OR Readonly_custom_field:\"test1\"))"}},"sort":{"_id":' .
-                '{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing"' .
-                ':"_last","unmapped_type":"long"}}}',
+                'OR Readonly_custom_field:\"test1\"))"}},"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":' .
+                '{"order":"DESC","missing":"_last","unmapped_type":"keyword"}}}',
             ],
             'Query using NOT logic operator to join list field values' => [
                 'label:test AND custom_field:test LOGIC_NOT custom_field:test1 ',
@@ -494,24 +507,26 @@ class QueryBuilderTest extends TestCase
                 'OR ComboBox_custom_field:\"test1\" OR CheckBox_custom_field:\"test1\"' .
                 ' OR RadioBox_custom_field:\"test1\" ' .
                 'OR SearchTextBox_custom_field:\"test1\" OR SearchDropdown_custom_field:\"test1\" ' .
-                'OR Readonly_custom_field:\"test1\"))"}},"sort":{"_id":' .
-                '{"order":"DESC","missing":"_last","unmapped_type":"long"},"label.raw":{"order":"DESC","missing"' .
-                ':"_last","unmapped_type":"long"}}}',
+                'OR Readonly_custom_field:\"test1\"))"}},"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":' .
+                '{"order":"DESC","missing":"_last","unmapped_type":"keyword"}}}',
             ],
             'Query URIs' => [
                 'https://test-act.docker.localhost/ontologies/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a',
                 '{"query":{"query_string":{"default_operator":"AND","query":"(\"https:\/\/test-act.docker.localhost' .
                 '\/ontologies\/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a\")"}},' .
-                '"sort":{"_id":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
+                '"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"}}}'
             ],
             'Query Field with URI' => [
                 'delivery: https://test-act.docker.localhost/ontologies/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a',
                 '{"query":{"query_string":{"default_operator":"AND","query":' .
                 '"(delivery:\"https:\/\/test-act.docker.localhost' .
                 '\/ontologies\/tao.rdf#i5f200ed20e80a8c259ebe410db7f6a\")"}},' .
-                '"sort":{"_id":{"order":"DESC","missing":"_last",' .
-                '"unmapped_type":"long"},"label.raw":{"order":"DESC","missing":"_last","unmapped_type":"long"}}}'
+                '"sort":{"updated_at.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"},"label.raw":{"order":"DESC","missing":"_last",' .
+                '"unmapped_type":"keyword"}}}'
             ],
         ];
     }
@@ -519,8 +534,9 @@ class QueryBuilderTest extends TestCase
     /**
      * Legacy flat query_string path (master behaviour). FEATURE_FLAG_ADVANCED_SEARCH_DISABLE_NESTED_ATTRIBUTES enabled.
      */
-    private function createQueryBuilderWithNestedAttributesDisabled(): QueryBuilder
-    {
+    private function createQueryBuilderWithNestedAttributesDisabled(
+        ?IndexConfigurationProvider $indexConfigurationProvider = null
+    ): QueryBuilder {
         $featureFlagChecker = $this->createMock(FeatureFlagCheckerInterface::class);
         $featureFlagChecker
             ->method('isEnabled')
@@ -538,7 +554,10 @@ class QueryBuilderTest extends TestCase
             new NestedAttributesFeature($featureFlagChecker, new NestedAttributesIndexResolver()),
             new LegacyResourceQueryConditionsBuilder($blockSupport),
             new StructuredResourceSearchQueryBuilder($blockSupport, new NestedAttributesQueryService()),
-            $blockSupport
+            $blockSupport,
+            new IndexDefaultSortFieldResolver(
+                $indexConfigurationProvider ?? new IndexConfigurationProvider()
+            )
         );
     }
 
@@ -557,6 +576,146 @@ class QueryBuilderTest extends TestCase
 
         $body = json_decode($params['body'], true, 512, JSON_THROW_ON_ERROR);
         $this->assertSame(['match_all' => []], $body['query']);
+    }
+
+    public function testSortRemapsSystemIdByIndex(): void
+    {
+        $this->createAccessControlMock(false);
+
+        foreach (['_id', 'id'] as $order) {
+            $params = $this->subject->getSearchParams('label:test', 'items', 0, 10, $order, 'DESC');
+            $body = json_decode($params['body'], true, 512, JSON_THROW_ON_ERROR);
+
+            $this->assertSame(['updated_at.raw', 'label.raw'], array_keys($body['sort']));
+            $this->assertArrayNotHasKey('_id', $body['sort']);
+            $this->assertSame('keyword', $body['sort']['updated_at.raw']['unmapped_type']);
+            $this->assertSame('keyword', $body['sort']['label.raw']['unmapped_type']);
+        }
+
+        foreach (['_id', 'id'] as $order) {
+            $params = $this->subject->getSearchParams('label:test', 'results', 0, 10, $order, 'DESC');
+            $body = json_decode($params['body'], true, 512, JSON_THROW_ON_ERROR);
+
+            $this->assertSame(
+                ['delivery_execution_start_time.raw', 'label.raw'],
+                array_keys($body['sort'])
+            );
+            $this->assertArrayNotHasKey('_id', $body['sort']);
+            $this->assertSame(
+                'keyword',
+                $body['sort']['delivery_execution_start_time.raw']['unmapped_type']
+            );
+        }
+
+        $params = $this->subject->getSearchParams('label:test', 'items', 0, 10, 'delivery.raw', 'DESC');
+        $body = json_decode($params['body'], true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertSame(['delivery.raw', 'label.raw'], array_keys($body['sort']));
+        $this->assertArrayNotHasKey('_id', $body['sort']);
+        $this->assertSame('keyword', $body['sort']['delivery.raw']['unmapped_type']);
+        $this->assertSame('keyword', $body['sort']['label.raw']['unmapped_type']);
+    }
+
+    public function testCanonicalDeliveryResultClassUriResolvesIndexAndIdSort(): void
+    {
+        $this->createAccessControlMock(false);
+
+        $this->prefixer = $this->createMock(IndexPrefixer::class);
+        $this->prefixer
+            ->expects($this->atLeastOnce())
+            ->method('prefix')
+            ->with(IndexerInterface::DELIVERY_RESULTS_INDEX)
+            ->willReturn('tenant_delivery-results');
+        $this->subject = $this->createQueryBuilderWithNestedAttributesDisabled();
+
+        $params = $this->subject->getSearchParams(
+            'label:test',
+            ResultService::DELIVERY_RESULT_CLASS_URI,
+            0,
+            10,
+            '_id',
+            'DESC'
+        );
+
+        $this->assertSame('tenant_delivery-results', $params['index']);
+        $this->assertNotSame(IndexerInterface::UNCLASSIFIEDS_DOCUMENTS_INDEX, $params['index']);
+
+        $body = json_decode($params['body'], true, 512, JSON_THROW_ON_ERROR);
+        $this->assertSame(
+            ['delivery_execution_start_time.raw', 'label.raw'],
+            array_keys($body['sort'])
+        );
+        $this->assertArrayNotHasKey('updated_at.raw', $body['sort']);
+        $this->assertArrayNotHasKey('_id', $body['sort']);
+    }
+
+    public function testPrefixedCanonicalDeliveryResultParentClassesUsesResultsPath(): void
+    {
+        $this->createAccessControlMock(false);
+
+        $this->prefixer = $this->createMock(IndexPrefixer::class);
+        $this->prefixer
+            ->expects($this->atLeastOnce())
+            ->method('prefix')
+            ->with(IndexerInterface::DELIVERY_RESULTS_INDEX)
+            ->willReturn('tenant_delivery-results');
+        $this->subject = $this->createQueryBuilderWithNestedAttributesDisabled();
+
+        $params = $this->subject->getSearchParams(
+            'parent_classes:http://www.tao.lu/Ontologies/TAOResult.rdf#DeliveryResult',
+            ResultService::DELIVERY_RESULT_CLASS_URI,
+            0,
+            10,
+            '_id',
+            'DESC'
+        );
+
+        $this->assertSame('tenant_delivery-results', $params['index']);
+
+        $body = json_decode($params['body'], true, 512, JSON_THROW_ON_ERROR);
+        $this->assertSame(['match_all' => []], $body['query']);
+        $this->assertSame(
+            ['delivery_execution_start_time.raw', 'label.raw'],
+            array_keys($body['sort'])
+        );
+        $this->assertArrayNotHasKey('bool', $body['query']);
+    }
+
+    public function testSetIndexFileRefreshesIdSortFieldOnSubsequentQuery(): void
+    {
+        $this->createAccessControlMock(false);
+
+        $provider = new IndexConfigurationProvider([
+            [
+                'index' => IndexerInterface::ITEMS_INDEX,
+                'defaultSortField' => 'updated_at.raw',
+            ],
+        ]);
+        $this->subject = $this->createQueryBuilderWithNestedAttributesDisabled($provider);
+
+        $params = $this->subject->getSearchParams('label:test', 'items', 0, 10, '_id', 'DESC');
+        $body = json_decode($params['body'], true, 512, JSON_THROW_ON_ERROR);
+        $this->assertSame(['updated_at.raw', 'label.raw'], array_keys($body['sort']));
+
+        $indexFile = tempnam(sys_get_temp_dir(), 'idx');
+        file_put_contents(
+            $indexFile,
+            '<?php return [[' .
+            "'index' => 'items'," .
+            "'defaultSortField' => 'custom_sort.raw'," .
+            ']];'
+        );
+
+        try {
+            $provider->setIndexFile($indexFile);
+            $params = $this->subject->getSearchParams('label:test', 'items', 0, 10, 'id', 'DESC');
+            $body = json_decode($params['body'], true, 512, JSON_THROW_ON_ERROR);
+            $this->assertSame(['custom_sort.raw', 'label.raw'], array_keys($body['sort']));
+            $this->assertArrayNotHasKey('_id', $body['sort']);
+            $this->assertArrayNotHasKey('updated_at.raw', $body['sort']);
+        } finally {
+            unlink($indexFile);
+        }
     }
 
     private function createAccessControlMock(bool $includeAccessControl): void

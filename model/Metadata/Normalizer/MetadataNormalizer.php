@@ -50,11 +50,14 @@ class MetadataNormalizer extends ConfigurableService implements NormalizerInterf
             );
         }
 
+        $label = $class->getLabel();
+
         return new IndexResource(
             $class->getUri(),
-            $class->getLabel(),
+            $label,
             [
                 'type' => 'property-list',
+                'label' => $label,
                 'parentClass' => $this->getParentClass($class),
                 'classPath' => $this->getClassPathFactory()->create($class),
                 'propertiesTree' => $this->getPropertiesFromClass($class),

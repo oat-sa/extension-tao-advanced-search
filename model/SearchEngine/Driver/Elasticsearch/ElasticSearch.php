@@ -38,14 +38,12 @@ use oat\taoAdvancedSearch\model\SearchEngine\IndexingResult;
 use oat\taoAdvancedSearch\model\SearchEngine\Normalizer\SearchResultNormalizer;
 use oat\taoAdvancedSearch\model\SearchEngine\Query;
 use oat\taoAdvancedSearch\model\SearchEngine\SearchResult;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexConfigurationProvider;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use Psr\Log\LoggerInterface;
 
 class ElasticSearch implements SearchInterface, TaoSearchInterface
 {
-    /** @var string */
-    private $indexFile;
-
     /** @var Client */
     private $client;
 
@@ -64,6 +62,9 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
     /** @var SearchResultNormalizer */
     private $searchResultNormalizer;
 
+    /** @var IndexConfigurationProvider */
+    private $indexConfigurationProvider;
+
     /** @var IndexingResult|null */
     private $lastIndexingResult;
 
@@ -73,7 +74,8 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
         IndexerInterface $indexer,
         IndexPrefixer $prefixer,
         LoggerInterface $logger,
-        SearchResultNormalizer $searchResultNormalizer
+        SearchResultNormalizer $searchResultNormalizer,
+        IndexConfigurationProvider $indexConfigurationProvider
     ) {
         $this->client = $client;
         $this->queryBuilder = $queryBuilder;
@@ -81,11 +83,12 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
         $this->prefixer = $prefixer;
         $this->logger = $logger;
         $this->searchResultNormalizer = $searchResultNormalizer;
+        $this->indexConfigurationProvider = $indexConfigurationProvider;
     }
 
     public function setIndexFile(string $indexFile): void
     {
-        $this->indexFile = $indexFile;
+        $this->indexConfigurationProvider->setIndexFile($indexFile);
     }
 
     public function countDocuments(string $index): int
@@ -145,14 +148,17 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
         return $this->buildAggregationSet($this->client->search($query)->asArray());
     }
 
-    public function query($queryString, $type, $start = 0, $count = 10, $order = '_id', $dir = 'DESC'): ResultSet
+    public function query($queryString, $type, $start = 0, $count = 10, $order = 'id', $dir = 'DESC'): ResultSet
     {
-        if ($order == 'id') {
-            $order = '_id';
-        }
-
         try {
-            $query = $this->queryBuilder->getSearchParams($queryString, $type, $start, $count, $order, $dir);
+            $query = $this->queryBuilder->getSearchParams(
+                (string) $queryString,
+                $this->normalizeQueryType($type),
+                (int) $start,
+                (int) $count,
+                (string) $order,
+                (string) $dir
+            );
             $this->logger->debug(sprintf('Elasticsearch Query %s', json_encode($query)));
 
             return $this->searchResultNormalizer->normalizeByByResultSet(
@@ -245,6 +251,7 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
                 continue;
             }
             $def['index'] = $prefixedIndexName;
+            unset($def['defaultSortField']);
             $this->client
                  ->indices()
                  ->create($def);
@@ -383,26 +390,21 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
 
     private function getIndexes(): array
     {
-        $indexFile = $this->getIndexFile();
-        $indexes = is_readable($indexFile) ? require $indexFile : [];
-        return $indexes;
+        return $this->indexConfigurationProvider->getIndexes();
     }
 
-    private function getIndexFile(): string
+    /**
+     * SearchProxy / ListResourceLookup pass a Class; structure UIs pass a string.
+     *
+     * @param mixed $type
+     */
+    private function normalizeQueryType($type): string
     {
-        return $this->indexFile ?? __DIR__ .
-        DIRECTORY_SEPARATOR .
-        '..' .
-        DIRECTORY_SEPARATOR .
-        '..' .
-        DIRECTORY_SEPARATOR .
-        '..' .
-        DIRECTORY_SEPARATOR .
-        '..' .
-        DIRECTORY_SEPARATOR .
-        'config' .
-        DIRECTORY_SEPARATOR .
-        'index.conf.php';
+        if ($type instanceof \core_kernel_classes_Resource) {
+            return $type->getUri();
+        }
+
+        return (string) $type;
     }
 
     private function hasHitsDefined(array $elasticResult): bool

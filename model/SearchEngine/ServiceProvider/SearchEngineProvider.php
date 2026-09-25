@@ -38,6 +38,8 @@ use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchI
 use oat\tao\model\featureFlag\FeatureFlagChecker;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\QueryBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Normalizer\SearchResultNormalizer;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexConfigurationProvider;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexDefaultSortFieldResolver;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\LegacyResourceQueryConditionsBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesDocumentBuilder;
@@ -147,6 +149,17 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
             )
             ->public();
 
+        $services->set(IndexConfigurationProvider::class, IndexConfigurationProvider::class)
+            ->public();
+
+        $services->set(IndexDefaultSortFieldResolver::class, IndexDefaultSortFieldResolver::class)
+            ->args(
+                [
+                    service(IndexConfigurationProvider::class),
+                ]
+            )
+            ->public();
+
         $services->set(QueryBuilder::class, QueryBuilder::class)
             ->args(
                 [
@@ -159,6 +172,7 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
                     service(LegacyResourceQueryConditionsBuilder::class),
                     service(StructuredResourceSearchQueryBuilder::class),
                     service(ResourceQueryBlockSupport::class),
+                    service(IndexDefaultSortFieldResolver::class),
                 ]
             )->public();
 
@@ -190,6 +204,7 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
                     service(IndexPrefixer::class),
                     service(LoggerService::SERVICE_ID),
                     service(SearchResultNormalizer::class),
+                    service(IndexConfigurationProvider::class),
                 ]
             )->public();
 

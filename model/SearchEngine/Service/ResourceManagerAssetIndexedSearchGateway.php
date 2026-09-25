@@ -46,8 +46,13 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
     // coderabbit: ignored — php -l clean; private helpers remain inside this class (brace FP)
     private const FETCH_MULTIPLIER = 3;
 
+    private const MIN_FETCH_BATCH_SIZE = 500;
+
     /** Hard stop so ACL post-filter cannot walk an unbounded index. */
     private const MAX_SCANNED_HITS = 2000;
+
+    /** @var string[] */
+    private const SEARCH_SOURCE_FIELDS = ['label', 'mime_type', 'location', 'updated_at'];
 
     /** @var ElasticSearch */
     private $elasticSearch;
@@ -105,6 +110,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                 $scopeLocation,
                 $query->getMetadataCriteria()
             );
+            $searchBody['_source'] = self::SEARCH_SOURCE_FIELDS;
 
             $pageSize = max(1, $query->getPageSize());
             $page = max(1, $query->getPage());
@@ -114,7 +120,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
             $esFrom = 0;
             $scannedHits = 0;
             $scanTruncated = false;
-            $batchSize = max($pageSize * self::FETCH_MULTIPLIER, 20);
+            $batchSize = max($pageSize * self::FETCH_MULTIPLIER, self::MIN_FETCH_BATCH_SIZE);
 
             while (true) {
                 $remainingBudget = self::MAX_SCANNED_HITS - $scannedHits;

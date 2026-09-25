@@ -38,6 +38,7 @@ use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\QueryBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Normalizer\SearchResultNormalizer;
 use oat\taoAdvancedSearch\model\SearchEngine\Query;
 use oat\taoAdvancedSearch\model\SearchEngine\SearchResult;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexConfigurationProvider;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\IndexPrefixer;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -88,7 +89,8 @@ class ElasticSearchTest extends TestCase
             $this->indexer,
             $this->prefixer,
             $this->logger,
-            $this->searchResultNormalizer
+            $this->searchResultNormalizer,
+            new IndexConfigurationProvider()
         );
 
         $this->sut->setIndexFile(__DIR__ . '/../../../../sample/testIndexes.conf.php');
@@ -254,6 +256,44 @@ class ElasticSearchTest extends TestCase
         $resultSet = $this->sut->query('item', $validType);
     }
 
+    public function testQueryAcceptsClassObjectAsType(): void
+    {
+        $typeUri = 'http://www.tao.lu/Ontologies/TAOItem.rdf#Item';
+        $class = $this->createMock(\core_kernel_classes_Class::class);
+        $class->expects($this->once())
+            ->method('getUri')
+            ->willReturn($typeUri);
+
+        $queryParams = [
+            'index' => 'items',
+            'size' => 30,
+            'from' => 0,
+            'client' => ['ignore' => 404],
+            'body' => '{}',
+        ];
+
+        $this->queryBuilder->expects($this->once())
+            ->method('getSearchParams')
+            ->with('adasd', $typeUri, 0, 30, 'id', 'DESC')
+            ->willReturn($queryParams);
+
+        $this->logger->expects($this->once())->method('debug');
+
+        $responseMock = $this->createMock(ResponseElasticsearch::class);
+        $responseMock->method('asArray')->willReturn([
+            'hits' => [
+                'hits' => [],
+                'total' => ['value' => 0],
+            ],
+        ]);
+        $this->client->expects($this->once())
+            ->method('search')
+            ->willReturn($responseMock);
+
+        $resultSet = $this->sut->query('adasd', $class, 0, '30', 'id', 'DESC');
+        $this->assertInstanceOf(ResultSet::class, $resultSet);
+    }
+
     public function testAggregate()
     {
         $aggQuery = new AggregationQuery(
@@ -394,7 +434,7 @@ class ElasticSearchTest extends TestCase
                     'ignore' => 404,
                 ],
             'body' => '{"query":{"query_string":{"default_operator":"AND","query":"(\\"item\\")"}},' .
-                '"sort":{"_id":{"order":"DESC"}}}',
+                '"sort":{"updated_at.raw":{"order":"DESC"},"label.raw":{"order":"DESC"}}}',
         ];
 
         $this->queryBuilder->expects($this->once())

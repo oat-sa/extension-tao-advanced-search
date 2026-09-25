@@ -200,9 +200,10 @@ class ResourceManagerAssetSearchQueryBuilder
     private function buildMetadataClause(string $propertyUri, string $value): array
     {
         $queryBlock = new QueryBlock($propertyUri, $value);
+        $flatQueryBlock = new QueryBlock($propertyUri, $this->escapeFlatQueryStringTerm($value));
         $legacyOrExact = $this->nestedAttributesQueryService->buildCustomFieldSearchQuery(
             $queryBlock,
-            $this->resourceQueryBlockSupport->buildFlatCustomMetadataQueryString($queryBlock)
+            $this->resourceQueryBlockSupport->buildFlatCustomMetadataQueryString($flatQueryBlock)
         );
 
         // Text criteria often need trailing-token match (e.g. label "47" → "mp3_47.mp3"),
@@ -271,6 +272,11 @@ class ResourceManagerAssetSearchQueryBuilder
                 ],
             ],
         ];
+    }
+
+    private function escapeFlatQueryStringTerm(string $value): string
+    {
+        return str_replace(['\\', '"'], ['\\\\', '\\"'], $value);
     }
 
     /**
