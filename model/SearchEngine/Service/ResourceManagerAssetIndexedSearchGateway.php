@@ -29,9 +29,10 @@ use oat\taoAdvancedSearch\model\SearchEngine\Contract\AssetMimeTypeResolverInter
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\AssetUriEncoderInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
-use oat\taoItems\model\media\AssetSearchUnavailableException;
 use oat\taoItems\model\media\AssetIndexedSearchGatewayInterface;
 use oat\taoItems\model\media\AssetSearchQuery;
+use oat\taoItems\model\media\AssetSearchUnavailableException;
+use oat\taoItems\model\media\ResourceUpdatedAtResolver;
 use oat\taoMediaManager\model\MediaSource;
 use Psr\Log\LoggerInterface;
 
@@ -44,6 +45,15 @@ use Psr\Log\LoggerInterface;
 class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGatewayInterface
 {
     // coderabbit: ignored — php -l clean; private helpers remain inside this class (brace FP)
+
+    /** @see \oat\tao\model\search\tokenizer\ResourceClasses */
+    private const INDEXED_LOCATION_ROOT_CLASS_URIS = [
+        'http://www.tao.lu/Ontologies/TAO.rdf#AssessmentContentObject',
+        'http://www.tao.lu/Ontologies/TAO.rdf#TAOObject',
+        'http://www.tao.lu/Ontologies/generis.rdf#generis_Ressource',
+        'http://www.w3.org/2000/01/rdf-schema#Resource',
+    ];
+
     private const FETCH_MULTIPLIER = 3;
 
     private const MIN_FETCH_BATCH_SIZE = 500;
@@ -72,13 +82,17 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
     /** @var AssetUriEncoderInterface */
     private $uriEncoder;
 
+    /** @var ResourceUpdatedAtResolver */
+    private $updatedAtResolver;
+
     public function __construct(
         ElasticSearch $elasticSearch,
         ResourceManagerAssetSearchQueryBuilder $queryBuilder,
         PermissionCheckerInterface $permissionChecker,
         LoggerInterface $logger,
         AssetMimeTypeResolverInterface $mimeTypeResolver,
-        AssetUriEncoderInterface $uriEncoder
+        AssetUriEncoderInterface $uriEncoder,
+        ResourceUpdatedAtResolver $updatedAtResolver
     ) {
         $this->elasticSearch = $elasticSearch;
         $this->queryBuilder = $queryBuilder;
@@ -86,6 +100,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
         $this->logger = $logger;
         $this->mimeTypeResolver = $mimeTypeResolver;
         $this->uriEncoder = $uriEncoder;
+        $this->updatedAtResolver = $updatedAtResolver;
     }
 
     public function isAvailable(): bool
@@ -121,6 +136,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
             $scannedHits = 0;
             $scanTruncated = false;
             $batchSize = max($pageSize * self::FETCH_MULTIPLIER, self::MIN_FETCH_BATCH_SIZE);
+            $requiredAuthorizedCount = $page * $pageSize;
 
             while (true) {
                 $remainingBudget = self::MAX_SCANNED_HITS - $scannedHits;
@@ -160,17 +176,30 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                         continue;
                     }
 
-                    $mapped = $this->mapHit($hit);
-                    if (!$this->matchesMimeFilter($mapped['mime'], $query->getFilter())) {
+                    $indexedMime = trim($this->stringifyHitValue($hit['mime_type'] ?? ''));
+                    $mimeForFilter = $indexedMime;
+                    if ($mimeForFilter === '' && $this->hasActiveMimeFilter($query->getFilter()) && $uri !== '') {
+                        $mimeForFilter = trim($this->mimeTypeResolver->resolve($uri));
+                    }
+                    if (!$this->matchesMimeFilter($mimeForFilter, $query->getFilter())) {
                         continue;
                     }
 
-                    $authorizedItems[] = $mapped;
+                    $authorizedItems[] = $this->mapHit($hit, $mimeForFilter);
                 }
 
                 $esFrom += $requestSize;
 
                 if ($esFrom >= $esTotal) {
+                    break;
+                }
+
+                if (
+                    $page > 1
+                    && count($authorizedItems) >= $requiredAuthorizedCount
+                    && $esFrom < $esTotal
+                ) {
+                    $scanTruncated = true;
                     break;
                 }
 
@@ -186,8 +215,11 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
             }
 
             $total = count($authorizedItems);
-            $maxPage = max(1, (int)ceil($total / $pageSize) ?: 1);
-            $normalizedPage = min(max(1, $page), $maxPage);
+            $normalizedPage = max(1, $page);
+            if (!$scanTruncated && $esFrom >= $esTotal) {
+                $maxPage = max(1, (int)ceil($total / $pageSize) ?: 1);
+                $normalizedPage = min($normalizedPage, $maxPage);
+            }
             $pageItems = array_slice($authorizedItems, ($normalizedPage - 1) * $pageSize, $pageSize);
 
             return [
@@ -228,21 +260,78 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
         );
 
         $tree = $mediaSource->getDirectories($scopeQuery);
-        $scopePath = (string)($tree['path'] ?? $search->getParentLink());
-        $scopeLabel = (string)($tree['label'] ?? $scopePath);
 
-        return $scopeLabel !== '' ? $scopeLabel : $scopePath;
+        $indexedLocation = $this->resolveIndexedLocationFromParentLink($search->getParentLink());
+        if ($indexedLocation !== '') {
+            return $indexedLocation;
+        }
+
+        $scopeLabel = trim((string)($tree['label'] ?? ''));
+        if ($scopeLabel !== '') {
+            return $scopeLabel;
+        }
+
+        return trim((string)($tree['path'] ?? $search->getParentLink()));
+    }
+
+    /**
+     * Matches assets index `location` (class labels joined by `/`, see IndexDocumentBuilder).
+     */
+    private function resolveIndexedLocationFromParentLink(string $parentLink): string
+    {
+        $parentLink = trim($parentLink);
+        if ($parentLink === '' || $parentLink === '/') {
+            return '';
+        }
+
+        $classUri = $parentLink;
+        if (strpos($parentLink, MediaSource::SCHEME_NAME) === 0) {
+            $classUri = \tao_helpers_Uri::decode(substr($parentLink, strlen(MediaSource::SCHEME_NAME)));
+        } elseif (!preg_match('#^https?://#i', $parentLink)) {
+            $classUri = \tao_helpers_Uri::decode($parentLink);
+        }
+
+        try {
+            $class = new \core_kernel_classes_Class($classUri);
+        } catch (Exception $exception) {
+            return '';
+        }
+
+        if (!$class->exists()) {
+            return '';
+        }
+
+        $labels = [$class->getLabel()];
+        foreach ($class->getParentClasses(true) as $parentClass) {
+            if ($this->isIndexedLocationRootClass($parentClass->getUri())) {
+                break;
+            }
+            $labels[] = $parentClass->getLabel();
+        }
+
+        if ($labels === []) {
+            return '';
+        }
+
+        return implode('/', array_reverse($labels));
+    }
+
+    private function isIndexedLocationRootClass(string $classUri): bool
+    {
+        return in_array($classUri, self::INDEXED_LOCATION_ROOT_CLASS_URIS, true);
     }
 
     /**
      * @param array<string, mixed> $hit
      * @return array<string, mixed>
      */
-    private function mapHit(array $hit): array
+    private function mapHit(array $hit, string $prefilledMime = ''): array
     {
         $label = $this->stringifyHitValue($hit['label'] ?? '');
         $uri = (string)($hit['id'] ?? '');
-        $mime = trim($this->stringifyHitValue($hit['mime_type'] ?? ''));
+        $mime = $prefilledMime !== ''
+            ? $prefilledMime
+            : trim($this->stringifyHitValue($hit['mime_type'] ?? ''));
         // Do not fall back to indexed `type` (often an ontology URI array).
         if ($mime === '' && $uri !== '') {
             $mime = $this->mimeTypeResolver->resolve($uri);
@@ -254,7 +343,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
             'name' => $label,
             'mime' => $mime,
             'location' => (string)($hit['location'] ?? ''),
-            'updatedAt' => $hit['updated_at'] ?? null,
+            'updatedAt' => $this->updatedAtResolver->resolve($hit['updated_at'] ?? null, $uri),
         ];
     }
 
@@ -299,13 +388,28 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
      */
     private function matchesMimeFilter(string $mime, array $allowedMimes): bool
     {
-        $normalizedAllowed = array_values(array_filter($allowedMimes, static function ($value): bool {
-            return is_string($value) && $value !== '';
-        }));
-        if ($normalizedAllowed === []) {
+        if (!$this->hasActiveMimeFilter($allowedMimes)) {
             return true;
         }
 
+        $normalizedAllowed = array_values(array_filter($allowedMimes, static function ($value): bool {
+            return is_string($value) && $value !== '';
+        }));
+
         return $mime !== '' && in_array($mime, $normalizedAllowed, true);
+    }
+
+    /**
+     * @param array<int, mixed> $allowedMimes
+     */
+    private function hasActiveMimeFilter(array $allowedMimes): bool
+    {
+        foreach ($allowedMimes as $value) {
+            if (is_string($value) && $value !== '') {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

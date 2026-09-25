@@ -34,6 +34,7 @@ use oat\taoAdvancedSearch\model\SearchEngine\SearchResult;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceManagerAssetIndexedSearchGateway;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceManagerAssetSearchQueryBuilder;
 use oat\taoItems\model\media\AssetSearchQuery;
+use oat\taoItems\model\media\ResourceUpdatedAtResolver;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -58,6 +59,9 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
     /** @var AssetUriEncoderInterface|MockObject */
     private $uriEncoder;
 
+    /** @var ResourceUpdatedAtResolver */
+    private $updatedAtResolver;
+
     /** @var ResourceManagerAssetIndexedSearchGateway */
     private $subject;
 
@@ -73,6 +77,7 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
         $this->uriEncoder->method('encode')->willReturnCallback(static function (string $uri): string {
             return \tao_helpers_Uri::encode($uri);
         });
+        $this->updatedAtResolver = new ResourceUpdatedAtResolver();
 
         $this->subject = new ResourceManagerAssetIndexedSearchGateway(
             $this->elasticSearch,
@@ -80,7 +85,8 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
             $this->permissionChecker,
             $this->logger,
             $this->mimeTypeResolver,
-            $this->uriEncoder
+            $this->uriEncoder,
+            $this->updatedAtResolver
         );
     }
 
@@ -97,6 +103,31 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
         $this->logger->expects($this->once())->method('warning');
 
         $this->assertFalse($this->subject->isAvailable());
+    }
+
+    public function testSearchUsesIndexedFolderLabelForScopeLocationAtRoot(): void
+    {
+        $query = $this->createSearchQuery();
+        $mediaSource = $query->getAsset()->getMediaSource();
+
+        $mediaSource->method('getDirectories')->willReturn([
+            'path' => 'taomedia://mediamanager/Assets/Nested/Folder',
+            'label' => 'Folder',
+            'children' => [],
+        ]);
+
+        $this->queryBuilder->expects($this->once())
+            ->method('build')
+            ->with(
+                $query,
+                'Folder',
+                $query->getMetadataCriteria()
+            )
+            ->willReturn(['query' => ['bool' => ['must' => []]]]);
+        $this->elasticSearch->method('searchWithBody')->willReturn(new SearchResult([], 0));
+        $this->permissionChecker->method('hasReadAccess')->willReturn(true);
+
+        $this->subject->search($query);
     }
 
     public function testSearchReturnsAuthorizedHitsWithAclAwareTotal(): void
@@ -131,6 +162,7 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
         $this->assertSame(1, $result['total']);
         $this->assertSame('asset://allowed', $result['items'][0]['uri']);
         $this->assertSame('image/png', $result['items'][0]['mime']);
+        $this->assertNotEmpty($result['items'][0]['updatedAt']);
         $this->assertSame(1, $result['page']);
         $this->assertSame(10, $result['pageSize']);
         $this->assertFalse($result['totalIsApproximate']);
@@ -149,7 +181,8 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
             $this->permissionChecker,
             $this->logger,
             $this->mimeTypeResolver,
-            $this->uriEncoder
+            $this->uriEncoder,
+            $this->updatedAtResolver
         );
 
         $query = $this->createSearchQuery();
@@ -198,6 +231,38 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
         $this->assertSame('asset://allowed-missing-mime', $result['items'][1]['uri']);
         $this->assertSame('', $result['items'][1]['mime']);
         $this->assertFalse($result['totalIsApproximate']);
+    }
+
+    public function testSearchNormalizesUpdatedAtFromUnixTimestamp(): void
+    {
+        $query = $this->createSearchQuery();
+        $mediaSource = $query->getAsset()->getMediaSource();
+
+        $mediaSource->method('getDirectories')->willReturn([
+            'path' => 'taomedia://mediamanager/Assets',
+            'label' => 'Assets',
+            'children' => [],
+        ]);
+
+        $this->queryBuilder->method('build')->willReturn(['query' => ['bool' => ['must' => []]]]);
+        $this->elasticSearch->method('searchWithBody')->willReturn(
+            new SearchResult(
+                [
+                    [
+                        'id' => 'asset://with-ts',
+                        'label' => 'With timestamp',
+                        'mime_type' => 'image/png',
+                        'updated_at' => '1785578400',
+                    ],
+                ],
+                1
+            )
+        );
+        $this->permissionChecker->method('hasReadAccess')->willReturn(true);
+
+        $result = $this->subject->search($query);
+
+        $this->assertSame('2026-08-01T10:00:00Z', $result['items'][0]['updatedAt']);
     }
 
     public function testSearchMapsHttpResourceIdToMediaBrowserUri(): void
@@ -307,6 +372,52 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
         $this->assertTrue($result['totalIsApproximate']);
         $this->assertSame(2000, $result['total']);
         $this->assertCount(10, $result['items']);
+    }
+
+    public function testSearchSkipsHitsWithIndexedMimeOutsideFilterBeforeOntologyLookup(): void
+    {
+        $this->mimeTypeResolver = $this->createMock(AssetMimeTypeResolverInterface::class);
+        $this->mimeTypeResolver->expects($this->never())->method('resolve');
+        $this->subject = new ResourceManagerAssetIndexedSearchGateway(
+            $this->elasticSearch,
+            $this->queryBuilder,
+            $this->permissionChecker,
+            $this->logger,
+            $this->mimeTypeResolver,
+            $this->uriEncoder,
+            $this->updatedAtResolver
+        );
+
+        $mediaSource = $this->createMock(MediaBrowser::class);
+        $asset = $this->createMock(MediaAsset::class);
+        $asset->method('getMediaSource')->willReturn($mediaSource);
+        $asset->method('getMediaIdentifier')->willReturn('/');
+        $query = (new AssetSearchQuery($asset, 'item-uri', 'en-US', ['image/png']))
+            ->setQuery('clip')
+            ->setPage(1)
+            ->setPageSize(10);
+        $mediaSource->method('getDirectories')->willReturn([
+            'path' => 'taomedia://mediamanager/Assets',
+            'label' => 'Assets',
+            'children' => [],
+        ]);
+
+        $this->queryBuilder->method('build')->willReturn(['query' => ['bool' => ['must' => []]]]);
+        $this->elasticSearch->method('searchWithBody')->willReturn(
+            new SearchResult(
+                [
+                    ['id' => 'asset://video', 'label' => 'Video', 'mime_type' => 'video/mp4'],
+                    ['id' => 'asset://image', 'label' => 'Image', 'mime_type' => 'image/png'],
+                ],
+                2
+            )
+        );
+        $this->permissionChecker->method('hasReadAccess')->willReturn(true);
+
+        $result = $this->subject->search($query);
+
+        $this->assertSame(1, $result['total']);
+        $this->assertSame('asset://image', $result['items'][0]['uri']);
     }
 
     public function testSearchWrapsElasticsearchFailures(): void

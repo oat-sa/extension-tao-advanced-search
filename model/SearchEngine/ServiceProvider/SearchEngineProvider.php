@@ -31,6 +31,7 @@ use oat\generis\model\DependencyInjection\ServiceOptions;
 use oat\oatbox\log\LoggerService;
 use oat\oatbox\session\SessionService;
 use oat\taoItems\model\media\AssetIndexedSearchGatewayInterface;
+use oat\taoItems\model\media\ResourceUpdatedAtResolver;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchClientFactory;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
@@ -129,6 +130,9 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
         $services->set(TaoAssetUriEncoder::class, TaoAssetUriEncoder::class)
             ->public();
 
+        $services->set(ResourceUpdatedAtResolver::class, ResourceUpdatedAtResolver::class)
+            ->public();
+
         // Explicit registration: gateway constructor requires PermissionCheckerInterface.
         $services->set(PermissionChecker::class, PermissionChecker::class)
             ->public();
@@ -145,6 +149,7 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
                     service(LoggerService::SERVICE_ID),
                     service(OntologyAssetMimeTypeResolver::class),
                     service(TaoAssetUriEncoder::class),
+                    service(ResourceUpdatedAtResolver::class),
                 ]
             )
             ->public();
