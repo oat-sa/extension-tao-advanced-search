@@ -28,19 +28,26 @@ use core_kernel_classes_Resource;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\AssetSearchTokenizer;
 use oat\taoMediaManager\model\TaoMediaOntology;
 
 /**
- * Ensures assets index documents store MIME type in the dedicated {@code mime_type} keyword field.
+ * Ensures assets index documents store MIME type and RM search tokens.
  */
 class AssetIndexDocumentBuilder implements IndexDocumentBuilderInterface
 {
     /** @var IndexDocumentBuilderInterface */
     private $inner;
 
-    public function __construct(IndexDocumentBuilderInterface $inner)
-    {
+    /** @var AssetSearchTokenizer */
+    private $assetSearchTokenizer;
+
+    public function __construct(
+        IndexDocumentBuilderInterface $inner,
+        AssetSearchTokenizer $assetSearchTokenizer = null
+    ) {
         $this->inner = $inner;
+        $this->assetSearchTokenizer = $assetSearchTokenizer ?? new AssetSearchTokenizer();
     }
 
     public function createDocumentFromResource(core_kernel_classes_Resource $resource): IndexDocument
@@ -51,13 +58,14 @@ class AssetIndexDocumentBuilder implements IndexDocumentBuilderInterface
             return $document;
         }
 
+        $body = $document->getBody();
+
         $mimeType = $this->resolveMimeType($resource);
-        if ($mimeType === null) {
-            return $document;
+        if ($mimeType !== null) {
+            $body['mime_type'] = $mimeType;
         }
 
-        $body = $document->getBody();
-        $body['mime_type'] = $mimeType;
+        $body = $this->assetSearchTokenizer->enrichDocumentBody($body);
 
         return new IndexDocument(
             $document->getId(),

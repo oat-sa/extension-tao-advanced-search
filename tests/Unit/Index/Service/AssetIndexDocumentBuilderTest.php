@@ -71,6 +71,7 @@ class AssetIndexDocumentBuilderTest extends TestCase
         $this->assertSame('image/png', $document->getBody()['mime_type']);
         $this->assertSame([IndexerInterface::MEDIA_CLASS_URI], $document->getBody()['type']);
         $this->assertSame('photo.png', $document->getBody()['label']);
+        $this->assertSame(['photo'], $document->getBody()['search_tokens']);
     }
 
     public function testCreateDocumentFromResourcePreservesTypeWhenMimeIsMissing(): void
@@ -84,7 +85,10 @@ class AssetIndexDocumentBuilderTest extends TestCase
 
         $document = $this->subject->createDocumentFromResource($resource);
 
-        $this->assertSame($expectedBody, $document->getBody());
+        $body = $document->getBody();
+        $this->assertSame(['photo'], $body['search_tokens']);
+        unset($body['search_tokens']);
+        $this->assertSame($expectedBody, $body);
     }
 
     public function testCreateDocumentFromResourcePreservesBodyWhenMimeLiteralIsEmpty(): void
@@ -98,8 +102,11 @@ class AssetIndexDocumentBuilderTest extends TestCase
 
         $document = $this->subject->createDocumentFromResource($resource);
 
-        $this->assertSame($expectedBody, $document->getBody());
-        $this->assertArrayNotHasKey('mime_type', $document->getBody());
+        $body = $document->getBody();
+        $this->assertSame(['photo'], $body['search_tokens']);
+        $this->assertArrayNotHasKey('mime_type', $body);
+        unset($body['search_tokens']);
+        $this->assertSame($expectedBody, $body);
     }
 
     public function testCreateDocumentFromResourceIgnoresNonLiteralMimeValues(): void
@@ -113,7 +120,10 @@ class AssetIndexDocumentBuilderTest extends TestCase
 
         $document = $this->subject->createDocumentFromResource($resource);
 
-        $this->assertSame($expectedBody, $document->getBody());
+        $body = $document->getBody();
+        $this->assertSame(['photo'], $body['search_tokens']);
+        unset($body['search_tokens']);
+        $this->assertSame($expectedBody, $body);
     }
 
     public function testCreateDocumentFromResourceLeavesNonMediaDocumentsUntouched(): void

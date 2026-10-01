@@ -25,6 +25,7 @@ namespace oat\taoAdvancedSearch\tests\Unit\SearchEngine\Service;
 use oat\tao\model\media\MediaAsset;
 use oat\tao\model\media\MediaBrowser;
 use oat\taoItems\model\media\AssetSearchQuery;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\AssetSearchTokenizer;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesQueryService;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceManagerAssetSearchQueryBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceQueryBlockSupport;
@@ -41,7 +42,8 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
     {
         $this->subject = new ResourceManagerAssetSearchQueryBuilder(
             new NestedAttributesQueryService(),
-            new ResourceQueryBlockSupport()
+            new ResourceQueryBlockSupport(),
+            new AssetSearchTokenizer()
         );
     }
 
@@ -66,12 +68,12 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
         $tokenClauses = array_slice($body['query']['bool']['must'], 1);
         $this->assertCount(2, $tokenClauses);
         $this->assertSame(
-            'color[A-Za-z0-9]*.*|.*[^A-Za-z0-9]color[A-Za-z0-9]*.*',
-            $tokenClauses[0]['bool']['should'][0]['regexp']['label.raw']['value']
+            ['value' => 'color', 'case_insensitive' => true],
+            $tokenClauses[0]['prefix']['search_tokens']
         );
         $this->assertSame(
-            'grade[A-Za-z0-9]*.*|.*[^A-Za-z0-9]grade[A-Za-z0-9]*.*',
-            $tokenClauses[1]['bool']['should'][0]['regexp']['label.raw']['value']
+            ['value' => 'grade', 'case_insensitive' => true],
+            $tokenClauses[1]['prefix']['search_tokens']
         );
     }
 
@@ -80,13 +82,7 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
         $body = $this->subject->build($this->createQuery('ab'), 'Assets');
 
         $tokenClause = $body['query']['bool']['must'][1];
-        $expected = 'ab([^A-Za-z0-9].*)?|.*[^A-Za-z0-9]ab([^A-Za-z0-9].*)?';
-        $this->assertSame($expected, $tokenClause['bool']['should'][0]['regexp']['label.raw']['value']);
-        $this->assertSame($expected, $tokenClause['bool']['should'][1]['regexp']['location.raw']['value']);
-        $this->assertSame(
-            $expected,
-            $tokenClause['bool']['should'][2]['nested']['query']['regexp']['attributes.raw_value.raw']['value']
-        );
+        $this->assertSame(['search_tokens' => 'ab'], $tokenClause['term']);
     }
 
     public function testBuildUsesPrefixForUniversalTokensOfThreeOrMoreCharacters(): void
@@ -95,10 +91,9 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
 
         $tokenClause = $body['query']['bool']['must'][1];
         $this->assertSame(
-            'col[A-Za-z0-9]*.*|.*[^A-Za-z0-9]col[A-Za-z0-9]*.*',
-            $tokenClause['bool']['should'][0]['regexp']['label.raw']['value']
+            ['value' => 'col', 'case_insensitive' => true],
+            $tokenClause['prefix']['search_tokens']
         );
-        $this->assertTrue($tokenClause['bool']['should'][0]['regexp']['label.raw']['case_insensitive']);
     }
 
     public function testBuildMatchesTrailingTokenInsideFilename(): void
@@ -107,8 +102,8 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
 
         $tokenClause = $body['query']['bool']['must'][1];
         $this->assertSame(
-            '154[A-Za-z0-9]*.*|.*[^A-Za-z0-9]154[A-Za-z0-9]*.*',
-            $tokenClause['bool']['should'][0]['regexp']['label.raw']['value']
+            ['value' => '154', 'case_insensitive' => true],
+            $tokenClause['prefix']['search_tokens']
         );
     }
 
@@ -154,8 +149,8 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
             $trailing['bool']['must'][0]
         );
         $this->assertSame(
-            'science[A-Za-z0-9]*.*|.*[^A-Za-z0-9]science[A-Za-z0-9]*.*',
-            $trailing['bool']['must'][1]['bool']['should'][0]['regexp']['attributes.value.raw']['value']
+            ['value' => 'science', 'case_insensitive' => true],
+            $trailing['bool']['must'][1]['prefix']['attributes.search_tokens']
         );
     }
 
@@ -187,8 +182,8 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
         }
         $this->assertNotNull($labelTrailing);
         $this->assertSame(
-            '47([^A-Za-z0-9].*)?|.*[^A-Za-z0-9]47([^A-Za-z0-9].*)?',
-            $labelTrailing['bool']['must'][1]['bool']['should'][0]['regexp']['attributes.value.raw']['value']
+            ['attributes.search_tokens' => '47'],
+            $labelTrailing['bool']['must'][1]['term']
         );
     }
 
@@ -204,8 +199,8 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
         $mustClauses = $body['query']['bool']['must'];
         $this->assertCount(3, $mustClauses);
         $this->assertSame(
-            'diagram[A-Za-z0-9]*.*|.*[^A-Za-z0-9]diagram[A-Za-z0-9]*.*',
-            $mustClauses[1]['bool']['should'][0]['regexp']['label.raw']['value']
+            ['value' => 'diagram', 'case_insensitive' => true],
+            $mustClauses[1]['prefix']['search_tokens']
         );
 
         $nestedQuery = $this->extractExactNestedMetadataQuery($body);
@@ -230,8 +225,8 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
         $mustClauses = $body['query']['bool']['must'];
         $this->assertCount(1, $mustClauses);
         $this->assertSame(
-            'clip[A-Za-z0-9]*.*|.*[^A-Za-z0-9]clip[A-Za-z0-9]*.*',
-            $mustClauses[0]['bool']['should'][0]['regexp']['label.raw']['value']
+            ['value' => 'clip', 'case_insensitive' => true],
+            $mustClauses[0]['prefix']['search_tokens']
         );
     }
 

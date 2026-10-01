@@ -44,12 +44,17 @@ class ResourceManagerAssetSearchQueryBuilder
     /** @var ResourceQueryBlockSupport */
     private $resourceQueryBlockSupport;
 
+    /** @var AssetSearchTokenizer */
+    private $assetSearchTokenizer;
+
     public function __construct(
         NestedAttributesQueryService $nestedAttributesQueryService,
-        ResourceQueryBlockSupport $resourceQueryBlockSupport
+        ResourceQueryBlockSupport $resourceQueryBlockSupport,
+        AssetSearchTokenizer $assetSearchTokenizer = null
     ) {
         $this->nestedAttributesQueryService = $nestedAttributesQueryService;
         $this->resourceQueryBlockSupport = $resourceQueryBlockSupport;
+        $this->assetSearchTokenizer = $assetSearchTokenizer ?? new AssetSearchTokenizer();
     }
 
     /**
@@ -67,12 +72,12 @@ class ResourceManagerAssetSearchQueryBuilder
         }
 
         $trimmedQuery = trim($query->getQuery());
-        $queryTokens = $this->tokenize($trimmedQuery);
+        $queryTokens = $this->assetSearchTokenizer->tokenize($trimmedQuery);
         if ($trimmedQuery !== '' && $queryTokens === []) {
             $mustClauses[] = ['match_none' => (object)[]];
         } else {
             foreach ($queryTokens as $token) {
-                $mustClauses[] = $this->buildUniversalTokenClause($token);
+                $mustClauses[] = $this->buildDocumentSearchTokenClause($token);
             }
         }
 
@@ -134,67 +139,25 @@ class ResourceManagerAssetSearchQueryBuilder
         ];
     }
 
-    private function buildUniversalTokenClause(string $token): array
+    private function buildDocumentSearchTokenClause(string $token): array
     {
-        $pattern = $this->buildTrailingTokenRegexp($token);
+        return $this->buildSearchTokenClause('search_tokens', $token);
+    }
 
-        return [
-            'bool' => [
-                'should' => [
-                    [
-                        'regexp' => [
-                            'label.raw' => [
-                                'value' => $pattern,
-                                'case_insensitive' => true,
-                            ],
-                        ],
-                    ],
-                    [
-                        'regexp' => [
-                            'location.raw' => [
-                                'value' => $pattern,
-                                'case_insensitive' => true,
-                            ],
-                        ],
-                    ],
-                    [
-                        'nested' => [
-                            'path' => 'attributes',
-                            'query' => [
-                                'regexp' => [
-                                    'attributes.raw_value.raw' => [
-                                        'value' => $pattern,
-                                        'case_insensitive' => true,
-                                    ],
-                                ],
-                            ],
-                        ],
+    private function buildSearchTokenClause(string $field, string $token): array
+    {
+        if (mb_strlen($token, 'UTF-8') >= self::PREFIX_MATCH_MIN_LENGTH) {
+            return [
+                'prefix' => [
+                    $field => [
+                        'value' => $token,
+                        'case_insensitive' => true,
                     ],
                 ],
-                'minimum_should_match' => 1,
-            ],
-        ];
-    }
+            ];
+        }
 
-    /**
-     * Trailing-token match aligned with AssetSearchBuilder::tokenize:
-     * split on non-alphanumeric, then prefix (>=3 chars) or exact (<3) on a token.
-     */
-    private function buildTrailingTokenRegexp(string $token): string
-    {
-        $escaped = $this->escapeLuceneRegexp($token);
-        $isPrefix = mb_strlen($token, 'UTF-8') >= self::PREFIX_MATCH_MIN_LENGTH;
-        $tokenBody = $isPrefix ? $escaped . '[A-Za-z0-9]*' : $escaped;
-        $afterToken = $isPrefix ? '.*' : '([^A-Za-z0-9].*)?';
-
-        // Whole-string Lucene regexp: token at start OR after a non-alnum delimiter.
-        return $tokenBody . $afterToken . '|.*[^A-Za-z0-9]' . $tokenBody . $afterToken;
-    }
-
-    private function escapeLuceneRegexp(string $value): string
-    {
-        // Lucene/ES regexp reserved chars, including optional operators (# @ & ~) and " \.
-        return preg_replace('/([\\\\."#@&~+*?\\[\\]^$(){}=!<>|:-])/', '\\\\$1', $value) ?? $value;
+        return ['term' => [$field => $token]];
     }
 
     private function buildMetadataClause(string $propertyUri, string $value): array
@@ -208,44 +171,7 @@ class ResourceManagerAssetSearchQueryBuilder
 
         // Text criteria often need trailing-token match (e.g. label "47" → "mp3_47.mp3"),
         // while enum/URI values still match via exact term in $legacyOrExact.
-        // AC4: keeps existing exact-keyword OR analyzed-text semantics and AND-combines
-        // independently supplied criteria; trailing-token is an additive should clause.
-        $pattern = $this->buildTrailingTokenRegexp($value);
-        $trailingToken = [
-            'nested' => [
-                'path' => 'attributes',
-                'query' => [
-                    'bool' => [
-                        'must' => [
-                            ['term' => ['attributes.key' => $propertyUri]],
-                            [
-                                'bool' => [
-                                    'should' => [
-                                        [
-                                            'regexp' => [
-                                                'attributes.value.raw' => [
-                                                    'value' => $pattern,
-                                                    'case_insensitive' => true,
-                                                ],
-                                            ],
-                                        ],
-                                        [
-                                            'regexp' => [
-                                                'attributes.raw_value.raw' => [
-                                                    'value' => $pattern,
-                                                    'case_insensitive' => true,
-                                                ],
-                                            ],
-                                        ],
-                                    ],
-                                    'minimum_should_match' => 1,
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-        ];
+        $trailingToken = $this->buildMetadataTrailingTokenClause($propertyUri, $value);
 
         return [
             'bool' => [
@@ -254,6 +180,37 @@ class ResourceManagerAssetSearchQueryBuilder
                     $trailingToken,
                 ],
                 'minimum_should_match' => 1,
+            ],
+        ];
+    }
+
+    private function buildMetadataTrailingTokenClause(string $propertyUri, string $value): array
+    {
+        $valueTokens = $this->assetSearchTokenizer->tokenize($value);
+        if (trim($value) !== '' && $valueTokens === []) {
+            return [
+                'nested' => [
+                    'path' => 'attributes',
+                    'query' => ['match_none' => (object)[]],
+                ],
+            ];
+        }
+
+        $tokenClauses = array_map(function (string $token): array {
+            return $this->buildSearchTokenClause('attributes.search_tokens', $token);
+        }, $valueTokens);
+
+        return [
+            'nested' => [
+                'path' => 'attributes',
+                'query' => [
+                    'bool' => [
+                        'must' => array_merge(
+                            [['term' => ['attributes.key' => $propertyUri]]],
+                            $tokenClauses
+                        ),
+                    ],
+                ],
             ],
         ];
     }
@@ -277,22 +234,5 @@ class ResourceManagerAssetSearchQueryBuilder
     private function escapeFlatQueryStringTerm(string $value): string
     {
         return str_replace(['\\', '"'], ['\\\\', '\\"'], $value);
-    }
-
-    /**
-     * @return string[]
-     */
-    private function tokenize(string $value): array
-    {
-        $normalized = mb_strtolower(trim($value), 'UTF-8');
-        if ($normalized === '') {
-            return [];
-        }
-
-        $parts = preg_split('/[^\p{L}\p{N}]+/u', $normalized) ?: [];
-
-        return array_values(array_filter($parts, static function (string $part): bool {
-            return $part !== '';
-        }));
     }
 }

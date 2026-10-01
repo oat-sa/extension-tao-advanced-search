@@ -66,6 +66,10 @@ return [
                     'type' => 'keyword',
                     'ignore_above' => 256,
                 ],
+                'search_tokens' => [
+                    'type' => 'keyword',
+                    'ignore_above' => 256,
+                ],
                 'read_access' => [
                     'type' => 'keyword',
                     'ignore_above' => 256,
@@ -94,6 +98,10 @@ return [
                                     'type' => 'keyword'
                                 ]
                             ]
+                        ],
+                        'search_tokens' => [
+                            'type' => 'keyword',
+                            'ignore_above' => 256,
                         ],
                     ],
                 ],

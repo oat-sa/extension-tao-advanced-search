@@ -52,6 +52,7 @@ use oat\taoAdvancedSearch\model\SearchEngine\Service\StructuredResourceSearchQue
 use oat\tao\model\accessControl\PermissionChecker;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\OntologyAssetMimeTypeResolver;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceManagerAssetIndexedSearchGateway;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\AssetSearchTokenizer;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceManagerAssetSearchQueryBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\TaoAssetUriEncoder;
 use oat\taoAdvancedSearch\model\SearchEngine\Specification\UseAclSpecification;
@@ -115,6 +116,7 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
                 [
                     service(NestedAttributesQueryService::class),
                     service(ResourceQueryBlockSupport::class),
+                    service(AssetSearchTokenizer::class),
                 ]
             )
             ->public();
