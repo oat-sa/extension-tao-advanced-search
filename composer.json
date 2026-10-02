@@ -37,7 +37,7 @@
     "oat-sa/extension-tao-delivery": ">=16.0.0",
     "oat-sa/extension-tao-outcome": ">=13.0.0",
     "oat-sa/extension-tao-test": ">=16.4.0",
-    "oat-sa/extension-tao-mediamanager": "14.2.2",
+    "oat-sa/extension-tao-mediamanager": ">=12.32.1",
     "oat-sa/extension-tao-item": "dev-feat/AUT-4666-asset-search-api as 13.99.99",
     "elasticsearch/elasticsearch": "^8.0"
   },
@@ -54,5 +54,8 @@
     "psr-4": {
       "oat\\taoAdvancedSearch\\tests\\": "test"
     }
+  },
+  "conflict": {
+    "oat-sa/extension-tao-item": ">=12.4.0 <13.99.99"
   }
 }
