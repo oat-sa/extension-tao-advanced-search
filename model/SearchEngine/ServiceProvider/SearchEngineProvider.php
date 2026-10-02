@@ -50,6 +50,7 @@ use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesQueryServic
 use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceQueryBlockSupport;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\StructuredResourceSearchQueryBuilder;
 use oat\tao\model\accessControl\PermissionChecker;
+use oat\tao\model\accessControl\PermissionCheckerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\OntologyAssetMimeTypeResolver;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceManagerAssetIndexedSearchGateway;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\AssetSearchTokenizer;
@@ -135,9 +136,10 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
         $services->set(ResourceUpdatedAtResolver::class, ResourceUpdatedAtResolver::class)
             ->public();
 
-        // Explicit registration: gateway constructor requires PermissionCheckerInterface.
+        // tao-core consumers assume PermissionChecker::class exists in the compiled container.
         $services->set(PermissionChecker::class, PermissionChecker::class)
             ->public();
+        $services->alias(PermissionCheckerInterface::class, PermissionChecker::class);
 
         $services->set(
             AssetIndexedSearchGatewayInterface::SERVICE_ID,

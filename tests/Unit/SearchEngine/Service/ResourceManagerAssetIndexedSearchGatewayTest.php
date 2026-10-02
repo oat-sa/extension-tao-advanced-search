@@ -424,6 +424,93 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
         $this->assertSame('asset://image', $result['items'][0]['uri']);
     }
 
+    public function testSearchReportsConsistentTotalAcrossPagesWithMultipleBatches(): void
+    {
+        $totalEsHits = 1000;
+        $pageSize = 10;
+        $allHits = [];
+        for ($i = 0; $i < $totalEsHits; $i++) {
+            $allHits[] = [
+                'id' => 'asset://hit-' . $i,
+                'label' => 'Hit ' . $i,
+                'mime_type' => 'image/png',
+            ];
+        }
+
+        $query = $this->createSearchQuery();
+        $mediaSource = $query->getAsset()->getMediaSource();
+        $mediaSource->method('getDirectories')->willReturn([
+            'path' => 'taomedia://mediamanager/Assets',
+            'label' => 'Assets',
+            'children' => [],
+        ]);
+
+        $this->queryBuilder->method('build')->willReturn(['query' => ['bool' => ['must' => []]]]);
+        $this->elasticSearch->method('searchWithBody')->willReturnCallback(
+            static function ($index, array $body) use ($allHits, $totalEsHits): SearchResult {
+                $from = (int)($body['from'] ?? 0);
+                $size = (int)($body['size'] ?? 10);
+
+                return new SearchResult(array_slice($allHits, $from, $size), $totalEsHits);
+            }
+        );
+        $this->permissionChecker->method('hasReadAccess')->willReturn(true);
+
+        $pageOne = $this->subject->search($query->setPage(1)->setPageSize($pageSize));
+        $pageTwo = $this->subject->search($query->setPage(2)->setPageSize($pageSize));
+
+        $this->assertSame($totalEsHits, $pageOne['total']);
+        $this->assertFalse($pageOne['totalIsApproximate']);
+        $this->assertSame($totalEsHits, $pageTwo['total']);
+        $this->assertFalse($pageTwo['totalIsApproximate']);
+        $this->assertSame('asset://hit-10', $pageTwo['items'][0]['uri']);
+    }
+
+    public function testSearchMapsOnlyCurrentPageHits(): void
+    {
+        $this->updatedAtResolver = $this->createMock(ResourceUpdatedAtResolver::class);
+        $this->updatedAtResolver->expects($this->exactly(10))
+            ->method('resolve')
+            ->willReturn('2026-01-01T00:00:00Z');
+        $this->subject = new ResourceManagerAssetIndexedSearchGateway(
+            $this->elasticSearch,
+            $this->queryBuilder,
+            $this->permissionChecker,
+            $this->logger,
+            $this->mimeTypeResolver,
+            $this->uriEncoder,
+            $this->updatedAtResolver
+        );
+
+        $hits = [];
+        for ($i = 0; $i < 100; $i++) {
+            $hits[] = [
+                'id' => 'asset://hit-' . $i,
+                'label' => 'Hit ' . $i,
+                'mime_type' => 'image/png',
+            ];
+        }
+
+        $query = $this->createSearchQuery()->setPage(1)->setPageSize(10);
+        $mediaSource = $query->getAsset()->getMediaSource();
+        $mediaSource->method('getDirectories')->willReturn([
+            'path' => 'taomedia://mediamanager/Assets',
+            'label' => 'Assets',
+            'children' => [],
+        ]);
+
+        $this->queryBuilder->method('build')->willReturn(['query' => ['bool' => ['must' => []]]]);
+        $this->elasticSearch->method('searchWithBody')->willReturn(
+            new SearchResult($hits, count($hits))
+        );
+        $this->permissionChecker->method('hasReadAccess')->willReturn(true);
+
+        $result = $this->subject->search($query);
+
+        $this->assertSame(100, $result['total']);
+        $this->assertCount(10, $result['items']);
+    }
+
     public function testSearchWrapsElasticsearchFailures(): void
     {
         $query = $this->createSearchQuery();

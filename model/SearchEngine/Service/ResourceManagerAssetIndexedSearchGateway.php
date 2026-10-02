@@ -127,7 +127,6 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
             $scannedHits = 0;
             $scanTruncated = false;
             $batchSize = max($pageSize * self::FETCH_MULTIPLIER, self::MIN_FETCH_BATCH_SIZE);
-            $requiredAuthorizedCount = $page * $pageSize;
 
             while (true) {
                 $remainingBudget = self::MAX_SCANNED_HITS - $scannedHits;
@@ -176,21 +175,15 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                         continue;
                     }
 
-                    $authorizedItems[] = $this->mapHit($hit, $mimeForFilter);
+                    $authorizedItems[] = [
+                        'hit' => $hit,
+                        'mime' => $mimeForFilter,
+                    ];
                 }
 
                 $esFrom += $requestSize;
 
                 if ($esFrom >= $esTotal) {
-                    break;
-                }
-
-                if (
-                    $page > 1
-                    && count($authorizedItems) >= $requiredAuthorizedCount
-                    && $esFrom < $esTotal
-                ) {
-                    $scanTruncated = true;
                     break;
                 }
 
@@ -211,7 +204,13 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                 $maxPage = max(1, (int)ceil($total / $pageSize) ?: 1);
                 $normalizedPage = min($normalizedPage, $maxPage);
             }
-            $pageItems = array_slice($authorizedItems, ($normalizedPage - 1) * $pageSize, $pageSize);
+            $pageSlice = array_slice($authorizedItems, ($normalizedPage - 1) * $pageSize, $pageSize);
+            $pageItems = array_map(
+                function (array $entry): array {
+                    return $this->mapHit($entry['hit'], $entry['mime']);
+                },
+                $pageSlice
+            );
 
             return [
                 'items' => array_values($pageItems),
