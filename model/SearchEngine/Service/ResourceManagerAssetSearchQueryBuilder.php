@@ -62,13 +62,13 @@ class ResourceManagerAssetSearchQueryBuilder
      */
     public function build(
         AssetSearchQuery $query,
-        string $scopeLocation,
+        string $scopeClassUri,
         array $metadataCriteria = []
     ): array {
         $mustClauses = [];
 
-        if ($scopeLocation !== '') {
-            $mustClauses[] = $this->buildScopeClause($scopeLocation);
+        if ($scopeClassUri !== '') {
+            $mustClauses[] = $this->buildScopeClause($scopeClassUri);
         }
 
         $trimmedQuery = trim($query->getQuery());
@@ -126,17 +126,14 @@ class ResourceManagerAssetSearchQueryBuilder
         return $body;
     }
 
-    private function buildScopeClause(string $scopeLocation): array
+    /**
+     * Scope by ontology class URI (same as backoffice {@see SearchProxy::getAdvancedSearchQueryString}).
+     */
+    private function buildScopeClause(string $scopeClassUri): array
     {
-        return [
-            'bool' => [
-                'should' => [
-                    ['term' => ['location.raw' => $scopeLocation]],
-                    ['prefix' => ['location.raw' => $scopeLocation . '/']],
-                ],
-                'minimum_should_match' => 1,
-            ],
-        ];
+        return $this->resourceQueryBlockSupport->buildStandardFieldMustClause(
+            new QueryBlock('parent_classes', $scopeClassUri)
+        );
     }
 
     private function buildDocumentSearchTokenClause(string $token): array

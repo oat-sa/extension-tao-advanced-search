@@ -35,6 +35,7 @@ use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceManagerAssetIndexed
 use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceManagerAssetSearchQueryBuilder;
 use oat\taoItems\model\media\AssetSearchQuery;
 use oat\taoItems\model\media\ResourceUpdatedAtResolver;
+use oat\taoMediaManager\model\MediaSource;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -105,22 +106,25 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
         $this->assertFalse($this->subject->isAvailable());
     }
 
-    public function testSearchUsesIndexedFolderLabelForScopeLocationAtRoot(): void
+    public function testSearchScopesByClassUriFromBrowsePath(): void
     {
-        $query = $this->createSearchQuery();
-        $mediaSource = $query->getAsset()->getMediaSource();
-
-        $mediaSource->method('getDirectories')->willReturn([
-            'path' => 'taomedia://mediamanager/Assets/Nested/Folder',
-            'label' => 'Folder',
-            'children' => [],
-        ]);
+        $folderClassUri = 'http://www.tao.lu/Ontologies/TAOMedia.rdf#iNestedFolder';
+        $mediaSource = $this->createMock(MediaBrowser::class);
+        $asset = $this->createMock(MediaAsset::class);
+        $asset->method('getMediaSource')->willReturn($mediaSource);
+        $asset->method('getMediaIdentifier')->willReturn(
+            MediaSource::SCHEME_NAME . \tao_helpers_Uri::encode($folderClassUri)
+        );
+        $query = (new AssetSearchQuery($asset, 'item-uri', 'en-US'))
+            ->setQuery('clip')
+            ->setPage(1)
+            ->setPageSize(10);
 
         $this->queryBuilder->expects($this->once())
             ->method('build')
             ->with(
                 $query,
-                'Folder',
+                $folderClassUri,
                 $query->getMetadataCriteria()
             )
             ->willReturn(['query' => ['bool' => ['must' => []]]]);

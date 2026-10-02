@@ -47,25 +47,39 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
         );
     }
 
-    public function testBuildAddsScopePrefixClause(): void
+    public function testBuildScopesByParentClassUri(): void
     {
-        $body = $this->subject->build($this->createQuery(''), 'Assets/Folder');
+        $classUri = 'http://www.tao.lu/Ontologies/TAOMedia.rdf#iFolderClass';
+        $body = $this->subject->build($this->createQuery(''), $classUri);
 
         $scopeClause = $body['query']['bool']['must'][0];
         $this->assertSame(
             [
-                ['term' => ['location.raw' => 'Assets/Folder']],
-                ['prefix' => ['location.raw' => 'Assets/Folder/']],
+                ['term' => ['parent_classes.raw' => $classUri]],
+                ['match_phrase' => ['parent_classes' => $classUri]],
             ],
             $scopeClause['bool']['should']
         );
     }
 
+    public function testBuildUsesDistinctScopeUrisForSameLabelPaths(): void
+    {
+        $classUriA = 'http://www.tao.lu/Ontologies/TAOMedia.rdf#iBranchAImages';
+        $classUriB = 'http://www.tao.lu/Ontologies/TAOMedia.rdf#iBranchBImages';
+
+        $scopeA = $this->subject->build($this->createQuery(''), $classUriA)['query']['bool']['must'][0];
+        $scopeB = $this->subject->build($this->createQuery(''), $classUriB)['query']['bool']['must'][0];
+
+        $this->assertNotSame($scopeA, $scopeB);
+        $this->assertSame($classUriA, $scopeA['bool']['should'][0]['term']['parent_classes.raw']);
+        $this->assertSame($classUriB, $scopeB['bool']['should'][0]['term']['parent_classes.raw']);
+    }
+
     public function testBuildCombinesUniversalTokensWithAnd(): void
     {
-        $body = $this->subject->build($this->createQuery('color grade'), 'Assets');
+        $body = $this->subject->build($this->createQuery('color grade'), '');
 
-        $tokenClauses = array_slice($body['query']['bool']['must'], 1);
+        $tokenClauses = $body['query']['bool']['must'];
         $this->assertCount(2, $tokenClauses);
         $this->assertSame(
             ['value' => 'color', 'case_insensitive' => true],
@@ -79,17 +93,17 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
 
     public function testBuildUsesTermForShortUniversalTokens(): void
     {
-        $body = $this->subject->build($this->createQuery('ab'), 'Assets');
+        $body = $this->subject->build($this->createQuery('ab'), '');
 
-        $tokenClause = $body['query']['bool']['must'][1];
+        $tokenClause = $body['query']['bool']['must'][0];
         $this->assertSame(['search_tokens' => 'ab'], $tokenClause['term']);
     }
 
     public function testBuildUsesPrefixForUniversalTokensOfThreeOrMoreCharacters(): void
     {
-        $body = $this->subject->build($this->createQuery('col'), 'Assets');
+        $body = $this->subject->build($this->createQuery('col'), '');
 
-        $tokenClause = $body['query']['bool']['must'][1];
+        $tokenClause = $body['query']['bool']['must'][0];
         $this->assertSame(
             ['value' => 'col', 'case_insensitive' => true],
             $tokenClause['prefix']['search_tokens']
@@ -98,9 +112,9 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
 
     public function testBuildMatchesTrailingTokenInsideFilename(): void
     {
-        $body = $this->subject->build($this->createQuery('154'), 'Assets');
+        $body = $this->subject->build($this->createQuery('154'), '');
 
-        $tokenClause = $body['query']['bool']['must'][1];
+        $tokenClause = $body['query']['bool']['must'][0];
         $this->assertSame(
             ['value' => '154', 'case_insensitive' => true],
             $tokenClause['prefix']['search_tokens']
@@ -110,7 +124,7 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
     public function testBuildAddsMimeTermsClause(): void
     {
         $query = $this->createQuery('video', ['video/mp4', 'image/png']);
-        $body = $this->subject->build($query, 'Assets');
+        $body = $this->subject->build($query, '');
 
         $mimeClause = end($body['query']['bool']['must']);
         $this->assertSame(
@@ -129,7 +143,7 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
         $propertyUri = 'http://www.tao.lu/Ontologies/TAO.rdf#Keywords';
         $body = $this->subject->build(
             $this->createQuery(''),
-            'Assets',
+            '',
             [$propertyUri => 'science']
         );
 
@@ -158,7 +172,7 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
     {
         $body = $this->subject->build(
             $this->createQuery(''),
-            'Assets',
+            '',
             [
                 'http://example/Language' => 'http://example/Langja-JP',
                 'http://example/label' => '47',
@@ -166,8 +180,7 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
         );
 
         $mustClauses = $body['query']['bool']['must'];
-        // scope + 2 metadata criteria
-        $this->assertCount(3, $mustClauses);
+        $this->assertCount(2, $mustClauses);
 
         $labelTrailing = null;
         foreach ($mustClauses as $clause) {
@@ -192,15 +205,15 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
         $propertyUri = 'http://www.tao.lu/Ontologies/TAO.rdf#Category';
         $body = $this->subject->build(
             $this->createQuery('diagram'),
-            'Assets',
+            '',
             [$propertyUri => 'Diagram']
         );
 
         $mustClauses = $body['query']['bool']['must'];
-        $this->assertCount(3, $mustClauses);
+        $this->assertCount(2, $mustClauses);
         $this->assertSame(
             ['value' => 'diagram', 'case_insensitive' => true],
-            $mustClauses[1]['prefix']['search_tokens']
+            $mustClauses[0]['prefix']['search_tokens']
         );
 
         $nestedQuery = $this->extractExactNestedMetadataQuery($body);
@@ -232,7 +245,7 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
 
     public function testBuildReturnsNoMatchesForDelimiterOnlyQuery(): void
     {
-        $body = $this->subject->build($this->createQuery('---'), 'Assets');
+        $body = $this->subject->build($this->createQuery('---'), '');
 
         $this->assertArrayHasKey('match_none', end($body['query']['bool']['must']));
     }

@@ -23,7 +23,6 @@ declare(strict_types=1);
 namespace oat\taoAdvancedSearch\model\SearchEngine\Service;
 
 use Exception;
-use oat\tao\model\accessControl\AccessControlEnablerInterface;
 use oat\tao\model\accessControl\PermissionCheckerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\AssetMimeTypeResolverInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\AssetUriEncoderInterface;
@@ -45,14 +44,6 @@ use Psr\Log\LoggerInterface;
 class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGatewayInterface
 {
     // coderabbit: ignored — php -l clean; private helpers remain inside this class (brace FP)
-
-    /** @see \oat\tao\model\search\tokenizer\ResourceClasses */
-    private const INDEXED_LOCATION_ROOT_CLASS_URIS = [
-        'http://www.tao.lu/Ontologies/TAO.rdf#AssessmentContentObject',
-        'http://www.tao.lu/Ontologies/TAO.rdf#TAOObject',
-        'http://www.tao.lu/Ontologies/generis.rdf#generis_Ressource',
-        'http://www.w3.org/2000/01/rdf-schema#Resource',
-    ];
 
     private const FETCH_MULTIPLIER = 3;
 
@@ -119,10 +110,10 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
     public function search(AssetSearchQuery $query): array
     {
         try {
-            $scopeLocation = $this->resolveScopeLocation($query);
+            $scopeClassUri = $this->resolveScopeClassUri($query->getParentLink());
             $searchBody = $this->queryBuilder->build(
                 $query,
-                $scopeLocation,
+                $scopeClassUri,
                 $query->getMetadataCriteria()
             );
             $searchBody['_source'] = self::SEARCH_SOURCE_FIELDS;
@@ -240,85 +231,25 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
         }
     }
 
-    private function resolveScopeLocation(AssetSearchQuery $search): string
-    {
-        $asset = $search->getAsset();
-        $mediaSource = $asset->getMediaSource();
-
-        if ($mediaSource instanceof AccessControlEnablerInterface) {
-            $mediaSource->enableAccessControl();
-        }
-
-        $scopeQuery = new AssetSearchQuery(
-            $asset,
-            $search->getItemUri(),
-            $search->getItemLang(),
-            $search->getFilter(),
-            1,
-            0,
-            0
-        );
-
-        $tree = $mediaSource->getDirectories($scopeQuery);
-
-        $indexedLocation = $this->resolveIndexedLocationFromParentLink($search->getParentLink());
-        if ($indexedLocation !== '') {
-            return $indexedLocation;
-        }
-
-        $scopeLabel = trim((string)($tree['label'] ?? ''));
-        if ($scopeLabel !== '') {
-            return $scopeLabel;
-        }
-
-        return trim((string)($tree['path'] ?? $search->getParentLink()));
-    }
-
     /**
-     * Matches assets index `location` (class labels joined by `/`, see IndexDocumentBuilder).
+     * Folder scope from browse path ({@code taomedia://…} or RDF class URI).
      */
-    private function resolveIndexedLocationFromParentLink(string $parentLink): string
+    private function resolveScopeClassUri(string $parentLink): string
     {
         $parentLink = trim($parentLink);
         if ($parentLink === '' || $parentLink === '/') {
             return '';
         }
 
-        $classUri = $parentLink;
         if (strpos($parentLink, MediaSource::SCHEME_NAME) === 0) {
-            $classUri = \tao_helpers_Uri::decode(substr($parentLink, strlen(MediaSource::SCHEME_NAME)));
-        } elseif (!preg_match('#^https?://#i', $parentLink)) {
-            $classUri = \tao_helpers_Uri::decode($parentLink);
+            return \tao_helpers_Uri::decode(substr($parentLink, strlen(MediaSource::SCHEME_NAME)));
         }
 
-        try {
-            $class = new \core_kernel_classes_Class($classUri);
-        } catch (Exception $exception) {
-            return '';
+        if (preg_match('#^https?://#i', $parentLink)) {
+            return $parentLink;
         }
 
-        if (!$class->exists()) {
-            return '';
-        }
-
-        $labels = [$class->getLabel()];
-        foreach ($class->getParentClasses(true) as $parentClass) {
-            if ($this->isIndexedLocationRootClass($parentClass->getUri())) {
-                break;
-            }
-            $labels[] = $parentClass->getLabel();
-        }
-
-        if ($labels === []) {
-            return '';
-        }
-
-        return implode('/', array_reverse($labels));
-    }
-
-    private function isIndexedLocationRootClass(string $classUri): bool
-    {
-        return in_array($classUri, self::INDEXED_LOCATION_ROOT_CLASS_URIS, true);
+        return \tao_helpers_Uri::decode($parentLink);
     }
 
     /**
