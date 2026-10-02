@@ -38,7 +38,7 @@
     "oat-sa/extension-tao-outcome": ">=13.0.0",
     "oat-sa/extension-tao-test": ">=16.4.0",
     "oat-sa/extension-tao-mediamanager": "14.2.2",
-    "oat-sa/extension-tao-item": "dev-feat/AUT-4666-asset-search-api#fb876dc",
+    "oat-sa/extension-tao-item": "dev-feat/AUT-4666-asset-search-api#fb876dc as 13.99.99",
     "elasticsearch/elasticsearch": "^8.0"
   },
   "require-dev": {
