@@ -15,6 +15,10 @@
     {
       "type": "vcs",
       "url": "https://github.com/oat-sa/extension-tao-item.git"
+    },
+    {
+      "type": "vcs",
+      "url": "https://github.com/oat-sa/extension-tao-mediamanager.git"
     }
   ],
   "keywords": [
@@ -37,7 +41,7 @@
     "oat-sa/extension-tao-delivery": ">=16.0.0",
     "oat-sa/extension-tao-outcome": ">=13.0.0",
     "oat-sa/extension-tao-test": ">=16.4.0",
-    "oat-sa/extension-tao-mediamanager": ">=12.32.1",
+    "oat-sa/extension-tao-mediamanager": "dev-feat/AUT-4664-resource-manager-media-filters as 14.99.99",
     "oat-sa/extension-tao-item": "dev-feat/AUT-4666-asset-search-api as 13.99.99",
     "elasticsearch/elasticsearch": "^8.0"
   },
