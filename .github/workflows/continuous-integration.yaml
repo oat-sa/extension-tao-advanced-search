@@ -29,4 +29,3 @@ jobs:
           php: ${{ matrix.php-version }}
           coverage: ${{ matrix.coverage }}
           test-suites-path: tests/Unit
-          github_token: ${{ secrets.CI_GITHUB_TOKEN }}
