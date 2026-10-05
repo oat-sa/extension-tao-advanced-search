@@ -28,8 +28,13 @@ use Elastic\Elasticsearch\Client;
 use oat\generis\model\data\permission\PermissionInterface;
 use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
 use oat\generis\model\DependencyInjection\ServiceOptions;
+use oat\oatbox\filesystem\FileSystemService;
 use oat\oatbox\log\LoggerService;
 use oat\oatbox\session\SessionService;
+use oat\taoItems\model\media\AssetIndexedSearchGatewayInterface;
+use oat\taoItems\model\media\ResourceUpdatedAtResolver;
+use oat\taoMediaManager\model\fileManagement\FileManagement;
+use oat\taoMediaManager\model\fileManagement\FileSourceUnserializer;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchClientFactory;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
@@ -47,6 +52,13 @@ use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesIndexResolv
 use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesQueryService;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceQueryBlockSupport;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\StructuredResourceSearchQueryBuilder;
+use oat\tao\model\accessControl\PermissionChecker;
+use oat\tao\model\accessControl\PermissionCheckerInterface;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\OntologyAssetMimeTypeResolver;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceManagerAssetIndexedSearchGateway;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\AssetSearchTokenizer;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceManagerAssetSearchQueryBuilder;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\TaoAssetUriEncoder;
 use oat\taoAdvancedSearch\model\SearchEngine\Specification\UseAclSpecification;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -101,6 +113,60 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
                     service(NestedAttributesQueryService::class),
                 ]
             )
+            ->public();
+
+        $services->set(ResourceManagerAssetSearchQueryBuilder::class, ResourceManagerAssetSearchQueryBuilder::class)
+            ->args(
+                [
+                    service(NestedAttributesQueryService::class),
+                    service(ResourceQueryBlockSupport::class),
+                    service(AssetSearchTokenizer::class),
+                ]
+            )
+            ->public();
+
+        $services->set(OntologyAssetMimeTypeResolver::class, OntologyAssetMimeTypeResolver::class)
+            ->args(
+                [
+                    service(LoggerService::SERVICE_ID),
+                ]
+            )
+            ->public();
+
+        $services->set(TaoAssetUriEncoder::class, TaoAssetUriEncoder::class)
+            ->public();
+
+        $services
+            ->set(ResourceUpdatedAtResolver::class, ResourceUpdatedAtResolver::class)
+            ->args([
+                service(FileManagement::SERVICE_ID),
+                service(FileSourceUnserializer::class),
+                service(FileSystemService::SERVICE_ID),
+            ])
+            ->public();
+
+        // tao-core consumers assume PermissionChecker::class exists in the compiled container.
+        $services->set(PermissionChecker::class, PermissionChecker::class)
+            ->public();
+        $services->alias(PermissionCheckerInterface::class, PermissionChecker::class);
+
+        $services
+            ->set(ResourceManagerAssetIndexedSearchGateway::class, ResourceManagerAssetIndexedSearchGateway::class)
+            ->args(
+                [
+                    service(ElasticSearch::class),
+                    service(ResourceManagerAssetSearchQueryBuilder::class),
+                    service(PermissionChecker::class),
+                    service(LoggerService::SERVICE_ID),
+                    service(OntologyAssetMimeTypeResolver::class),
+                    service(TaoAssetUriEncoder::class),
+                    service(ResourceUpdatedAtResolver::class),
+                ]
+            )
+            ->public();
+
+        $services
+            ->alias(AssetIndexedSearchGatewayInterface::class, ResourceManagerAssetIndexedSearchGateway::class)
             ->public();
 
         $services->set(IndexConfigurationProvider::class, IndexConfigurationProvider::class)
