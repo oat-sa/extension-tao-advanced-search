@@ -28,10 +28,13 @@ use Elastic\Elasticsearch\Client;
 use oat\generis\model\data\permission\PermissionInterface;
 use oat\generis\model\DependencyInjection\ContainerServiceProviderInterface;
 use oat\generis\model\DependencyInjection\ServiceOptions;
+use oat\oatbox\filesystem\FileSystemService;
 use oat\oatbox\log\LoggerService;
 use oat\oatbox\session\SessionService;
 use oat\taoItems\model\media\AssetIndexedSearchGatewayInterface;
 use oat\taoItems\model\media\ResourceUpdatedAtResolver;
+use oat\taoMediaManager\model\fileManagement\FileManagement;
+use oat\taoMediaManager\model\fileManagement\FileSourceUnserializer;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchClientFactory;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
@@ -133,7 +136,13 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
         $services->set(TaoAssetUriEncoder::class, TaoAssetUriEncoder::class)
             ->public();
 
-        $services->set(ResourceUpdatedAtResolver::class, ResourceUpdatedAtResolver::class)
+        $services
+            ->set(ResourceUpdatedAtResolver::class, ResourceUpdatedAtResolver::class)
+            ->args([
+                service(FileManagement::SERVICE_ID),
+                service(FileSourceUnserializer::class),
+                service(FileSystemService::SERVICE_ID),
+            ])
             ->public();
 
         // tao-core consumers assume PermissionChecker::class exists in the compiled container.
@@ -141,10 +150,8 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
             ->public();
         $services->alias(PermissionCheckerInterface::class, PermissionChecker::class);
 
-        $services->set(
-            AssetIndexedSearchGatewayInterface::SERVICE_ID,
-            ResourceManagerAssetIndexedSearchGateway::class
-        )
+        $services
+            ->set(ResourceManagerAssetIndexedSearchGateway::class, ResourceManagerAssetIndexedSearchGateway::class)
             ->args(
                 [
                     service(ElasticSearch::class),
@@ -156,6 +163,10 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
                     service(ResourceUpdatedAtResolver::class),
                 ]
             )
+            ->public();
+
+        $services
+            ->alias(AssetIndexedSearchGatewayInterface::class, ResourceManagerAssetIndexedSearchGateway::class)
             ->public();
 
         $services->set(IndexConfigurationProvider::class, IndexConfigurationProvider::class)
