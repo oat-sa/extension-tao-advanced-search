@@ -12,10 +12,6 @@
     "issues": "http://forge.taotesting.com"
   },
   "repositories": [
-    {
-      "type": "vcs",
-      "url": "https://github.com/oat-sa/extension-tao-item.git"
-    }
   ],
   "keywords": [
     "tao",
@@ -27,7 +23,6 @@
     "tao-extension-name": "taoAdvancedSearch"
   },
   "minimum-stability": "dev",
-  "prefer-stable": false,
   "require": {
     "oat-sa/oatbox-extension-installer": "~1.1||dev-master",
     "ext-json": "*",
@@ -41,7 +36,6 @@
     "elasticsearch/elasticsearch": "^8.0"
   },
   "require-dev": {
-    "oat-sa/extension-tao-item": "dev-feat/AUT-4666-asset-search-api as 13.99.99",
     "php-http/mock-client": "^1.6",
     "dg/bypass-finals": "^1.7"
   },
