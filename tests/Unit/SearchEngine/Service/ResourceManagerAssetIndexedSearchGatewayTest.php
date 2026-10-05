@@ -34,6 +34,7 @@ use oat\taoAdvancedSearch\model\SearchEngine\SearchResult;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceManagerAssetIndexedSearchGateway;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceManagerAssetSearchQueryBuilder;
 use oat\taoItems\model\media\AssetSearchQuery;
+use oat\taoItems\model\media\AssetUpdatedAtNormalizer;
 use oat\taoItems\model\media\ResourceUpdatedAtResolver;
 use oat\taoMediaManager\model\MediaSource;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -78,7 +79,7 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
         $this->uriEncoder->method('encode')->willReturnCallback(static function (string $uri): string {
             return \tao_helpers_Uri::encode($uri);
         });
-        $this->updatedAtResolver = new ResourceUpdatedAtResolver();
+        $this->updatedAtResolver = $this->createUpdatedAtResolverStub();
 
         $this->subject = new ResourceManagerAssetIndexedSearchGateway(
             $this->elasticSearch,
@@ -521,6 +522,21 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
 
         $this->expectException(AssetSearchUnavailableException::class);
         $this->subject->search($query);
+    }
+
+    /**
+     * @return ResourceUpdatedAtResolver|MockObject
+     */
+    private function createUpdatedAtResolverStub()
+    {
+        $resolver = $this->createMock(ResourceUpdatedAtResolver::class);
+        $resolver->method('resolve')->willReturnCallback(
+            static function ($indexedValue, string $resourceUri): string {
+                return AssetUpdatedAtNormalizer::normalize($indexedValue) ?? '1970-01-01T00:00:00Z';
+            }
+        );
+
+        return $resolver;
     }
 
     private function createSearchQuery(): AssetSearchQuery
