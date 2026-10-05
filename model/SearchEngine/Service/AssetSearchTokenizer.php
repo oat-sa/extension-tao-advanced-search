@@ -32,20 +32,7 @@ class AssetSearchTokenizer
      */
     public function tokenize(string $value): array
     {
-        $normalized = mb_strtolower(trim($value), 'UTF-8');
-        if ($normalized === '') {
-            return [];
-        }
-
-        $parts = preg_split('/[^\p{L}\p{N}]+/u', $normalized) ?: [];
-
-        $tokens = array_values(array_filter($parts, static function (string $part): bool {
-            return $part !== '';
-        }));
-
-        $tokens = array_values(array_unique($tokens));
-
-        return $this->dropTrailingFileExtensionToken($normalized, $tokens);
+        return $this->tokenizeValue($value, true);
     }
 
     /**
@@ -76,7 +63,10 @@ class AssetSearchTokenizer
                 continue;
             }
 
-            $attributes[$index]['search_tokens'] = $this->tokenize($this->attributeNestedSearchText($attribute));
+            $attributes[$index]['search_tokens'] = $this->tokenizeValue(
+                $this->attributeNestedSearchText($attribute),
+                false
+            );
         }
 
         return $attributes;
@@ -89,16 +79,17 @@ class AssetSearchTokenizer
      */
     public function collectDocumentSearchTokens(array $body): array
     {
-        $chunks = [];
+        $tokens = [];
 
         foreach (['label', 'location'] as $field) {
             if (!isset($body[$field])) {
                 continue;
             }
             $text = $this->stringify($body[$field]);
-            if ($text !== '') {
-                $chunks[] = $text;
+            if ($text === '') {
+                continue;
             }
+            $tokens = array_merge($tokens, $this->tokenizeValue($text, true));
         }
 
         if (isset($body['attributes']) && is_array($body['attributes'])) {
@@ -107,17 +98,43 @@ class AssetSearchTokenizer
                     continue;
                 }
                 $text = $this->attributeText($attribute);
-                if ($text !== '') {
-                    $chunks[] = $text;
+                if ($text === '') {
+                    continue;
                 }
+                $tokens = array_merge($tokens, $this->tokenizeValue($text, false));
             }
         }
 
-        if ($chunks === []) {
+        if ($tokens === []) {
             return [];
         }
 
-        return $this->tokenize(implode(' ', $chunks));
+        return array_values(array_unique($tokens));
+    }
+
+    /**
+     * @return string[]
+     */
+    private function tokenizeValue(string $value, bool $dropTrailingFileExtension): array
+    {
+        $normalized = mb_strtolower(trim($value), 'UTF-8');
+        if ($normalized === '') {
+            return [];
+        }
+
+        $parts = preg_split('/[^\p{L}\p{N}]+/u', $normalized) ?: [];
+
+        $tokens = array_values(array_filter($parts, static function (string $part): bool {
+            return $part !== '';
+        }));
+
+        $tokens = array_values(array_unique($tokens));
+
+        if (!$dropTrailingFileExtension) {
+            return $tokens;
+        }
+
+        return $this->dropTrailingFileExtensionToken($normalized, $tokens);
     }
 
     /**

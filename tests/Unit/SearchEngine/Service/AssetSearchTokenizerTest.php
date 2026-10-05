@@ -60,4 +60,31 @@ class AssetSearchTokenizerTest extends TestCase
         $this->assertContains('science', $body['search_tokens']);
         $this->assertSame(['science', 'grade'], $body['attributes'][0]['search_tokens']);
     }
+
+    public function testEnrichDocumentBodyKeepsAttributeTokensWhenLabelHasFileExtension(): void
+    {
+        $body = $this->subject->enrichDocumentBody([
+            'label' => 'Clip_154.mp3',
+            'attributes' => [
+                [
+                    'raw_value' => 'Grade 2.0',
+                ],
+            ],
+        ]);
+
+        $this->assertContains('2', $body['search_tokens']);
+        $this->assertContains('0', $body['search_tokens']);
+        $this->assertSame(['grade', '2', '0'], $body['attributes'][0]['search_tokens']);
+    }
+
+    public function testEnrichAttributesRetainsDottedSuffixTokens(): void
+    {
+        $attributes = $this->subject->enrichAttributes([
+            [
+                'raw_value' => 'notes.txt',
+            ],
+        ]);
+
+        $this->assertSame(['notes', 'txt'], $attributes[0]['search_tokens']);
+    }
 }
