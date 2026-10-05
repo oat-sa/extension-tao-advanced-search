@@ -128,13 +128,11 @@ class AssetSearchTokenizer
             return $part !== '';
         }));
 
-        $tokens = array_values(array_unique($tokens));
-
-        if (!$dropTrailingFileExtension) {
-            return $tokens;
+        if ($dropTrailingFileExtension) {
+            $tokens = $this->dropTrailingFileExtensionToken($normalized, $tokens);
         }
 
-        return $this->dropTrailingFileExtensionToken($normalized, $tokens);
+        return array_values(array_unique($tokens));
     }
 
     /**

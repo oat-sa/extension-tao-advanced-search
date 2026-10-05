@@ -40,6 +40,20 @@ class AssetSearchTokenizerTest extends TestCase
         $this->assertSame(['mp3', '154'], $this->subject->tokenize('MP3_154.mp3'));
     }
 
+    public function testTokenizeKeepsStemWhenLabelEqualsNameAndExtension(): void
+    {
+        $this->assertSame(['report'], $this->subject->tokenize('report.report'));
+    }
+
+    public function testEnrichDocumentBodyKeepsReportTokenForDuplicateStemExtensionLabel(): void
+    {
+        $body = $this->subject->enrichDocumentBody([
+            'label' => 'report.report',
+        ]);
+
+        $this->assertSame(['report'], $body['search_tokens']);
+    }
+
     public function testEnrichDocumentBodyAddsSearchTokensAndNestedAttributeTokens(): void
     {
         $body = $this->subject->enrichDocumentBody([
