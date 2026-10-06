@@ -208,10 +208,16 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
             }
 
             $exhaustedIndex = $esFrom >= $esTotal;
-            $total = count($authorizedItems);
-            $totalIsApproximate = $browseListing
-                ? (!$exhaustedIndex || $scanTruncated)
-                : $scanTruncated;
+            $authorizedCount = count($authorizedItems);
+            if ($browseListing && !$exhaustedIndex) {
+                // Index not fully walked: ES total drives pagination UI (approximate; may include
+                // not-yet-scanned hits). Readable count alone caps at the first batch (e.g. 3 pages).
+                $total = $esTotal;
+                $totalIsApproximate = true;
+            } else {
+                $total = $authorizedCount;
+                $totalIsApproximate = $scanTruncated;
+            }
 
             $normalizedPage = max(1, $page);
             if (!$scanTruncated && $exhaustedIndex) {

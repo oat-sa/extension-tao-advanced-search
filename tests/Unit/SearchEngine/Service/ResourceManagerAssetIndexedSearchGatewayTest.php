@@ -192,7 +192,7 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
 
         $this->assertSame([45], $requestedSizes);
         $this->assertCount(15, $result['items']);
-        $this->assertSame(15, $result['total']);
+        $this->assertSame(100, $result['total']);
         $this->assertTrue($result['totalIsApproximate']);
     }
 
