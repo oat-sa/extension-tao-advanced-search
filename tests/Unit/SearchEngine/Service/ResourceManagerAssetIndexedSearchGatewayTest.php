@@ -130,7 +130,32 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
         $this->elasticSearch->method('searchWithBody')->willReturn(new SearchResult([], 0));
         $this->permissionChecker->method('hasReadAccess')->willReturn(true);
 
-        $this->subject->search($query);
+        $result = $this->subject->search($query);
+
+        $this->assertSame(0, $result['total']);
+        $this->assertSame(1, $result['page']);
+        $this->assertFalse($result['totalIsApproximate']);
+    }
+
+    public function testBrowseListingWithEmptyIndexClampsHighPageToOne(): void
+    {
+        $mediaSource = $this->createMock(MediaBrowser::class);
+        $asset = $this->createMock(MediaAsset::class);
+        $asset->method('getMediaSource')->willReturn($mediaSource);
+        $asset->method('getMediaIdentifier')->willReturn(MediaSource::SCHEME_NAME);
+        $query = (new AssetSearchQuery($asset, 'item-uri', 'en-US'))
+            ->setPage(5)
+            ->setPageSize(15);
+
+        $this->queryBuilder->method('build')->willReturn(['query' => ['bool' => ['must' => []]]]);
+        $this->elasticSearch->method('searchWithBody')->willReturn(new SearchResult([], 0));
+        $this->permissionChecker->method('hasReadAccess')->willReturn(true);
+
+        $result = $this->subject->search($query);
+
+        $this->assertSame(0, $result['total']);
+        $this->assertSame(1, $result['page']);
+        $this->assertSame([], $result['items']);
     }
 
     public function testBrowseListingUsesSmallBatchAndStopsAfterCurrentPage(): void
@@ -167,7 +192,7 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
 
         $this->assertSame([45], $requestedSizes);
         $this->assertCount(15, $result['items']);
-        $this->assertSame(100, $result['total']);
+        $this->assertSame(15, $result['total']);
         $this->assertTrue($result['totalIsApproximate']);
     }
 

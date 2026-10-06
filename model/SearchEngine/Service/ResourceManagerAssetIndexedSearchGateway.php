@@ -207,14 +207,11 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                 }
             }
 
-            $exhaustedIndex = $esTotal > 0 && $esFrom >= $esTotal;
-            if ($browseListing && !$exhaustedIndex) {
-                $total = $esTotal;
-                $totalIsApproximate = true;
-            } else {
-                $total = count($authorizedItems);
-                $totalIsApproximate = $scanTruncated;
-            }
+            $exhaustedIndex = $esFrom >= $esTotal;
+            $total = count($authorizedItems);
+            $totalIsApproximate = $browseListing
+                ? (!$exhaustedIndex || $scanTruncated)
+                : $scanTruncated;
 
             $normalizedPage = max(1, $page);
             if (!$scanTruncated && $exhaustedIndex) {
