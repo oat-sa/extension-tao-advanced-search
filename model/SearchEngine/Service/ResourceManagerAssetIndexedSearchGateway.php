@@ -157,6 +157,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
 
                 $batchHits = iterator_to_array($result);
                 if ($batchHits === []) {
+                    $indexFullyScanned = true;
                     break;
                 }
 
@@ -287,8 +288,12 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
         int $page,
         int $pageSize
     ): int {
+        if ($esTotal <= 0 && $authorizedCount <= 0) {
+            return 0;
+        }
+
         $minimumForPagination = max($authorizedCount, ($page + 1) * $pageSize);
-        if ($scannedHits <= 0 || $esTotal <= 0 || $authorizedCount <= 0) {
+        if ($scannedHits <= 0 || $authorizedCount <= 0) {
             return $minimumForPagination;
         }
 
