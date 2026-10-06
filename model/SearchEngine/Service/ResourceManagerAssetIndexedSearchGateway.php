@@ -159,12 +159,13 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                     break;
                 }
 
-                $scannedHits += count($batchHits);
-
+                $browseTargetReached = false;
+                $hitsExaminedInBatch = 0;
                 foreach ($batchHits as $hit) {
                     if (!is_array($hit)) {
                         continue;
                     }
+                    $hitsExaminedInBatch++;
 
                     $uri = (string)($hit['id'] ?? '');
                     if ($uri === '' || !$this->permissionChecker->hasReadAccess($uri)) {
@@ -184,11 +185,17 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                         'hit' => $hit,
                         'mime' => $mimeForFilter,
                     ];
+
+                    if ($authorizedTarget !== null && count($authorizedItems) >= $authorizedTarget) {
+                        $browseTargetReached = true;
+                        break;
+                    }
                 }
+                $scannedHits += $hitsExaminedInBatch;
 
                 $esFrom += $requestSize;
 
-                if ($authorizedTarget !== null && count($authorizedItems) >= $authorizedTarget) {
+                if ($browseTargetReached) {
                     break;
                 }
 
@@ -210,9 +217,13 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
             $exhaustedIndex = $esFrom >= $esTotal;
             $authorizedCount = count($authorizedItems);
             if ($browseListing && !$exhaustedIndex) {
-                // Index not fully walked: ES total drives pagination UI (approximate; may include
-                // not-yet-scanned hits). Readable count alone caps at the first batch (e.g. 3 pages).
-                $total = $esTotal;
+                $total = $this->estimateIncompleteBrowseTotal(
+                    $authorizedCount,
+                    $scannedHits,
+                    $esTotal,
+                    $page,
+                    $pageSize
+                );
                 $totalIsApproximate = true;
             } else {
                 $total = $authorizedCount;
@@ -248,6 +259,30 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                 $exception
             );
         }
+    }
+
+    /**
+     * Estimate readable total for browse while the index is not fully scanned.
+     * Scales partial ACL/mime filtering results; never returns raw ES total as exact.
+     */
+    private function estimateIncompleteBrowseTotal(
+        int $authorizedCount,
+        int $scannedHits,
+        int $esTotal,
+        int $page,
+        int $pageSize
+    ): int {
+        $minimumForPagination = max($authorizedCount, ($page + 1) * $pageSize);
+        if ($scannedHits <= 0 || $esTotal <= 0 || $authorizedCount <= 0) {
+            return $minimumForPagination;
+        }
+
+        $estimatedReadable = (int)min(
+            $esTotal,
+            max($authorizedCount, (int)ceil(($authorizedCount / $scannedHits) * $esTotal))
+        );
+
+        return max($minimumForPagination, $estimatedReadable);
     }
 
     private function isBrowseListing(AssetSearchQuery $query): bool
