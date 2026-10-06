@@ -196,6 +196,38 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
         $this->assertTrue($result['totalIsApproximate']);
     }
 
+    public function testBrowseListingDoesNotTreatEarlyPageStopAsExhaustedIndex(): void
+    {
+        $mediaSource = $this->createMock(MediaBrowser::class);
+        $asset = $this->createMock(MediaAsset::class);
+        $asset->method('getMediaSource')->willReturn($mediaSource);
+        $asset->method('getMediaIdentifier')->willReturn(MediaSource::SCHEME_NAME);
+        $query = (new AssetSearchQuery($asset, 'item-uri', 'en-US'))
+            ->setPage(1)
+            ->setPageSize(15);
+
+        $this->queryBuilder->method('build')->willReturn(['query' => ['bool' => ['must' => []]]]);
+
+        $hits = [];
+        for ($i = 0; $i < 30; $i++) {
+            $hits[] = [
+                'id' => 'asset://hit-' . $i,
+                'label' => 'Hit ' . $i,
+                'mime_type' => 'image/png',
+            ];
+        }
+        $this->elasticSearch->method('searchWithBody')->willReturn(
+            new SearchResult($hits, count($hits))
+        );
+        $this->permissionChecker->method('hasReadAccess')->willReturn(true);
+
+        $result = $this->subject->search($query);
+
+        $this->assertCount(15, $result['items']);
+        $this->assertTrue($result['totalIsApproximate']);
+        $this->assertGreaterThan(15, $result['total']);
+    }
+
     public function testSearchScopesByClassUriFromBrowsePath(): void
     {
         $folderClassUri = 'http://www.tao.lu/Ontologies/TAOMedia.rdf#iNestedFolder';

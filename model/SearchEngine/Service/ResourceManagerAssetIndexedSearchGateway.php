@@ -132,6 +132,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
             $esFrom = 0;
             $scannedHits = 0;
             $scanTruncated = false;
+            $indexFullyScanned = false;
 
             while (true) {
                 $remainingBudget = self::MAX_SCANNED_HITS - $scannedHits;
@@ -157,6 +158,13 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                 $batchHits = iterator_to_array($result);
                 if ($batchHits === []) {
                     break;
+                }
+
+                $examinableHitsInBatch = 0;
+                foreach ($batchHits as $hit) {
+                    if (is_array($hit)) {
+                        $examinableHitsInBatch++;
+                    }
                 }
 
                 $browseTargetReached = false;
@@ -193,9 +201,16 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                 }
                 $scannedHits += $hitsExaminedInBatch;
 
+                $batchFullyProcessed = $hitsExaminedInBatch >= $examinableHitsInBatch;
+                $receivedPartialBatch = count($batchHits) < $requestSize;
+
                 $esFrom += $requestSize;
 
-                if ($browseTargetReached) {
+                if ($batchFullyProcessed && ($receivedPartialBatch || $esFrom >= $esTotal)) {
+                    $indexFullyScanned = true;
+                }
+
+                if ($browseTargetReached || $indexFullyScanned) {
                     break;
                 }
 
@@ -214,7 +229,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                 }
             }
 
-            $exhaustedIndex = $esFrom >= $esTotal;
+            $exhaustedIndex = $indexFullyScanned;
             $authorizedCount = count($authorizedItems);
             if ($browseListing && !$exhaustedIndex) {
                 $total = $this->estimateIncompleteBrowseTotal(
