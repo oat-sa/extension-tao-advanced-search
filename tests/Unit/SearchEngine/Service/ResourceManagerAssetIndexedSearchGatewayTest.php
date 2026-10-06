@@ -37,6 +37,7 @@ use oat\taoItems\model\media\AssetSearchQuery;
 use oat\taoItems\model\media\AssetUpdatedAtNormalizer;
 use oat\taoItems\model\media\ResourceUpdatedAtResolver;
 use oat\taoMediaManager\model\MediaSource;
+use oat\taoMediaManager\model\TaoMediaOntology;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -105,6 +106,69 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
         $this->logger->expects($this->once())->method('warning');
 
         $this->assertFalse($this->subject->isAvailable());
+    }
+
+    public function testBrowseListingScopesBareMediamanagerPathToMediaRootClass(): void
+    {
+        $rootClassUri = TaoMediaOntology::CLASS_URI_MEDIA_ROOT;
+        $mediaSource = $this->createMock(MediaBrowser::class);
+        $asset = $this->createMock(MediaAsset::class);
+        $asset->method('getMediaSource')->willReturn($mediaSource);
+        $asset->method('getMediaIdentifier')->willReturn(MediaSource::SCHEME_NAME);
+        $query = (new AssetSearchQuery($asset, 'item-uri', 'en-US'))
+            ->setPage(1)
+            ->setPageSize(15);
+
+        $this->queryBuilder->expects($this->once())
+            ->method('build')
+            ->with(
+                $query,
+                $rootClassUri,
+                $query->getMetadataCriteria()
+            )
+            ->willReturn(['query' => ['bool' => ['must' => []]]]);
+        $this->elasticSearch->method('searchWithBody')->willReturn(new SearchResult([], 0));
+        $this->permissionChecker->method('hasReadAccess')->willReturn(true);
+
+        $this->subject->search($query);
+    }
+
+    public function testBrowseListingUsesSmallBatchAndStopsAfterCurrentPage(): void
+    {
+        $mediaSource = $this->createMock(MediaBrowser::class);
+        $asset = $this->createMock(MediaAsset::class);
+        $asset->method('getMediaSource')->willReturn($mediaSource);
+        $asset->method('getMediaIdentifier')->willReturn(MediaSource::SCHEME_NAME);
+        $query = (new AssetSearchQuery($asset, 'item-uri', 'en-US'))
+            ->setPage(1)
+            ->setPageSize(15);
+
+        $this->queryBuilder->method('build')->willReturn(['query' => ['bool' => ['must' => []]]]);
+
+        $requestedSizes = [];
+        $hits = [];
+        for ($i = 0; $i < 100; $i++) {
+            $hits[] = [
+                'id' => 'asset://hit-' . $i,
+                'label' => 'Hit ' . $i,
+                'mime_type' => 'image/png',
+            ];
+        }
+        $this->elasticSearch->method('searchWithBody')->willReturnCallback(
+            static function ($index, array $body) use ($hits, &$requestedSizes): SearchResult {
+                $requestedSizes[] = (int)($body['size'] ?? 0);
+
+                return new SearchResult(array_slice($hits, 0, (int)($body['size'] ?? 0)), count($hits));
+            }
+        );
+        $this->permissionChecker->method('hasReadAccess')->willReturn(true);
+
+        $result = $this->subject->search($query);
+
+        $this->assertSame([45], $requestedSizes);
+        $this->assertCount(15, $result['items']);
+        $this->assertSame(100, $result['total']);
+        $this->assertTrue($result['totalIsApproximate']);
     }
 
     public function testSearchScopesByClassUriFromBrowsePath(): void

@@ -33,6 +33,7 @@ use oat\taoItems\model\media\AssetSearchQuery;
 use oat\taoItems\model\media\AssetSearchUnavailableException;
 use oat\taoItems\model\media\ResourceUpdatedAtResolver;
 use oat\taoMediaManager\model\MediaSource;
+use oat\taoMediaManager\model\TaoMediaOntology;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -110,7 +111,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
     public function search(AssetSearchQuery $query): array
     {
         try {
-            $scopeClassUri = $this->resolveScopeClassUri($query->getParentLink());
+            $scopeClassUri = $this->resolveScopeClassUri($query);
             $searchBody = $this->queryBuilder->build(
                 $query,
                 $scopeClassUri,
@@ -120,13 +121,17 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
 
             $pageSize = max(1, $query->getPageSize());
             $page = max(1, $query->getPage());
+            $browseListing = $this->isBrowseListing($query);
+            $batchSize = $browseListing
+                ? max($pageSize * self::FETCH_MULTIPLIER, $pageSize)
+                : max($pageSize * self::FETCH_MULTIPLIER, self::MIN_FETCH_BATCH_SIZE);
+            $authorizedTarget = $browseListing ? $page * $pageSize : null;
 
             $authorizedItems = [];
             $esTotal = 0;
             $esFrom = 0;
             $scannedHits = 0;
             $scanTruncated = false;
-            $batchSize = max($pageSize * self::FETCH_MULTIPLIER, self::MIN_FETCH_BATCH_SIZE);
 
             while (true) {
                 $remainingBudget = self::MAX_SCANNED_HITS - $scannedHits;
@@ -183,6 +188,10 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
 
                 $esFrom += $requestSize;
 
+                if ($authorizedTarget !== null && count($authorizedItems) >= $authorizedTarget) {
+                    break;
+                }
+
                 if ($esFrom >= $esTotal) {
                     break;
                 }
@@ -198,9 +207,17 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                 }
             }
 
-            $total = count($authorizedItems);
+            $exhaustedIndex = $esTotal > 0 && $esFrom >= $esTotal;
+            if ($browseListing && !$exhaustedIndex) {
+                $total = $esTotal;
+                $totalIsApproximate = true;
+            } else {
+                $total = count($authorizedItems);
+                $totalIsApproximate = $scanTruncated;
+            }
+
             $normalizedPage = max(1, $page);
-            if (!$scanTruncated && $esFrom >= $esTotal) {
+            if (!$scanTruncated && $exhaustedIndex) {
                 $maxPage = max(1, (int)ceil($total / $pageSize) ?: 1);
                 $normalizedPage = min($normalizedPage, $maxPage);
             }
@@ -217,7 +234,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                 'total' => $total,
                 'page' => $normalizedPage,
                 'pageSize' => $pageSize,
-                'totalIsApproximate' => $scanTruncated,
+                'totalIsApproximate' => $totalIsApproximate,
             ];
         } catch (AssetSearchUnavailableException $exception) {
             throw $exception;
@@ -230,25 +247,47 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
         }
     }
 
+    private function isBrowseListing(AssetSearchQuery $query): bool
+    {
+        return trim($query->getQuery()) === '' && !$query->hasMetadataCriteria();
+    }
+
     /**
      * Folder scope from browse path ({@code taomedia://…} or RDF class URI).
      */
-    private function resolveScopeClassUri(string $parentLink): string
+    private function resolveScopeClassUri(AssetSearchQuery $query): string
     {
-        $parentLink = trim($parentLink);
+        $parentLink = trim($query->getParentLink());
         if ($parentLink === '' || $parentLink === '/') {
-            return '';
+            return $this->resolveMediaRootClassUri($query);
         }
 
         if (strpos($parentLink, MediaSource::SCHEME_NAME) === 0) {
-            return \tao_helpers_Uri::decode(substr($parentLink, strlen(MediaSource::SCHEME_NAME)));
+            $classUri = \tao_helpers_Uri::decode(substr($parentLink, strlen(MediaSource::SCHEME_NAME)));
+            if ($classUri === '' || $classUri === '/') {
+                return $this->resolveMediaRootClassUri($query);
+            }
+
+            return $classUri;
         }
 
         if (preg_match('#^https?://#i', $parentLink)) {
             return $parentLink;
         }
 
-        return \tao_helpers_Uri::decode($parentLink);
+        $decoded = \tao_helpers_Uri::decode($parentLink);
+
+        return $decoded !== '' ? $decoded : $this->resolveMediaRootClassUri($query);
+    }
+
+    private function resolveMediaRootClassUri(AssetSearchQuery $query): string
+    {
+        $mediaSource = $query->getAsset()->getMediaSource();
+        if ($mediaSource instanceof MediaSource) {
+            return $mediaSource->getRootClass()->getUri();
+        }
+
+        return TaoMediaOntology::CLASS_URI_MEDIA_ROOT;
     }
 
     /**
