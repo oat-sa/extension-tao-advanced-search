@@ -22,7 +22,11 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\SearchEngine\Service;
 
+use oat\generis\model\data\permission\PermissionInterface;
+use oat\oatbox\session\SessionService;
+use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\QueryBlock;
+use oat\taoAdvancedSearch\model\SearchEngine\Specification\UseAclSpecification;
 use oat\taoItems\model\media\AssetSearchQuery;
 
 /**
@@ -47,14 +51,37 @@ class ResourceManagerAssetSearchQueryBuilder
     /** @var AssetSearchTokenizer */
     private $assetSearchTokenizer;
 
+    /** @var SessionService */
+    private $sessionService;
+
+    /** @var PermissionInterface */
+    private $permission;
+
+    /** @var UseAclSpecification */
+    private $useAclSpecification;
+
+    /** Whether the last {@see build()} added a {@code read_access} filter. */
+    private $lastBuildAppliedAccessControl = false;
+
     public function __construct(
         NestedAttributesQueryService $nestedAttributesQueryService,
         ResourceQueryBlockSupport $resourceQueryBlockSupport,
+        SessionService $sessionService,
+        PermissionInterface $permission,
+        UseAclSpecification $useAclSpecification,
         AssetSearchTokenizer $assetSearchTokenizer = null
     ) {
         $this->nestedAttributesQueryService = $nestedAttributesQueryService;
         $this->resourceQueryBlockSupport = $resourceQueryBlockSupport;
+        $this->sessionService = $sessionService;
+        $this->permission = $permission;
+        $this->useAclSpecification = $useAclSpecification;
         $this->assetSearchTokenizer = $assetSearchTokenizer ?? new AssetSearchTokenizer();
+    }
+
+    public function lastBuildAppliedAccessControl(): bool
+    {
+        return $this->lastBuildAppliedAccessControl;
     }
 
     /**
@@ -65,10 +92,18 @@ class ResourceManagerAssetSearchQueryBuilder
         string $scopeClassUri,
         array $metadataCriteria = []
     ): array {
+        $this->lastBuildAppliedAccessControl = false;
         $mustClauses = [];
 
         if ($scopeClassUri !== '') {
             $mustClauses[] = $this->buildScopeClause($scopeClassUri);
+        }
+
+        if ($this->includeAccessControlInQuery()) {
+            $mustClauses[] = $this->resourceQueryBlockSupport->buildAccessControlMustClause(
+                $this->getAccessControlIdentifiers()
+            );
+            $this->lastBuildAppliedAccessControl = true;
         }
 
         $trimmedQuery = trim($query->getQuery());
@@ -85,9 +120,6 @@ class ResourceManagerAssetSearchQueryBuilder
             return is_string($value) && $value !== '';
         }));
         if ($mimeTypes !== []) {
-            // Prefer keyword mapping from assets.conf.php. Some local/legacy indices
-            // still map mime_type as text+keyword (dynamic), so also match .keyword.
-            // Docs without mime_type are kept for PHP post-filter via ontology.
             $mustClauses[] = [
                 'bool' => [
                     'should' => [
@@ -231,5 +263,29 @@ class ResourceManagerAssetSearchQueryBuilder
     private function escapeFlatQueryStringTerm(string $value): string
     {
         return str_replace(['\\', '"'], ['\\\\', '\\"'], $value);
+    }
+
+    private function includeAccessControlInQuery(): bool
+    {
+        return $this->useAclSpecification->isSatisfiedBy(
+            IndexerInterface::ASSETS_INDEX,
+            $this->permission,
+            $this->sessionService->getCurrentUser()
+        );
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function getAccessControlIdentifiers(): array
+    {
+        $identifiers = [];
+        $currentUser = $this->sessionService->getCurrentUser();
+        $identifiers[] = $currentUser->getIdentifier();
+        foreach ($currentUser->getRoles() as $role) {
+            $identifiers[] = $role;
+        }
+
+        return $identifiers;
     }
 }
