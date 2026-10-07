@@ -22,6 +22,9 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\SearchEngine\Service;
 
+use oat\generis\model\data\permission\PermissionInterface;
+use oat\oatbox\session\SessionService;
+use oat\oatbox\user\User;
 use oat\tao\model\media\MediaAsset;
 use oat\tao\model\media\MediaBrowser;
 use oat\taoItems\model\media\AssetSearchQuery;
@@ -29,6 +32,8 @@ use oat\taoAdvancedSearch\model\SearchEngine\Service\AssetSearchTokenizer;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesQueryService;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceManagerAssetSearchQueryBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceQueryBlockSupport;
+use oat\taoAdvancedSearch\model\SearchEngine\Specification\UseAclSpecification;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
@@ -38,12 +43,59 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
     /** @var ResourceManagerAssetSearchQueryBuilder */
     private $subject;
 
+    /** @var SessionService|MockObject */
+    private $sessionService;
+
+    /** @var PermissionInterface|MockObject */
+    private $permission;
+
+    /** @var UseAclSpecification|MockObject */
+    private $useAclSpecification;
+
     protected function setUp(): void
     {
+        $this->sessionService = $this->createMock(SessionService::class);
+        $this->sessionService->method('getCurrentUser')->willReturn($this->createMock(User::class));
+        $this->permission = $this->createMock(PermissionInterface::class);
+        $this->useAclSpecification = $this->createMock(UseAclSpecification::class);
+        $this->useAclSpecification->method('isSatisfiedBy')->willReturn(false);
+
         $this->subject = new ResourceManagerAssetSearchQueryBuilder(
             new NestedAttributesQueryService(),
             new ResourceQueryBlockSupport(),
+            $this->sessionService,
+            $this->permission,
+            $this->useAclSpecification,
             new AssetSearchTokenizer()
+        );
+    }
+
+    public function testBuildAddsReadAccessFilterWhenAclSpecificationRequiresIt(): void
+    {
+        $sessionService = $this->createMock(SessionService::class);
+        $user = $this->createMock(User::class);
+        $user->method('getIdentifier')->willReturn('user-id-1');
+        $user->method('getRoles')->willReturn(['role-uri-1']);
+        $sessionService->method('getCurrentUser')->willReturn($user);
+
+        $this->useAclSpecification = $this->createMock(UseAclSpecification::class);
+        $this->useAclSpecification->method('isSatisfiedBy')->willReturn(true);
+        $this->subject = new ResourceManagerAssetSearchQueryBuilder(
+            new NestedAttributesQueryService(),
+            new ResourceQueryBlockSupport(),
+            $sessionService,
+            $this->permission,
+            $this->useAclSpecification,
+            new AssetSearchTokenizer()
+        );
+
+        $body = $this->subject->build($this->createQuery(''), '');
+
+        $this->assertTrue($this->subject->lastBuildAppliedAccessControl());
+        $aclClause = end($body['query']['bool']['must']);
+        $this->assertSame(
+            ['user-id-1', 'role-uri-1'],
+            $aclClause['terms']['read_access']
         );
     }
 
@@ -135,7 +187,7 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
             ['video/mp4', 'image/png'],
             $mimeClause['bool']['should'][1]['terms']['mime_type.keyword']
         );
-        $this->assertArrayHasKey('must_not', $mimeClause['bool']['should'][2]['bool']);
+        $this->assertCount(2, $mimeClause['bool']['should']);
     }
 
     public function testBuildAddsMetadataClauseWithPropertyUriAndValue(): void

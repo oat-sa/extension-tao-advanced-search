@@ -50,7 +50,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
 
     private const MIN_FETCH_BATCH_SIZE = 500;
 
-    /** Hard stop so ACL post-filter cannot walk an unbounded index. */
+    /** Hard stop when ACL is applied in PHP during full-text search (no ES {@code read_access} clause). */
     private const MAX_SCANNED_HITS = 2000;
 
     /** @var string[] */
@@ -117,6 +117,16 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                 $scopeClassUri,
                 $query->getMetadataCriteria()
             );
+
+            $accessControlInQuery = $this->queryUsesElasticsearchAccessControl();
+            if ($accessControlInQuery || $this->isBrowseListing($query)) {
+                return $this->searchWithDirectElasticsearchPagination(
+                    $query,
+                    $searchBody,
+                    $accessControlInQuery
+                );
+            }
+
             $searchBody['_source'] = self::SEARCH_SOURCE_FIELDS;
 
             $pageSize = max(1, $query->getPageSize());
@@ -308,6 +318,63 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
     private function isBrowseListing(AssetSearchQuery $query): bool
     {
         return trim($query->getQuery()) === '' && !$query->hasMetadataCriteria();
+    }
+
+    private function queryUsesElasticsearchAccessControl(): bool
+    {
+        return $this->queryBuilder instanceof ResourceManagerAssetSearchQueryBuilder
+            && $this->queryBuilder->lastBuildAppliedAccessControl();
+    }
+
+    /**
+     * @param array<string, mixed> $searchBody
+     * @return array<string, mixed>
+     */
+    private function searchWithDirectElasticsearchPagination(
+        AssetSearchQuery $query,
+        array $searchBody,
+        bool $accessControlInQuery
+    ): array {
+        $pageSize = max(1, $query->getPageSize());
+        $page = max(1, $query->getPage());
+
+        $searchBody['_source'] = self::SEARCH_SOURCE_FIELDS;
+        $searchBody['from'] = ($page - 1) * $pageSize;
+        $searchBody['size'] = $pageSize;
+        $searchBody['track_total_hits'] = true;
+
+        $result = $this->elasticSearch->searchWithBody(IndexerInterface::ASSETS_INDEX, $searchBody);
+        $total = $result->getTotalCount();
+
+        $pageItems = [];
+        foreach ($result as $hit) {
+            if (!is_array($hit)) {
+                continue;
+            }
+
+            $uri = (string)($hit['id'] ?? '');
+            if ($uri === '' || (!$accessControlInQuery && !$this->permissionChecker->hasReadAccess($uri))) {
+                continue;
+            }
+
+            $indexedMime = trim($this->stringifyHitValue($hit['mime_type'] ?? ''));
+            if (!$this->matchesMimeFilter($indexedMime, $query->getFilter())) {
+                continue;
+            }
+
+            $pageItems[] = $this->mapHit($hit, $indexedMime);
+        }
+
+        $maxPage = max(1, (int)ceil($total / $pageSize) ?: 1);
+        $normalizedPage = min($page, $maxPage);
+
+        return [
+            'items' => array_values($pageItems),
+            'total' => $total,
+            'page' => $normalizedPage,
+            'pageSize' => $pageSize,
+            'totalIsApproximate' => !$accessControlInQuery,
+        ];
     }
 
     /**

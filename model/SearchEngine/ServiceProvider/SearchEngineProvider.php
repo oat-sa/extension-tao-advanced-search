@@ -120,6 +120,9 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
                 [
                     service(NestedAttributesQueryService::class),
                     service(ResourceQueryBlockSupport::class),
+                    service(SessionService::SERVICE_ID),
+                    service(PermissionInterface::SERVICE_ID),
+                    service(UseAclSpecification::class),
                     service(AssetSearchTokenizer::class),
                 ]
             )
