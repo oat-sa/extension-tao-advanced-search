@@ -119,11 +119,11 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
             );
 
             $accessControlInQuery = $this->queryUsesElasticsearchAccessControl();
-            if ($accessControlInQuery || $this->isBrowseListing($query)) {
+            if ($accessControlInQuery) {
                 return $this->searchWithDirectElasticsearchPagination(
                     $query,
                     $searchBody,
-                    $accessControlInQuery
+                    true
                 );
             }
 
@@ -322,8 +322,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
 
     private function queryUsesElasticsearchAccessControl(): bool
     {
-        return $this->queryBuilder instanceof ResourceManagerAssetSearchQueryBuilder
-            && $this->queryBuilder->lastBuildAppliedAccessControl();
+        return $this->queryBuilder->lastBuildAppliedAccessControl();
     }
 
     /**
@@ -358,11 +357,12 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
             }
 
             $indexedMime = trim($this->stringifyHitValue($hit['mime_type'] ?? ''));
-            if (!$this->matchesMimeFilter($indexedMime, $query->getFilter())) {
-                continue;
+            $mimeForMap = $indexedMime;
+            if ($mimeForMap === '' && $this->hasActiveMimeFilter($query->getFilter()) && $uri !== '') {
+                $mimeForMap = trim($this->mimeTypeResolver->resolve($uri));
             }
 
-            $pageItems[] = $this->mapHit($hit, $indexedMime);
+            $pageItems[] = $this->mapHit($hit, $mimeForMap);
         }
 
         $maxPage = max(1, (int)ceil($total / $pageSize) ?: 1);
@@ -373,7 +373,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
             'total' => $total,
             'page' => $normalizedPage,
             'pageSize' => $pageSize,
-            'totalIsApproximate' => !$accessControlInQuery,
+            'totalIsApproximate' => false,
         ];
     }
 

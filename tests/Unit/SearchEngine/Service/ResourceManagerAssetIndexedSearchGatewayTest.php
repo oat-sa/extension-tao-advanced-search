@@ -72,7 +72,6 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
     {
         $this->elasticSearch = $this->createMock(ElasticSearch::class);
         $this->queryBuilder = $this->createMock(ResourceManagerAssetSearchQueryBuilder::class);
-        $this->queryBuilder->method('lastBuildAppliedAccessControl')->willReturn(false);
         $this->permissionChecker = $this->createMock(PermissionCheckerInterface::class);
         $this->logger = $this->createMock(LoggerInterface::class);
         $this->mimeTypeResolver = $this->createMock(AssetMimeTypeResolverInterface::class);
@@ -200,7 +199,7 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
         $this->assertFalse($result['totalIsApproximate']);
     }
 
-    public function testBrowseListingUsesSingleElasticsearchPageWithoutAccessControlInQuery(): void
+    public function testBrowseListingScansElasticsearchWhenAccessControlIsNotInQuery(): void
     {
         $mediaSource = $this->createMock(MediaBrowser::class);
         $asset = $this->createMock(MediaAsset::class);
@@ -224,21 +223,23 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
         $this->elasticSearch->method('searchWithBody')->willReturnCallback(
             static function ($index, array $body) use ($hits, &$requestedSizes): SearchResult {
                 $requestedSizes[] = (int)($body['size'] ?? 0);
+                $from = (int)($body['from'] ?? 0);
+                $size = (int)($body['size'] ?? 0);
 
-                return new SearchResult(array_slice($hits, 0, (int)($body['size'] ?? 0)), count($hits));
+                return new SearchResult(array_slice($hits, $from, $size), count($hits));
             }
         );
         $this->permissionChecker->method('hasReadAccess')->willReturn(true);
 
         $result = $this->subject->search($query);
 
-        $this->assertSame([15], $requestedSizes);
+        $this->assertSame([45], $requestedSizes);
         $this->assertCount(15, $result['items']);
         $this->assertSame(100, $result['total']);
         $this->assertTrue($result['totalIsApproximate']);
     }
 
-    public function testBrowseListingReportsElasticsearchTotalWhenAccessControlIsNotInQuery(): void
+    public function testBrowseListingWithoutAccessControlInQueryDoesNotExposeRawIndexTotalWhenHitsAreUnreadable(): void
     {
         $mediaSource = $this->createMock(MediaBrowser::class);
         $asset = $this->createMock(MediaAsset::class);
@@ -258,16 +259,25 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
                 'mime_type' => 'image/png',
             ];
         }
-        $this->elasticSearch->method('searchWithBody')->willReturn(
-            new SearchResult($hits, count($hits))
+        $this->elasticSearch->method('searchWithBody')->willReturnCallback(
+            static function ($index, array $body) use ($hits): SearchResult {
+                $from = (int)($body['from'] ?? 0);
+                $size = (int)($body['size'] ?? count($hits));
+
+                return new SearchResult(array_slice($hits, $from, $size), count($hits));
+            }
         );
-        $this->permissionChecker->method('hasReadAccess')->willReturn(true);
+        $this->permissionChecker->method('hasReadAccess')->willReturnCallback(
+            static function (string $uri): bool {
+                return $uri === 'asset://hit-0';
+            }
+        );
 
         $result = $this->subject->search($query);
 
-        $this->assertCount(15, $result['items']);
-        $this->assertTrue($result['totalIsApproximate']);
-        $this->assertSame(30, $result['total']);
+        $this->assertCount(1, $result['items']);
+        $this->assertSame(1, $result['total']);
+        $this->assertFalse($result['totalIsApproximate']);
     }
 
     public function testSearchScopesByClassUriFromBrowsePath(): void

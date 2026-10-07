@@ -125,6 +125,13 @@ class ResourceManagerAssetSearchQueryBuilder
                     'should' => [
                         ['terms' => ['mime_type' => $mimeTypes]],
                         ['terms' => ['mime_type.keyword' => $mimeTypes]],
+                        [
+                            'bool' => [
+                                'must_not' => [
+                                    ['exists' => ['field' => 'mime_type']],
+                                ],
+                            ],
+                        ],
                     ],
                     'minimum_should_match' => 1,
                 ],

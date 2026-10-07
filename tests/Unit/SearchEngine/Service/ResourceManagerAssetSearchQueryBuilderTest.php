@@ -187,7 +187,11 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
             ['video/mp4', 'image/png'],
             $mimeClause['bool']['should'][1]['terms']['mime_type.keyword']
         );
-        $this->assertCount(2, $mimeClause['bool']['should']);
+        $this->assertCount(3, $mimeClause['bool']['should']);
+        $this->assertSame(
+            ['field' => 'mime_type'],
+            $mimeClause['bool']['should'][2]['bool']['must_not'][0]['exists']
+        );
     }
 
     public function testBuildAddsMetadataClauseWithPropertyUriAndValue(): void
