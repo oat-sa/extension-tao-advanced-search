@@ -33,6 +33,7 @@ use oat\taoItems\model\media\AssetSearchQuery;
 use oat\taoItems\model\media\AssetSearchUnavailableException;
 use oat\taoItems\model\media\ResourceUpdatedAtResolver;
 use oat\taoMediaManager\model\MediaSource;
+use oat\taoMediaManager\model\TaoMediaOntology;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -49,7 +50,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
 
     private const MIN_FETCH_BATCH_SIZE = 500;
 
-    /** Hard stop so ACL post-filter cannot walk an unbounded index. */
+    /** Hard stop when ACL is applied in PHP during full-text search (no ES {@code read_access} clause). */
     private const MAX_SCANNED_HITS = 2000;
 
     /** @var string[] */
@@ -110,23 +111,38 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
     public function search(AssetSearchQuery $query): array
     {
         try {
-            $scopeClassUri = $this->resolveScopeClassUri($query->getParentLink());
+            $scopeClassUri = $this->resolveScopeClassUri($query);
             $searchBody = $this->queryBuilder->build(
                 $query,
                 $scopeClassUri,
                 $query->getMetadataCriteria()
             );
+
+            $accessControlInQuery = $this->queryUsesElasticsearchAccessControl();
+            if ($accessControlInQuery) {
+                return $this->searchWithDirectElasticsearchPagination(
+                    $query,
+                    $searchBody,
+                    true
+                );
+            }
+
             $searchBody['_source'] = self::SEARCH_SOURCE_FIELDS;
 
             $pageSize = max(1, $query->getPageSize());
             $page = max(1, $query->getPage());
+            $browseListing = $this->isBrowseListing($query);
+            $batchSize = $browseListing
+                ? max($pageSize * self::FETCH_MULTIPLIER, $pageSize)
+                : max($pageSize * self::FETCH_MULTIPLIER, self::MIN_FETCH_BATCH_SIZE);
+            $authorizedTarget = $browseListing ? $page * $pageSize : null;
 
             $authorizedItems = [];
             $esTotal = 0;
             $esFrom = 0;
             $scannedHits = 0;
             $scanTruncated = false;
-            $batchSize = max($pageSize * self::FETCH_MULTIPLIER, self::MIN_FETCH_BATCH_SIZE);
+            $indexFullyScanned = false;
 
             while (true) {
                 $remainingBudget = self::MAX_SCANNED_HITS - $scannedHits;
@@ -151,15 +167,24 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
 
                 $batchHits = iterator_to_array($result);
                 if ($batchHits === []) {
+                    $indexFullyScanned = true;
                     break;
                 }
 
-                $scannedHits += count($batchHits);
+                $examinableHitsInBatch = 0;
+                foreach ($batchHits as $hit) {
+                    if (is_array($hit)) {
+                        $examinableHitsInBatch++;
+                    }
+                }
 
+                $browseTargetReached = false;
+                $hitsExaminedInBatch = 0;
                 foreach ($batchHits as $hit) {
                     if (!is_array($hit)) {
                         continue;
                     }
+                    $hitsExaminedInBatch++;
 
                     $uri = (string)($hit['id'] ?? '');
                     if ($uri === '' || !$this->permissionChecker->hasReadAccess($uri)) {
@@ -179,9 +204,26 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                         'hit' => $hit,
                         'mime' => $mimeForFilter,
                     ];
+
+                    if ($authorizedTarget !== null && count($authorizedItems) >= $authorizedTarget) {
+                        $browseTargetReached = true;
+                        break;
+                    }
                 }
+                $scannedHits += $hitsExaminedInBatch;
+
+                $batchFullyProcessed = $hitsExaminedInBatch >= $examinableHitsInBatch;
+                $receivedPartialBatch = count($batchHits) < $requestSize;
 
                 $esFrom += $requestSize;
+
+                if ($batchFullyProcessed && ($receivedPartialBatch || $esFrom >= $esTotal)) {
+                    $indexFullyScanned = true;
+                }
+
+                if ($browseTargetReached || $indexFullyScanned) {
+                    break;
+                }
 
                 if ($esFrom >= $esTotal) {
                     break;
@@ -198,9 +240,24 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                 }
             }
 
-            $total = count($authorizedItems);
+            $exhaustedIndex = $indexFullyScanned;
+            $authorizedCount = count($authorizedItems);
+            if ($browseListing && !$exhaustedIndex) {
+                $total = $this->estimateIncompleteBrowseTotal(
+                    $authorizedCount,
+                    $scannedHits,
+                    $esTotal,
+                    $page,
+                    $pageSize
+                );
+                $totalIsApproximate = true;
+            } else {
+                $total = $authorizedCount;
+                $totalIsApproximate = $scanTruncated;
+            }
+
             $normalizedPage = max(1, $page);
-            if (!$scanTruncated && $esFrom >= $esTotal) {
+            if (!$scanTruncated && $exhaustedIndex) {
                 $maxPage = max(1, (int)ceil($total / $pageSize) ?: 1);
                 $normalizedPage = min($normalizedPage, $maxPage);
             }
@@ -217,7 +274,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                 'total' => $total,
                 'page' => $normalizedPage,
                 'pageSize' => $pageSize,
-                'totalIsApproximate' => $scanTruncated,
+                'totalIsApproximate' => $totalIsApproximate,
             ];
         } catch (AssetSearchUnavailableException $exception) {
             throw $exception;
@@ -231,24 +288,131 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
     }
 
     /**
+     * Estimate readable total for browse while the index is not fully scanned.
+     * Scales partial ACL/mime filtering results; never returns raw ES total as exact.
+     */
+    private function estimateIncompleteBrowseTotal(
+        int $authorizedCount,
+        int $scannedHits,
+        int $esTotal,
+        int $page,
+        int $pageSize
+    ): int {
+        if ($esTotal <= 0 && $authorizedCount <= 0) {
+            return 0;
+        }
+
+        $minimumForPagination = max($authorizedCount, ($page + 1) * $pageSize);
+        if ($scannedHits <= 0 || $authorizedCount <= 0) {
+            return $minimumForPagination;
+        }
+
+        $estimatedReadable = (int)min(
+            $esTotal,
+            max($authorizedCount, (int)ceil(($authorizedCount / $scannedHits) * $esTotal))
+        );
+
+        return max($minimumForPagination, $estimatedReadable);
+    }
+
+    private function isBrowseListing(AssetSearchQuery $query): bool
+    {
+        return trim($query->getQuery()) === '' && !$query->hasMetadataCriteria();
+    }
+
+    private function queryUsesElasticsearchAccessControl(): bool
+    {
+        return $this->queryBuilder->lastBuildAppliedAccessControl();
+    }
+
+    /**
+     * @param array<string, mixed> $searchBody
+     * @return array<string, mixed>
+     */
+    private function searchWithDirectElasticsearchPagination(
+        AssetSearchQuery $query,
+        array $searchBody,
+        bool $accessControlInQuery
+    ): array {
+        $pageSize = max(1, $query->getPageSize());
+        $page = max(1, $query->getPage());
+
+        $searchBody['_source'] = self::SEARCH_SOURCE_FIELDS;
+        $searchBody['from'] = ($page - 1) * $pageSize;
+        $searchBody['size'] = $pageSize;
+        $searchBody['track_total_hits'] = true;
+
+        $result = $this->elasticSearch->searchWithBody(IndexerInterface::ASSETS_INDEX, $searchBody);
+        $total = $result->getTotalCount();
+
+        $pageItems = [];
+        foreach ($result as $hit) {
+            if (!is_array($hit)) {
+                continue;
+            }
+
+            $uri = (string)($hit['id'] ?? '');
+            if ($uri === '' || (!$accessControlInQuery && !$this->permissionChecker->hasReadAccess($uri))) {
+                continue;
+            }
+
+            $indexedMime = trim($this->stringifyHitValue($hit['mime_type'] ?? ''));
+            $mimeForMap = $indexedMime;
+            if ($mimeForMap === '' && $this->hasActiveMimeFilter($query->getFilter()) && $uri !== '') {
+                $mimeForMap = trim($this->mimeTypeResolver->resolve($uri));
+            }
+
+            $pageItems[] = $this->mapHit($hit, $mimeForMap);
+        }
+
+        $maxPage = max(1, (int)ceil($total / $pageSize) ?: 1);
+        $normalizedPage = min($page, $maxPage);
+
+        return [
+            'items' => array_values($pageItems),
+            'total' => $total,
+            'page' => $normalizedPage,
+            'pageSize' => $pageSize,
+            'totalIsApproximate' => false,
+        ];
+    }
+
+    /**
      * Folder scope from browse path ({@code taomedia://…} or RDF class URI).
      */
-    private function resolveScopeClassUri(string $parentLink): string
+    private function resolveScopeClassUri(AssetSearchQuery $query): string
     {
-        $parentLink = trim($parentLink);
+        $parentLink = trim($query->getParentLink());
         if ($parentLink === '' || $parentLink === '/') {
-            return '';
+            return $this->resolveMediaRootClassUri($query);
         }
 
         if (strpos($parentLink, MediaSource::SCHEME_NAME) === 0) {
-            return \tao_helpers_Uri::decode(substr($parentLink, strlen(MediaSource::SCHEME_NAME)));
+            $classUri = \tao_helpers_Uri::decode(substr($parentLink, strlen(MediaSource::SCHEME_NAME)));
+            if ($classUri === '' || $classUri === '/') {
+                return $this->resolveMediaRootClassUri($query);
+            }
+
+            return $classUri;
         }
 
         if (preg_match('#^https?://#i', $parentLink)) {
             return $parentLink;
         }
 
-        return \tao_helpers_Uri::decode($parentLink);
+        $decoded = \tao_helpers_Uri::decode($parentLink);
+
+        return $decoded !== '' ? $decoded : $this->resolveMediaRootClassUri($query);
+    }
+
+    private function resolveMediaRootClassUri(AssetSearchQuery $query): string
+    {
+        $mediaSource = $query->getAsset()->getMediaSource();
+        if ($mediaSource instanceof MediaSource) {
+            return $mediaSource->getRootClass()->getUri();
+        }
+
+        return TaoMediaOntology::CLASS_URI_MEDIA_ROOT;
     }
 
     /**

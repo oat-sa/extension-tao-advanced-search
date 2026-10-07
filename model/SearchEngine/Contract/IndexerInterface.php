@@ -58,7 +58,8 @@ interface IndexerInterface
     public const INDEXES_WITH_ACCESS_CONTROL = [
         self::ITEMS_INDEX,
         self::TESTS_INDEX,
-        self::TEST_TAKERS_INDEX
+        self::TEST_TAKERS_INDEX,
+        self::ASSETS_INDEX,
     ];
 
     /**
