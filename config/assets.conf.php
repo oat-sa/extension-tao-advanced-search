@@ -39,7 +39,11 @@ return [
                     'fields' => [
                         'raw' => [
                             'type' => 'keyword'
-                        ]
+                        ],
+                        'sort' => [
+                            'type' => 'keyword',
+                            'normalizer' => 'lowercase',
+                        ],
                     ]
                 ],
                 'updated_at' => [
@@ -55,7 +59,11 @@ return [
                     'fields' => [
                         'raw' => [
                             'type' => 'keyword'
-                        ]
+                        ],
+                        'sort' => [
+                            'type' => 'keyword',
+                            'normalizer' => 'lowercase',
+                        ],
                     ]
                 ],
                 'type' => [

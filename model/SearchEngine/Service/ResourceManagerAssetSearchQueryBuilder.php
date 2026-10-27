@@ -37,8 +37,8 @@ class ResourceManagerAssetSearchQueryBuilder
     public const PREFIX_MATCH_MIN_LENGTH = 3;
 
     private const SORT_FIELD_MAP = [
-        AssetSearchQuery::SORT_LABEL => 'label.raw',
-        AssetSearchQuery::SORT_LOCATION => 'location.raw',
+        AssetSearchQuery::SORT_LABEL => 'label.sort',
+        AssetSearchQuery::SORT_LOCATION => 'location.sort',
         AssetSearchQuery::SORT_UPDATED_AT => 'updated_at.raw',
     ];
 
@@ -255,6 +255,8 @@ class ResourceManagerAssetSearchQueryBuilder
             [
                 $field => [
                     'order' => $query->getSortDir(),
+                    'missing' => '_last',
+                    'unmapped_type' => 'keyword',
                 ],
             ],
         ];
