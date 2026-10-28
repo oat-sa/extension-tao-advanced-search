@@ -59,7 +59,8 @@ class NestedAttributesQueryService
     /**
      * Identifier-style lookup: keyword {@code term} only (no analyzed {@code query_string} / {@code match}).
      *
-     * @param list<array<string, mixed>> $flatExactTermClauses from {@see ResourceQueryBlockSupport::buildFlatCustomMetadataExactTermClauses()}
+     * @param list<array<string, mixed>> $flatExactTermClauses from
+     *     {@see ResourceQueryBlockSupport::buildFlatCustomMetadataExactTermClauses()}
      */
     public function buildExactCustomFieldSearchQuery(QueryBlock $queryBlock, array $flatExactTermClauses): array
     {
