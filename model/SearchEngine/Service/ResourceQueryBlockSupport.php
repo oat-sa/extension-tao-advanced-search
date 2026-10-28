@@ -113,6 +113,24 @@ class ResourceQueryBlockSupport
     }
 
     /**
+     * @return list<array<string, array<string, string>>>
+     */
+    public function buildFlatCustomMetadataExactTermClauses(QueryBlock $queryBlock): array
+    {
+        $clauses = [];
+
+        foreach (self::CUSTOM_FIELDS as $customField) {
+            $clauses[] = [
+                'term' => [
+                    sprintf('%s_%s.raw', $customField, $queryBlock->getField()) => $queryBlock->getTerm(),
+                ],
+            ];
+        }
+
+        return $clauses;
+    }
+
+    /**
      * Legacy fieldless {@code query_string} fragment: quoted phrase across all top-level index fields.
      */
     public function buildFieldlessQueryString(string $term): string
