@@ -57,6 +57,24 @@ class NestedAttributesQueryService
     }
 
     /**
+     * Identifier-style lookup: keyword {@code term} only (no analyzed {@code query_string} / {@code match}).
+     *
+     * @param list<array<string, mixed>> $flatExactTermClauses from {@see ResourceQueryBlockSupport::buildFlatCustomMetadataExactTermClauses()}
+     */
+    public function buildExactCustomFieldSearchQuery(QueryBlock $queryBlock, array $flatExactTermClauses): array
+    {
+        return [
+            'bool' => [
+                'should' => array_merge(
+                    $flatExactTermClauses,
+                    [$this->buildNestedAttributeExactCondition($queryBlock)]
+                ),
+                'minimum_should_match' => 1,
+            ],
+        ];
+    }
+
+    /**
      * Fieldless search: legacy root {@code query_string} (all top-level fields, including unreindexed flat custom
      * metadata) plus nested {@code attributes} for reindexed documents.
      */
@@ -108,6 +126,33 @@ class NestedAttributesQueryService
                         'must' => [
                             ['term' => [self::ATTRIBUTES_KEY_FIELD => $queryBlock->getField()]],
                             $this->buildNestedAttributeValueClause($queryBlock->getTerm()),
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    private function buildNestedAttributeExactCondition(QueryBlock $queryBlock): array
+    {
+        $term = $queryBlock->getTerm();
+
+        return [
+            'nested' => [
+                'path' => self::ATTRIBUTES_FIELD,
+                'query' => [
+                    'bool' => [
+                        'must' => [
+                            ['term' => [self::ATTRIBUTES_KEY_FIELD => $queryBlock->getField()]],
+                            [
+                                'bool' => [
+                                    'should' => [
+                                        ['term' => [self::ATTRIBUTES_VALUE_FIELD => $term]],
+                                        ['term' => [self::ATTRIBUTES_RAW_VALUE_FIELD => $term]],
+                                    ],
+                                    'minimum_should_match' => 1,
+                                ],
+                            ],
                         ],
                     ],
                 ],
