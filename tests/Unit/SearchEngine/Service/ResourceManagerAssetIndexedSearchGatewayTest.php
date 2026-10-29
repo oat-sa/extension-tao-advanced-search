@@ -276,7 +276,7 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
 
         $this->assertCount(1, $result['items']);
         $this->assertSame(30, $result['total']);
-        $this->assertFalse($result['totalIsApproximate']);
+        $this->assertTrue($result['totalIsApproximate']);
     }
 
     public function testSearchScopesByClassUriFromBrowsePath(): void
@@ -499,6 +499,45 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
         $this->assertSame(1, $requestedBodies[0]['from']);
         $this->assertSame(1, $requestedBodies[0]['size']);
         $this->assertTrue($requestedBodies[0]['track_total_hits']);
+    }
+
+    public function testBrowseListingClampsOutOfRangePageToLastPage(): void
+    {
+        $query = $this->createSearchQuery()->setQuery('')->setPage(5)->setPageSize(2);
+        $mediaSource = $query->getAsset()->getMediaSource();
+        $mediaSource->method('getDirectories')->willReturn([
+            'path' => 'taomedia://mediamanager/Assets',
+            'label' => 'Assets',
+            'children' => [],
+        ]);
+
+        $this->queryBuilder->method('build')->willReturn(['query' => ['bool' => ['must' => []]]]);
+
+        $requestedFroms = [];
+        $hits = [
+            ['id' => 'asset://alpha', 'label' => 'Alpha', 'mime_type' => 'image/png'],
+            ['id' => 'asset://beta', 'label' => 'Beta', 'mime_type' => 'image/png'],
+            ['id' => 'asset://gamma', 'label' => 'Gamma', 'mime_type' => 'image/png'],
+        ];
+        $this->elasticSearch->method('searchWithBody')->willReturnCallback(
+            static function ($index, array $body) use ($hits, &$requestedFroms): SearchResult {
+                $requestedFroms[] = (int)($body['from'] ?? 0);
+                $from = (int)($body['from'] ?? 0);
+                $size = (int)($body['size'] ?? count($hits));
+
+                return new SearchResult(array_slice($hits, $from, $size), count($hits));
+            }
+        );
+        $this->permissionChecker->method('hasReadAccess')->willReturn(true);
+
+        $result = $this->subject->search($query);
+
+        $this->assertSame([8, 2], $requestedFroms);
+        $this->assertSame(3, $result['total']);
+        $this->assertSame(2, $result['page']);
+        $this->assertCount(1, $result['items']);
+        $this->assertSame('asset://gamma', $result['items'][0]['uri']);
+        $this->assertFalse($result['totalIsApproximate']);
     }
 
     public function testSearchMarksTotalApproximateWhenScanBudgetExceeded(): void

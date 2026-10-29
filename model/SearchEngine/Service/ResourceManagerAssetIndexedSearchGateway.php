@@ -297,21 +297,33 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
         $page = max(1, $query->getPage());
 
         $searchBody['_source'] = self::SEARCH_SOURCE_FIELDS;
-        $searchBody['from'] = ($page - 1) * $pageSize;
         $searchBody['size'] = $pageSize;
         $searchBody['track_total_hits'] = true;
 
-        $result = $this->elasticSearch->searchWithBody(IndexerInterface::ASSETS_INDEX, $searchBody);
-        $total = $result->getTotalCount();
+        $droppedHits = 0;
+        do {
+            $searchBody['from'] = ($page - 1) * $pageSize;
+            $result = $this->elasticSearch->searchWithBody(IndexerInterface::ASSETS_INDEX, $searchBody);
+            $total = $result->getTotalCount();
+            $maxPage = max(1, (int)ceil($total / $pageSize));
+
+            if ($page <= $maxPage) {
+                break;
+            }
+
+            $page = $maxPage;
+        } while (true);
 
         $pageItems = [];
         foreach ($result as $hit) {
             if (!is_array($hit)) {
+                $droppedHits++;
                 continue;
             }
 
             $uri = (string)($hit['id'] ?? '');
             if ($uri === '' || (!$accessControlInQuery && !$this->permissionChecker->hasReadAccess($uri))) {
+                $droppedHits++;
                 continue;
             }
 
@@ -324,15 +336,12 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
             $pageItems[] = $this->mapHit($hit, $mimeForMap);
         }
 
-        $maxPage = max(1, (int)ceil($total / $pageSize) ?: 1);
-        $normalizedPage = min($page, $maxPage);
-
         return [
             'items' => array_values($pageItems),
             'total' => $total,
-            'page' => $normalizedPage,
+            'page' => $page,
             'pageSize' => $pageSize,
-            'totalIsApproximate' => false,
+            'totalIsApproximate' => $droppedHits > 0,
         ];
     }
 
