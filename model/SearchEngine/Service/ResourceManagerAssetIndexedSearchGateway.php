@@ -127,15 +127,19 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                 );
             }
 
+            if ($this->isBrowseListing($query)) {
+                return $this->searchWithDirectElasticsearchPagination(
+                    $query,
+                    $searchBody,
+                    $accessControlInQuery
+                );
+            }
+
             $searchBody['_source'] = self::SEARCH_SOURCE_FIELDS;
 
             $pageSize = max(1, $query->getPageSize());
             $page = max(1, $query->getPage());
-            $browseListing = $this->isBrowseListing($query);
-            $batchSize = $browseListing
-                ? max($pageSize * self::FETCH_MULTIPLIER, $pageSize)
-                : max($pageSize * self::FETCH_MULTIPLIER, self::MIN_FETCH_BATCH_SIZE);
-            $authorizedTarget = $browseListing ? $page * $pageSize : null;
+            $batchSize = max($pageSize * self::FETCH_MULTIPLIER, self::MIN_FETCH_BATCH_SIZE);
 
             $authorizedItems = [];
             $esTotal = 0;
@@ -178,7 +182,6 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                     }
                 }
 
-                $browseTargetReached = false;
                 $hitsExaminedInBatch = 0;
                 foreach ($batchHits as $hit) {
                     if (!is_array($hit)) {
@@ -204,11 +207,6 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                         'hit' => $hit,
                         'mime' => $mimeForFilter,
                     ];
-
-                    if ($authorizedTarget !== null && count($authorizedItems) >= $authorizedTarget) {
-                        $browseTargetReached = true;
-                        break;
-                    }
                 }
                 $scannedHits += $hitsExaminedInBatch;
 
@@ -221,7 +219,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                     $indexFullyScanned = true;
                 }
 
-                if ($browseTargetReached || $indexFullyScanned) {
+                if ($indexFullyScanned) {
                     break;
                 }
 
@@ -242,19 +240,8 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
 
             $exhaustedIndex = $indexFullyScanned;
             $authorizedCount = count($authorizedItems);
-            if ($browseListing && !$exhaustedIndex) {
-                $total = $this->estimateIncompleteBrowseTotal(
-                    $authorizedCount,
-                    $scannedHits,
-                    $esTotal,
-                    $page,
-                    $pageSize
-                );
-                $totalIsApproximate = true;
-            } else {
-                $total = $authorizedCount;
-                $totalIsApproximate = $scanTruncated;
-            }
+            $total = $authorizedCount;
+            $totalIsApproximate = $scanTruncated;
 
             $normalizedPage = max(1, $page);
             if (!$scanTruncated && $exhaustedIndex) {
@@ -285,34 +272,6 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                 $exception
             );
         }
-    }
-
-    /**
-     * Estimate readable total for browse while the index is not fully scanned.
-     * Scales partial ACL/mime filtering results; never returns raw ES total as exact.
-     */
-    private function estimateIncompleteBrowseTotal(
-        int $authorizedCount,
-        int $scannedHits,
-        int $esTotal,
-        int $page,
-        int $pageSize
-    ): int {
-        if ($esTotal <= 0 && $authorizedCount <= 0) {
-            return 0;
-        }
-
-        $minimumForPagination = max($authorizedCount, ($page + 1) * $pageSize);
-        if ($scannedHits <= 0 || $authorizedCount <= 0) {
-            return $minimumForPagination;
-        }
-
-        $estimatedReadable = (int)min(
-            $esTotal,
-            max($authorizedCount, (int)ceil(($authorizedCount / $scannedHits) * $esTotal))
-        );
-
-        return max($minimumForPagination, $estimatedReadable);
     }
 
     private function isBrowseListing(AssetSearchQuery $query): bool
