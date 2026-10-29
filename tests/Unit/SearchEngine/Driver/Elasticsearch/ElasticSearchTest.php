@@ -27,6 +27,7 @@ use Elastic\Elasticsearch\Client;
 use Elastic\Elasticsearch\Endpoints\Indices;
 use Elastic\Elasticsearch\Response\Elasticsearch as ResponseElasticsearch;
 use Exception;
+use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\search\ResultSet;
 use oat\tao\model\search\strategy\GenerisSearch;
 use oat\tao\model\search\SyntaxException;
@@ -34,6 +35,7 @@ use oat\taoAdvancedSearch\model\SearchEngine\AggregationQuery;
 use oat\taoAdvancedSearch\model\SearchEngine\AggregationResult;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
+use oat\taoAdvancedSearch\model\SearchEngine\IndexingResult;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\QueryBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Normalizer\SearchResultNormalizer;
 use oat\taoAdvancedSearch\model\SearchEngine\Query;
@@ -421,6 +423,122 @@ class ElasticSearchTest extends TestCase
             ->willReturn($responseMock);
 
         $this->assertEquals(false, $this->sut->ping());
+    }
+
+    public function testIndexRefreshesTouchedIndex(): void
+    {
+        $document = $this->createMock(IndexDocument::class);
+        $indexMock = $this->createMock(Indices::class);
+        $existsResponseMock = $this->createMock(ResponseElasticsearch::class);
+        $existsResponseMock->method('asBool')->willReturn(true);
+
+        $this->client->expects($this->any())
+            ->method('indices')
+            ->willReturn($indexMock);
+
+        $indexMock->expects($this->once())
+            ->method('exists')
+            ->with(['index' => 'items'])
+            ->willReturn($existsResponseMock);
+
+        $this->indexer->expects($this->once())
+            ->method('getIndexNameByDocument')
+            ->with($document)
+            ->willReturn('items');
+
+        $this->indexer->expects($this->once())
+            ->method('buildIndex')
+            ->willReturn(new IndexingResult(1));
+
+        $indexMock->expects($this->once())
+            ->method('refresh')
+            ->with(['index' => 'items']);
+
+        $this->assertSame(1, $this->sut->index([$document]));
+    }
+
+    public function testIndexRefreshesEachTouchedIndexInBatch(): void
+    {
+        $firstDocument = $this->createMock(IndexDocument::class);
+        $secondDocument = $this->createMock(IndexDocument::class);
+        $indexMock = $this->createMock(Indices::class);
+        $existsResponseMock = $this->createMock(ResponseElasticsearch::class);
+        $existsResponseMock->method('asBool')->willReturn(true);
+
+        $this->client->expects($this->any())
+            ->method('indices')
+            ->willReturn($indexMock);
+
+        $indexMock->expects($this->exactly(2))
+            ->method('exists')
+            ->willReturn($existsResponseMock);
+
+        $this->indexer->expects($this->exactly(2))
+            ->method('getIndexNameByDocument')
+            ->withConsecutive([$firstDocument], [$secondDocument])
+            ->willReturnOnConsecutiveCalls('items', 'tests');
+
+        $this->indexer->expects($this->once())
+            ->method('buildIndex')
+            ->willReturn(new IndexingResult(2));
+
+        $indexMock->expects($this->exactly(2))
+            ->method('refresh')
+            ->withConsecutive(
+                [['index' => 'items']],
+                [['index' => 'tests']]
+            );
+
+        $this->assertSame(2, $this->sut->index([$firstDocument, $secondDocument]));
+    }
+
+    public function testIndexLogsRefreshFailureAndReturnsIndexedCount(): void
+    {
+        $document = $this->createMock(IndexDocument::class);
+        $indexMock = $this->createMock(Indices::class);
+        $existsResponseMock = $this->createMock(ResponseElasticsearch::class);
+        $existsResponseMock->method('asBool')->willReturn(true);
+
+        $this->client->expects($this->any())
+            ->method('indices')
+            ->willReturn($indexMock);
+
+        $indexMock->expects($this->once())
+            ->method('exists')
+            ->with(['index' => 'items'])
+            ->willReturn($existsResponseMock);
+
+        $this->indexer->expects($this->once())
+            ->method('getIndexNameByDocument')
+            ->willReturn('items');
+
+        $this->indexer->expects($this->once())
+            ->method('buildIndex')
+            ->willReturn(new IndexingResult(1));
+
+        $indexMock->expects($this->once())
+            ->method('refresh')
+            ->with(['index' => 'items'])
+            ->willThrowException(new Exception('refresh failed'));
+
+        $this->logger->expects($this->once())
+            ->method('warning')
+            ->with('Error refreshing index "items": refresh failed');
+
+        $this->assertSame(1, $this->sut->index([$document]));
+    }
+
+    public function testRemoveDelegatesToIndexerWithoutRefresh(): void
+    {
+        $this->client->expects($this->never())
+            ->method('indices');
+
+        $this->indexer->expects($this->once())
+            ->method('deleteDocument')
+            ->with('id')
+            ->willReturn(true);
+
+        $this->assertTrue($this->sut->remove('id'));
     }
 
     private function mockDebugLogger(): void
