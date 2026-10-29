@@ -191,6 +191,7 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
             : new ArrayIterator($documents);
 
         $validatedDocuments = [];
+        $indexNames = [];
         $skippedError = null;
 
         foreach ($iterator as $document) {
@@ -214,6 +215,7 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
             }
 
             $validatedDocuments[] = $document;
+            $indexNames[$indexName] = true;
         }
 
         if (empty($validatedDocuments)) {
@@ -222,6 +224,8 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
         }
 
         $this->lastIndexingResult = $this->indexer->buildIndex(new ArrayIterator($validatedDocuments));
+
+        $this->refreshIndexes(array_keys($indexNames));
 
         return $this->lastIndexingResult->getTotalIndexed();
     }
@@ -307,6 +311,19 @@ class ElasticSearch implements SearchInterface, TaoSearchInterface
     public function ping(): bool
     {
         return $this->client->ping()->asBool();
+    }
+
+    private function refreshIndexes(array $indexNames): void
+    {
+        foreach ($indexNames as $indexName) {
+            try {
+                $this->client->indices()->refresh(['index' => $indexName]);
+            } catch (\Throwable $e) {
+                $this->logger->warning(
+                    sprintf('Error refreshing index "%s": %s', $indexName, $e->getMessage())
+                );
+            }
+        }
     }
 
     private function isExistingIndex(string $indexName): bool
