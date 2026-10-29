@@ -194,6 +194,8 @@ class ElasticSearchIndexer implements IndexerInterface
             try {
                 $this->client->delete($deleteParams);
 
+                $this->client->indices()->refresh(['index' => $document['_index']]);
+
                 $this->logger->debug(sprintf('[documentId: "%s"] ', $id));
             } catch (Throwable $e) {
                 $this->logDocumentFailure(
