@@ -33,6 +33,9 @@ use oat\taoAdvancedSearch\model\Index\Service\ResultIndexer;
 use oat\taoAdvancedSearch\model\Metadata\Listener\MetadataInheritanceListener;
 use oat\taoAdvancedSearch\model\Metadata\Listener\UnsupportedEventException;
 use oat\taoAdvancedSearch\model\Metadata\Normalizer\MetadataNormalizer;
+use oat\taoAdvancedSearch\model\Resource\Service\SyncResourceResultIndexer;
+use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface as SearchEngineIndexerInterface;
+use RuntimeException;
 
 class MetadataInheritanceListenerTest extends TestCase
 {
@@ -47,6 +50,9 @@ class MetadataInheritanceListenerTest extends TestCase
     /** @var MetadataNormalizer|MockObject */
     private $metadataNormalizerMock;
 
+    /** @var SyncResourceResultIndexer|MockObject */
+    private $syncIndexerMock;
+
     /** @var ResourceCreated|MockObject */
     private $eventMock;
 
@@ -55,12 +61,14 @@ class MetadataInheritanceListenerTest extends TestCase
         $this->subject = new MetadataInheritanceListener();
         $this->resultIndexerMock = $this->createMock(ResultIndexer::class);
         $this->metadataNormalizerMock = $this->createMock(MetadataNormalizer::class);
+        $this->syncIndexerMock = $this->createMock(SyncResourceResultIndexer::class);
         $this->eventMock = $this->createMock(ResourceCreated::class);
         $this->subject->setServiceLocator(
             $this->getServiceManagerMock(
                 [
                     ResultIndexer::class => $this->resultIndexerMock,
-                    MetadataNormalizer::class => $this->metadataNormalizerMock
+                    MetadataNormalizer::class => $this->metadataNormalizerMock,
+                    SyncResourceResultIndexer::class => $this->syncIndexerMock
                 ]
             )
         );
@@ -106,5 +114,162 @@ class MetadataInheritanceListenerTest extends TestCase
         $this->subject->listen(
             $this->eventMock
         );
+    }
+
+    public function testListenSyncIndexesMediaResourceByClassEquality(): void
+    {
+        $resourceMock = $this->createMock(core_kernel_classes_Resource::class);
+        $mediaClassMock = $this->createMock(core_kernel_classes_Class::class);
+        $typeMock = $this->createMock(core_kernel_classes_Class::class);
+
+        $this->eventMock
+            ->method('getResource')
+            ->willReturn($resourceMock);
+
+        $resourceMock
+            ->method('getTypes')
+            ->willReturn([$typeMock]);
+
+        $resourceMock
+            ->method('getClass')
+            ->with(SearchEngineIndexerInterface::MEDIA_CLASS_URI)
+            ->willReturn($mediaClassMock);
+
+        $typeMock
+            ->method('equals')
+            ->with($mediaClassMock)
+            ->willReturn(true);
+
+        $this->syncIndexerMock
+            ->expects($this->once())
+            ->method('addIndex')
+            ->with($resourceMock);
+
+        $this->subject->listen($this->eventMock);
+    }
+
+    public function testListenSyncIndexesMediaResourceBySubClass(): void
+    {
+        $resourceMock = $this->createMock(core_kernel_classes_Resource::class);
+        $mediaClassMock = $this->createMock(core_kernel_classes_Class::class);
+        $typeMock = $this->createMock(core_kernel_classes_Class::class);
+
+        $this->eventMock
+            ->method('getResource')
+            ->willReturn($resourceMock);
+
+        $resourceMock
+            ->method('getTypes')
+            ->willReturn([$typeMock]);
+
+        $resourceMock
+            ->method('getClass')
+            ->with(SearchEngineIndexerInterface::MEDIA_CLASS_URI)
+            ->willReturn($mediaClassMock);
+
+        $typeMock
+            ->method('equals')
+            ->with($mediaClassMock)
+            ->willReturn(false);
+
+        $typeMock
+            ->method('isSubClassOf')
+            ->with($mediaClassMock)
+            ->willReturn(true);
+
+        $this->syncIndexerMock
+            ->expects($this->once())
+            ->method('addIndex')
+            ->with($resourceMock);
+
+        $this->subject->listen($this->eventMock);
+    }
+
+    public function testListenDoesNotSyncIndexNonMediaResource(): void
+    {
+        $resourceMock = $this->createMock(core_kernel_classes_Resource::class);
+        $mediaClassMock = $this->createMock(core_kernel_classes_Class::class);
+        $typeMock = $this->createMock(core_kernel_classes_Class::class);
+
+        $this->eventMock
+            ->method('getResource')
+            ->willReturn($resourceMock);
+
+        $resourceMock
+            ->method('getTypes')
+            ->willReturn([$typeMock]);
+
+        $resourceMock
+            ->method('getClass')
+            ->with(SearchEngineIndexerInterface::MEDIA_CLASS_URI)
+            ->willReturn($mediaClassMock);
+
+        $typeMock
+            ->method('equals')
+            ->with($mediaClassMock)
+            ->willReturn(false);
+
+        $typeMock
+            ->method('isSubClassOf')
+            ->with($mediaClassMock)
+            ->willReturn(false);
+
+        $this->syncIndexerMock
+            ->expects($this->never())
+            ->method('addIndex');
+
+        $this->subject->listen($this->eventMock);
+    }
+
+    public function testListenDoesNotSyncIndexResourceWithoutTypes(): void
+    {
+        $resourceMock = $this->createMock(core_kernel_classes_Resource::class);
+
+        $this->eventMock
+            ->method('getResource')
+            ->willReturn($resourceMock);
+
+        $resourceMock
+            ->method('getTypes')
+            ->willReturn([]);
+
+        $this->syncIndexerMock
+            ->expects($this->never())
+            ->method('addIndex');
+
+        $this->subject->listen($this->eventMock);
+    }
+
+    public function testListenDoesNotThrowWhenSyncIndexingFails(): void
+    {
+        $resourceMock = $this->createMock(core_kernel_classes_Resource::class);
+        $mediaClassMock = $this->createMock(core_kernel_classes_Class::class);
+        $typeMock = $this->createMock(core_kernel_classes_Class::class);
+
+        $this->eventMock
+            ->method('getResource')
+            ->willReturn($resourceMock);
+
+        $resourceMock
+            ->method('getTypes')
+            ->willReturn([$typeMock]);
+
+        $resourceMock
+            ->method('getClass')
+            ->with(SearchEngineIndexerInterface::MEDIA_CLASS_URI)
+            ->willReturn($mediaClassMock);
+
+        $typeMock
+            ->method('equals')
+            ->with($mediaClassMock)
+            ->willReturn(true);
+
+        $this->syncIndexerMock
+            ->expects($this->once())
+            ->method('addIndex')
+            ->with($resourceMock)
+            ->willThrowException(new RuntimeException('Sync indexing failed'));
+
+        $this->subject->listen($this->eventMock);
     }
 }
