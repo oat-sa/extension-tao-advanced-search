@@ -313,7 +313,7 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
                 ['label.sort' => $this->sortClause('asc')],
                 ['label.raw' => $this->sortClause('asc')],
                 ['location.raw' => $this->sortClause('asc')],
-                ['resource_id' => $this->sortClause('asc')],
+                ['resource_id.keyword' => $this->sortClause('asc')],
             ],
             $this->subject->build($this->createQuery(''), '')['sort']
         );
@@ -325,7 +325,7 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
                 ['location.sort' => $this->sortClause('asc')],
                 ['location.raw' => $this->sortClause('asc')],
                 ['label.raw' => $this->sortClause('asc')],
-                ['resource_id' => $this->sortClause('asc')],
+                ['resource_id.keyword' => $this->sortClause('asc')],
             ],
             $this->subject->build($locationQuery, '')['sort']
         );
@@ -337,7 +337,7 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
                 ['updated_at.raw' => $this->sortClause('asc')],
                 ['label.sort' => $this->sortClause('asc')],
                 ['location.raw' => $this->sortClause('asc')],
-                ['resource_id' => $this->sortClause('asc')],
+                ['resource_id.keyword' => $this->sortClause('asc')],
             ],
             $this->subject->build($updatedAtQuery, '')['sort']
         );
@@ -349,7 +349,7 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
                 ['label.sort' => $this->sortClause('desc')],
                 ['label.raw' => $this->sortClause('desc')],
                 ['location.raw' => $this->sortClause('desc')],
-                ['resource_id' => $this->sortClause('desc')],
+                ['resource_id.keyword' => $this->sortClause('desc')],
             ],
             $this->subject->build($descendingQuery, '')['sort']
         );
@@ -361,7 +361,7 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
                 ['label.sort' => $this->sortClause('asc')],
                 ['label.raw' => $this->sortClause('asc')],
                 ['location.raw' => $this->sortClause('asc')],
-                ['resource_id' => $this->sortClause('asc')],
+                ['resource_id.keyword' => $this->sortClause('asc')],
             ],
             $this->subject->build($unknownQuery, '')['sort']
         );
