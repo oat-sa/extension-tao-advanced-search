@@ -48,9 +48,9 @@ class ResourceManagerAssetSearchQueryBuilder
      * differing only by case, and duplicate labels, in an order that changes between requests.
      */
     private const SORT_TIEBREAK_FIELDS = [
-        AssetSearchQuery::SORT_LABEL => ['label.raw', 'location.raw', 'resource_id'],
-        AssetSearchQuery::SORT_LOCATION => ['location.raw', 'label.raw', 'resource_id'],
-        AssetSearchQuery::SORT_UPDATED_AT => ['label.sort', 'location.raw', 'resource_id'],
+        AssetSearchQuery::SORT_LABEL => ['label.raw', 'location.raw', 'resource_id.keyword'],
+        AssetSearchQuery::SORT_LOCATION => ['location.raw', 'label.raw', 'resource_id.keyword'],
+        AssetSearchQuery::SORT_UPDATED_AT => ['label.sort', 'location.raw', 'resource_id.keyword'],
     ];
 
     /** @var NestedAttributesQueryService */

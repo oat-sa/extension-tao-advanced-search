@@ -79,8 +79,13 @@ return [
                     'ignore_above' => 256,
                 ],
                 'resource_id' => [
-                    'type' => 'keyword',
-                    'ignore_above' => 1024,
+                    'type' => 'text',
+                    'fields' => [
+                        'keyword' => [
+                            'type' => 'keyword',
+                            'ignore_above' => 256,
+                        ],
+                    ],
                 ],
                 'read_access' => [
                     'type' => 'keyword',
