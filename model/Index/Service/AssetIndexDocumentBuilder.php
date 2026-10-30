@@ -65,6 +65,8 @@ class AssetIndexDocumentBuilder implements IndexDocumentBuilderInterface
             $body['mime_type'] = $mimeType;
         }
 
+        $body['resource_id'] = (string) $resource->getUri();
+
         $body = $this->assetSearchTokenizer->enrichDocumentBody($body);
 
         return new IndexDocument(
@@ -78,6 +80,10 @@ class AssetIndexDocumentBuilder implements IndexDocumentBuilderInterface
 
     public function createDocumentFromArray(array $resourceData = []): IndexDocument
     {
+        if (isset($resourceData['id']) && is_array($resourceData['body'] ?? null)) {
+            $resourceData['body']['resource_id'] = (string) $resourceData['id'];
+        }
+
         return $this->inner->createDocumentFromArray($resourceData);
     }
 
