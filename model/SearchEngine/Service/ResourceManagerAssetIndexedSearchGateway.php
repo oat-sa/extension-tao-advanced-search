@@ -119,11 +119,10 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
             );
 
             $accessControlInQuery = $this->queryUsesElasticsearchAccessControl();
-            if ($accessControlInQuery) {
+            if ($accessControlInQuery && !$this->hasActiveMimeFilter($query->getFilter())) {
                 return $this->searchWithDirectElasticsearchPagination(
                     $query,
-                    $searchBody,
-                    true
+                    $searchBody
                 );
             }
 
@@ -131,11 +130,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
 
             $pageSize = max(1, $query->getPageSize());
             $page = max(1, $query->getPage());
-            $browseListing = $this->isBrowseListing($query);
-            $batchSize = $browseListing
-                ? max($pageSize * self::FETCH_MULTIPLIER, $pageSize)
-                : max($pageSize * self::FETCH_MULTIPLIER, self::MIN_FETCH_BATCH_SIZE);
-            $authorizedTarget = $browseListing ? $page * $pageSize : null;
+            $batchSize = max($pageSize * self::FETCH_MULTIPLIER, self::MIN_FETCH_BATCH_SIZE);
 
             $authorizedItems = [];
             $esTotal = 0;
@@ -178,7 +173,6 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                     }
                 }
 
-                $browseTargetReached = false;
                 $hitsExaminedInBatch = 0;
                 foreach ($batchHits as $hit) {
                     if (!is_array($hit)) {
@@ -204,11 +198,6 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                         'hit' => $hit,
                         'mime' => $mimeForFilter,
                     ];
-
-                    if ($authorizedTarget !== null && count($authorizedItems) >= $authorizedTarget) {
-                        $browseTargetReached = true;
-                        break;
-                    }
                 }
                 $scannedHits += $hitsExaminedInBatch;
 
@@ -221,7 +210,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
                     $indexFullyScanned = true;
                 }
 
-                if ($browseTargetReached || $indexFullyScanned) {
+                if ($indexFullyScanned) {
                     break;
                 }
 
@@ -242,19 +231,8 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
 
             $exhaustedIndex = $indexFullyScanned;
             $authorizedCount = count($authorizedItems);
-            if ($browseListing && !$exhaustedIndex) {
-                $total = $this->estimateIncompleteBrowseTotal(
-                    $authorizedCount,
-                    $scannedHits,
-                    $esTotal,
-                    $page,
-                    $pageSize
-                );
-                $totalIsApproximate = true;
-            } else {
-                $total = $authorizedCount;
-                $totalIsApproximate = $scanTruncated;
-            }
+            $total = $authorizedCount;
+            $totalIsApproximate = $scanTruncated;
 
             $normalizedPage = max(1, $page);
             if (!$scanTruncated && $exhaustedIndex) {
@@ -287,39 +265,6 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
         }
     }
 
-    /**
-     * Estimate readable total for browse while the index is not fully scanned.
-     * Scales partial ACL/mime filtering results; never returns raw ES total as exact.
-     */
-    private function estimateIncompleteBrowseTotal(
-        int $authorizedCount,
-        int $scannedHits,
-        int $esTotal,
-        int $page,
-        int $pageSize
-    ): int {
-        if ($esTotal <= 0 && $authorizedCount <= 0) {
-            return 0;
-        }
-
-        $minimumForPagination = max($authorizedCount, ($page + 1) * $pageSize);
-        if ($scannedHits <= 0 || $authorizedCount <= 0) {
-            return $minimumForPagination;
-        }
-
-        $estimatedReadable = (int)min(
-            $esTotal,
-            max($authorizedCount, (int)ceil(($authorizedCount / $scannedHits) * $esTotal))
-        );
-
-        return max($minimumForPagination, $estimatedReadable);
-    }
-
-    private function isBrowseListing(AssetSearchQuery $query): bool
-    {
-        return trim($query->getQuery()) === '' && !$query->hasMetadataCriteria();
-    }
-
     private function queryUsesElasticsearchAccessControl(): bool
     {
         return $this->queryBuilder->lastBuildAppliedAccessControl();
@@ -331,8 +276,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
      */
     private function searchWithDirectElasticsearchPagination(
         AssetSearchQuery $query,
-        array $searchBody,
-        bool $accessControlInQuery
+        array $searchBody
     ): array {
         $pageSize = max(1, $query->getPageSize());
         $page = max(1, $query->getPage());
@@ -345,35 +289,32 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
         $result = $this->elasticSearch->searchWithBody(IndexerInterface::ASSETS_INDEX, $searchBody);
         $total = $result->getTotalCount();
 
-        $pageItems = [];
-        foreach ($result as $hit) {
-            if (!is_array($hit)) {
-                continue;
-            }
-
-            $uri = (string)($hit['id'] ?? '');
-            if ($uri === '' || (!$accessControlInQuery && !$this->permissionChecker->hasReadAccess($uri))) {
-                continue;
-            }
-
-            $indexedMime = trim($this->stringifyHitValue($hit['mime_type'] ?? ''));
-            $mimeForMap = $indexedMime;
-            if ($mimeForMap === '' && $this->hasActiveMimeFilter($query->getFilter()) && $uri !== '') {
-                $mimeForMap = trim($this->mimeTypeResolver->resolve($uri));
-            }
-
-            $pageItems[] = $this->mapHit($hit, $mimeForMap);
+        $maxPage = max(1, (int) ceil($total / $pageSize));
+        if ($page > $maxPage) {
+            $page = $maxPage;
+            $searchBody['from'] = ($page - 1) * $pageSize;
+            $result = $this->elasticSearch->searchWithBody(IndexerInterface::ASSETS_INDEX, $searchBody);
+            $total = $result->getTotalCount();
         }
 
-        $maxPage = max(1, (int)ceil($total / $pageSize) ?: 1);
-        $normalizedPage = min($page, $maxPage);
+        $pageItems = [];
+        $droppedHits = 0;
+        foreach (iterator_to_array($result) as $hit) {
+            $uri = is_array($hit) ? (string)($hit['id'] ?? '') : '';
+            if ($uri === '') {
+                $droppedHits++;
+                continue;
+            }
+
+            $pageItems[] = $this->mapHit($hit);
+        }
 
         return [
             'items' => array_values($pageItems),
             'total' => $total,
-            'page' => $normalizedPage,
+            'page' => $page,
             'pageSize' => $pageSize,
-            'totalIsApproximate' => false,
+            'totalIsApproximate' => $droppedHits > 0,
         ];
     }
 
