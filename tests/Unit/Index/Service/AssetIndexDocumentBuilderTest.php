@@ -78,11 +78,7 @@ class AssetIndexDocumentBuilderTest extends TestCase
     {
         $resource = $this->createMediaResource(null);
 
-        $expectedBody = [
-            'type' => [IndexerInterface::MEDIA_CLASS_URI],
-            'label' => 'photo.png',
-            'resource_id' => 'media-uri',
-        ];
+        $expectedBody = ['type' => [IndexerInterface::MEDIA_CLASS_URI], 'label' => 'photo.png'];
         $this->inner->method('createDocumentFromResource')->willReturn(
             new IndexDocument('media-uri', $expectedBody, [], null, null)
         );
@@ -91,7 +87,8 @@ class AssetIndexDocumentBuilderTest extends TestCase
 
         $body = $document->getBody();
         $this->assertSame(['photo'], $body['search_tokens']);
-        unset($body['search_tokens']);
+        $this->assertSame('media-uri', $body['resource_id']);
+        unset($body['search_tokens'], $body['resource_id']);
         $this->assertSame($expectedBody, $body);
     }
 
@@ -99,11 +96,7 @@ class AssetIndexDocumentBuilderTest extends TestCase
     {
         $resource = $this->createMediaResource(new core_kernel_classes_Literal('   '));
 
-        $expectedBody = [
-            'type' => [IndexerInterface::MEDIA_CLASS_URI],
-            'label' => 'photo.png',
-            'resource_id' => 'media-uri',
-        ];
+        $expectedBody = ['type' => [IndexerInterface::MEDIA_CLASS_URI], 'label' => 'photo.png'];
         $this->inner->method('createDocumentFromResource')->willReturn(
             new IndexDocument('media-uri', $expectedBody, [], null, null)
         );
@@ -113,7 +106,8 @@ class AssetIndexDocumentBuilderTest extends TestCase
         $body = $document->getBody();
         $this->assertSame(['photo'], $body['search_tokens']);
         $this->assertArrayNotHasKey('mime_type', $body);
-        unset($body['search_tokens']);
+        $this->assertSame('media-uri', $body['resource_id']);
+        unset($body['search_tokens'], $body['resource_id']);
         $this->assertSame($expectedBody, $body);
     }
 
@@ -121,11 +115,7 @@ class AssetIndexDocumentBuilderTest extends TestCase
     {
         $resource = $this->createMediaResource($this->createMock(core_kernel_classes_Resource::class));
 
-        $expectedBody = [
-            'type' => [IndexerInterface::MEDIA_CLASS_URI],
-            'label' => 'photo.png',
-            'resource_id' => 'media-uri',
-        ];
+        $expectedBody = ['type' => [IndexerInterface::MEDIA_CLASS_URI], 'label' => 'photo.png'];
         $this->inner->method('createDocumentFromResource')->willReturn(
             new IndexDocument('media-uri', $expectedBody, [], null, null)
         );
@@ -134,8 +124,32 @@ class AssetIndexDocumentBuilderTest extends TestCase
 
         $body = $document->getBody();
         $this->assertSame(['photo'], $body['search_tokens']);
-        unset($body['search_tokens']);
+        $this->assertSame('media-uri', $body['resource_id']);
+        unset($body['search_tokens'], $body['resource_id']);
         $this->assertSame($expectedBody, $body);
+    }
+
+    public function testCreateDocumentFromResourceReplacesResourceIdFromInnerBuilder(): void
+    {
+        $resource = $this->createMediaResource(new core_kernel_classes_Literal('image/png'));
+
+        $this->inner->method('createDocumentFromResource')->willReturn(
+            new IndexDocument(
+                'stale-id',
+                [
+                    'type' => [IndexerInterface::MEDIA_CLASS_URI],
+                    'label' => 'photo.png',
+                    'resource_id' => 'stale-id',
+                ],
+                [],
+                null,
+                null
+            )
+        );
+
+        $document = $this->subject->createDocumentFromResource($resource);
+
+        $this->assertSame('media-uri', $document->getBody()['resource_id']);
     }
 
     public function testCreateDocumentFromArrayKeepsUniqueSortKey(): void
