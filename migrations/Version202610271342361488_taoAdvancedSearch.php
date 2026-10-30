@@ -42,7 +42,7 @@ final class Version202610271342361488_taoAdvancedSearch extends AbstractMigratio
     /**
      * Matches {@code taoAdvancedSearch/config/assets.conf.php} {@code label} / {@code location} sort fields.
      */
-    private const SORT_MAPPING_BODY = '{"properties":{"label":{"type":"text","fields":{"raw":{"type":"keyword"},"sort":{"type":"keyword","normalizer":"lowercase"}}},"location":{"type":"text","fields":{"raw":{"type":"keyword"},"sort":{"type":"keyword","normalizer":"lowercase"}}},"resource_id":{"type":"text","fields":{"keyword":{"type":"keyword","ignore_above":256}}}}}';
+    private const SORT_MAPPING_BODY = '{"properties":{"label":{"type":"text","fields":{"raw":{"type":"keyword"},"sort":{"type":"keyword","normalizer":"lowercase"}}},"location":{"type":"text","fields":{"raw":{"type":"keyword"},"sort":{"type":"keyword","normalizer":"lowercase"}}},"resource_id":{"type":"text","fields":{"keyword":{"type":"keyword","ignore_above":1024}}}}}';
 
     private const REINDEX_CHUNK_SIZE = 500;
 
