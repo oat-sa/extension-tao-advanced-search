@@ -295,45 +295,63 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
     ): array {
         $pageSize = max(1, $query->getPageSize());
         $page = max(1, $query->getPage());
+        $mimeFilterActive = $this->hasActiveMimeFilter($query->getFilter());
 
         $searchBody['_source'] = self::SEARCH_SOURCE_FIELDS;
+        $searchBody['from'] = ($page - 1) * $pageSize;
         $searchBody['size'] = $pageSize;
         $searchBody['track_total_hits'] = true;
 
+        $total = 0;
+        $pageItems = [];
         $droppedHits = 0;
-        do {
-            $searchBody['from'] = ($page - 1) * $pageSize;
+        $offset = ($page - 1) * $pageSize;
+
+        while (true) {
+            $searchBody['from'] = $offset;
+            $searchBody['size'] = $mimeFilterActive
+                ? $pageSize - count($pageItems)
+                : $pageSize;
+
             $result = $this->elasticSearch->searchWithBody(IndexerInterface::ASSETS_INDEX, $searchBody);
             $total = $result->getTotalCount();
-            $maxPage = max(1, (int)ceil($total / $pageSize));
 
-            if ($page <= $maxPage) {
+            $maxPage = max(1, (int) ceil($total / $pageSize));
+            if ($page > $maxPage) {
+                $page = $maxPage;
+                $offset = ($page - 1) * $pageSize;
+                $pageItems = [];
+                $droppedHits = 0;
+                continue;
+            }
+
+            $batchHits = iterator_to_array($result);
+            foreach ($batchHits as $hit) {
+                $uri = is_array($hit) ? (string)($hit['id'] ?? '') : '';
+                if ($uri === '' || (!$accessControlInQuery && !$this->permissionChecker->hasReadAccess($uri))) {
+                    $droppedHits++;
+                    continue;
+                }
+
+                $indexedMime = trim($this->stringifyHitValue($hit['mime_type'] ?? ''));
+                $mimeForMap = $indexedMime;
+                if ($mimeForMap === '' && $mimeFilterActive && $uri !== '') {
+                    $mimeForMap = trim($this->mimeTypeResolver->resolve($uri));
+                }
+
+                if (!$this->matchesMimeFilter($mimeForMap, $query->getFilter())) {
+                    $droppedHits++;
+                    continue;
+                }
+
+                $pageItems[] = $this->mapHit($hit, $mimeForMap);
+            }
+
+            if (!$mimeFilterActive || count($pageItems) >= $pageSize || $batchHits === []) {
                 break;
             }
 
-            $page = $maxPage;
-        } while (true);
-
-        $pageItems = [];
-        foreach ($result as $hit) {
-            if (!is_array($hit)) {
-                $droppedHits++;
-                continue;
-            }
-
-            $uri = (string)($hit['id'] ?? '');
-            if ($uri === '' || (!$accessControlInQuery && !$this->permissionChecker->hasReadAccess($uri))) {
-                $droppedHits++;
-                continue;
-            }
-
-            $indexedMime = trim($this->stringifyHitValue($hit['mime_type'] ?? ''));
-            $mimeForMap = $indexedMime;
-            if ($mimeForMap === '' && $this->hasActiveMimeFilter($query->getFilter()) && $uri !== '') {
-                $mimeForMap = trim($this->mimeTypeResolver->resolve($uri));
-            }
-
-            $pageItems[] = $this->mapHit($hit, $mimeForMap);
+            $offset += count($batchHits);
         }
 
         return [

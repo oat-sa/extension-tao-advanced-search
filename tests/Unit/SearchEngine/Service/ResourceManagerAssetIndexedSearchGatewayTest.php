@@ -199,6 +199,95 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
         $this->assertFalse($result['totalIsApproximate']);
     }
 
+    public function testBrowseListingDirectPaginationAppliesMimeFilterAndCountsDroppedHits(): void
+    {
+        $this->queryBuilder->method('lastBuildAppliedAccessControl')->willReturn(true);
+
+        $this->mimeTypeResolver = $this->createMock(AssetMimeTypeResolverInterface::class);
+        $this->mimeTypeResolver->expects($this->once())
+            ->method('resolve')
+            ->with('asset://hit-0')
+            ->willReturn('video/mp4');
+        $this->subject = new ResourceManagerAssetIndexedSearchGateway(
+            $this->elasticSearch,
+            $this->queryBuilder,
+            $this->permissionChecker,
+            $this->logger,
+            $this->mimeTypeResolver,
+            $this->uriEncoder,
+            $this->updatedAtResolver
+        );
+
+        $mediaSource = $this->createMock(MediaBrowser::class);
+        $asset = $this->createMock(MediaAsset::class);
+        $asset->method('getMediaSource')->willReturn($mediaSource);
+        $asset->method('getMediaIdentifier')->willReturn(MediaSource::SCHEME_NAME);
+        $query = (new AssetSearchQuery($asset, 'item-uri', 'en-US', ['image/png']))
+            ->setPage(1)
+            ->setPageSize(2);
+
+        $this->queryBuilder->method('build')->willReturn(['query' => ['bool' => ['must' => []]]]);
+
+        $hits = [
+            ['id' => 'asset://hit-0', 'label' => 'Video'],
+            ['id' => 'asset://hit-1', 'label' => 'Image 1', 'mime_type' => 'image/png'],
+            ['id' => 'asset://hit-2', 'label' => 'Image 2', 'mime_type' => 'image/png'],
+        ];
+        $this->elasticSearch->method('searchWithBody')->willReturnCallback(
+            static function ($index, array $body) use ($hits): SearchResult {
+                $from = (int)($body['from'] ?? 0);
+                $size = (int)($body['size'] ?? 0);
+
+                return new SearchResult(array_slice($hits, $from, $size), count($hits));
+            }
+        );
+
+        $result = $this->subject->search($query);
+
+        $this->assertSame(3, $result['total']);
+        $this->assertTrue($result['totalIsApproximate']);
+        $this->assertCount(2, $result['items']);
+        $this->assertSame('asset://hit-1', $result['items'][0]['uri']);
+        $this->assertSame('asset://hit-2', $result['items'][1]['uri']);
+        $this->assertSame('image/png', $result['items'][0]['mime']);
+        $this->assertSame('image/png', $result['items'][1]['mime']);
+    }
+
+    public function testBrowseListingDirectPaginationCountsUnreadableHitsAsDropped(): void
+    {
+        $this->queryBuilder->method('lastBuildAppliedAccessControl')->willReturn(true);
+
+        $query = $this->createSearchQuery()->setQuery('')->setPage(1)->setPageSize(10);
+        $mediaSource = $query->getAsset()->getMediaSource();
+        $mediaSource->method('getDirectories')->willReturn([
+            'path' => 'taomedia://mediamanager/Assets',
+            'label' => 'Assets',
+            'children' => [],
+        ]);
+
+        $this->queryBuilder->method('build')->willReturn(['query' => ['bool' => ['must' => []]]]);
+
+        $hits = [
+            ['id' => 'asset://readable', 'label' => 'Readable', 'mime_type' => 'image/png'],
+            'unreadable-hit',
+        ];
+        $this->elasticSearch->method('searchWithBody')->willReturnCallback(
+            static function ($index, array $body) use ($hits): SearchResult {
+                $from = (int)($body['from'] ?? 0);
+                $size = (int)($body['size'] ?? count($hits));
+
+                return new SearchResult(array_slice($hits, $from, $size), count($hits));
+            }
+        );
+
+        $result = $this->subject->search($query);
+
+        $this->assertSame(2, $result['total']);
+        $this->assertCount(1, $result['items']);
+        $this->assertSame('asset://readable', $result['items'][0]['uri']);
+        $this->assertTrue($result['totalIsApproximate']);
+    }
+
     public function testBrowseListingUsesDirectPaginationWhenAccessControlIsNotInQuery(): void
     {
         $mediaSource = $this->createMock(MediaBrowser::class);
