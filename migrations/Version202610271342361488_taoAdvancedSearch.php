@@ -114,8 +114,7 @@ final class Version202610271342361488_taoAdvancedSearch extends AbstractMigratio
         );
 
         try {
-            $this->runAction(
-                new MigrationAction(),
+            $reindexReport = $this->propagate(new MigrationAction())(
                 [
                     '-c',
                     (string) self::REINDEX_CHUNK_SIZE,
@@ -126,6 +125,16 @@ final class Version202610271342361488_taoAdvancedSearch extends AbstractMigratio
                     '-rp',
                 ]
             );
+
+            if (!$reindexReport instanceof \common_report_Report) {
+                throw new RuntimeException('Media assets reindex action returned no report');
+            }
+
+            $this->addReport($reindexReport);
+
+            if ($reindexReport->getType() === Report::TYPE_ERROR) {
+                throw new RuntimeException('Failed to queue the media assets reindex');
+            }
 
             $this->addReport(Report::createSuccess('Media assets reindex queued (task queue worker required)'));
         } catch (Throwable $e) {
