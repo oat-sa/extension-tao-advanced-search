@@ -78,6 +78,10 @@ return [
                     'type' => 'keyword',
                     'ignore_above' => 256,
                 ],
+                'resource_id' => [
+                    'type' => 'keyword',
+                    'ignore_above' => 1024,
+                ],
                 'read_access' => [
                     'type' => 'keyword',
                     'ignore_above' => 256,
