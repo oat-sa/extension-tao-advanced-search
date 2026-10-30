@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\SearchEngine\Service;
 
+use DG\BypassFinals;
 use Exception;
 use oat\tao\model\accessControl\PermissionCheckerInterface;
 use oat\tao\model\media\MediaAsset;
@@ -70,6 +71,7 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
 
     protected function setUp(): void
     {
+        BypassFinals::enable();
         $this->elasticSearch = $this->createMock(ElasticSearch::class);
         $this->queryBuilder = $this->createMock(ResourceManagerAssetSearchQueryBuilder::class);
         $this->permissionChecker = $this->createMock(PermissionCheckerInterface::class);
@@ -199,24 +201,56 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
         $this->assertFalse($result['totalIsApproximate']);
     }
 
-    public function testBrowseListingDirectPaginationAppliesMimeFilterAndCountsDroppedHits(): void
+    public function testBrowseListingWithAccessControlInQueryUsesDirectPagination(): void
     {
         $this->queryBuilder->method('lastBuildAppliedAccessControl')->willReturn(true);
+        $this->permissionChecker->expects($this->never())->method('hasReadAccess');
 
-        $this->mimeTypeResolver = $this->createMock(AssetMimeTypeResolverInterface::class);
-        $this->mimeTypeResolver->expects($this->once())
-            ->method('resolve')
-            ->with('asset://hit-0')
-            ->willReturn('video/mp4');
-        $this->subject = new ResourceManagerAssetIndexedSearchGateway(
-            $this->elasticSearch,
-            $this->queryBuilder,
-            $this->permissionChecker,
-            $this->logger,
-            $this->mimeTypeResolver,
-            $this->uriEncoder,
-            $this->updatedAtResolver
-        );
+        $mediaSource = $this->createMock(MediaBrowser::class);
+        $asset = $this->createMock(MediaAsset::class);
+        $asset->method('getMediaSource')->willReturn($mediaSource);
+        $asset->method('getMediaIdentifier')->willReturn(MediaSource::SCHEME_NAME);
+        $query = (new AssetSearchQuery($asset, 'item-uri', 'en-US'))
+            ->setPage(2)
+            ->setPageSize(5);
+
+        $this->queryBuilder->method('build')->willReturn(['query' => ['bool' => ['must' => []]]]);
+
+        $hits = [];
+        for ($i = 0; $i < 12; $i++) {
+            $hits[] = [
+                'id' => 'asset://hit-' . $i,
+                'label' => 'Hit ' . $i,
+                'mime_type' => 'image/png',
+            ];
+        }
+        $requestedBodies = [];
+        $this->elasticSearch->expects($this->once())
+            ->method('searchWithBody')
+            ->willReturnCallback(
+                static function ($index, array $body) use ($hits, &$requestedBodies): SearchResult {
+                    $requestedBodies[] = $body;
+                    $from = (int)($body['from'] ?? 0);
+                    $size = (int)($body['size'] ?? 0);
+
+                    return new SearchResult(array_slice($hits, $from, $size), count($hits));
+                }
+            );
+
+        $result = $this->subject->search($query);
+
+        $this->assertCount(1, $requestedBodies);
+        $this->assertSame(5, $requestedBodies[0]['from']);
+        $this->assertSame(5, $requestedBodies[0]['size']);
+        $this->assertSame(12, $result['total']);
+        $this->assertSame(2, $result['page']);
+        $this->assertSame('asset://hit-5', $result['items'][0]['uri']);
+        $this->assertFalse($result['totalIsApproximate']);
+    }
+
+    public function testBrowseListingWithMimeFilterPaginatesAuthorizedItemsWithoutRepeats(): void
+    {
+        $this->queryBuilder->method('lastBuildAppliedAccessControl')->willReturn(true);
 
         $mediaSource = $this->createMock(MediaBrowser::class);
         $asset = $this->createMock(MediaAsset::class);
@@ -229,35 +263,38 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
         $this->queryBuilder->method('build')->willReturn(['query' => ['bool' => ['must' => []]]]);
 
         $hits = [
-            ['id' => 'asset://hit-0', 'label' => 'Video'],
-            ['id' => 'asset://hit-1', 'label' => 'Image 1', 'mime_type' => 'image/png'],
-            ['id' => 'asset://hit-2', 'label' => 'Image 2', 'mime_type' => 'image/png'],
+            ['id' => 'asset://a', 'label' => 'A', 'mime_type' => 'image/png'],
+            ['id' => 'asset://b', 'label' => 'B', 'mime_type' => 'video/mp4'],
+            ['id' => 'asset://c', 'label' => 'C', 'mime_type' => 'image/png'],
+            ['id' => 'asset://d', 'label' => 'D', 'mime_type' => 'image/png'],
         ];
+        $requestedFroms = [];
         $this->elasticSearch->method('searchWithBody')->willReturnCallback(
-            static function ($index, array $body) use ($hits): SearchResult {
+            static function ($index, array $body) use ($hits, &$requestedFroms): SearchResult {
+                $requestedFroms[] = (int)($body['from'] ?? 0);
                 $from = (int)($body['from'] ?? 0);
-                $size = (int)($body['size'] ?? 0);
+                $size = (int)($body['size'] ?? count($hits));
 
                 return new SearchResult(array_slice($hits, $from, $size), count($hits));
             }
         );
+        $this->permissionChecker->method('hasReadAccess')->willReturn(true);
 
-        $result = $this->subject->search($query);
+        $pageOne = $this->subject->search($query);
+        $pageTwo = $this->subject->search($query->setPage(2));
 
-        $this->assertSame(3, $result['total']);
-        $this->assertTrue($result['totalIsApproximate']);
-        $this->assertCount(2, $result['items']);
-        $this->assertSame('asset://hit-1', $result['items'][0]['uri']);
-        $this->assertSame('asset://hit-2', $result['items'][1]['uri']);
-        $this->assertSame('image/png', $result['items'][0]['mime']);
-        $this->assertSame('image/png', $result['items'][1]['mime']);
+        $this->assertSame(3, $pageOne['total']);
+        $this->assertSame(['asset://a', 'asset://c'], array_column($pageOne['items'], 'uri'));
+        $this->assertSame(['asset://d'], array_column($pageTwo['items'], 'uri'));
+        $this->assertNotContains('asset://c', array_column($pageTwo['items'], 'uri'));
+        foreach ($requestedFroms as $requestedFrom) {
+            $this->assertSame(0, $requestedFrom);
+        }
     }
 
-    public function testBrowseListingDirectPaginationCountsUnreadableHitsAsDropped(): void
+    public function testBrowseListingWithoutAccessControlInQueryClampsPagePastAuthorizedEnd(): void
     {
-        $this->queryBuilder->method('lastBuildAppliedAccessControl')->willReturn(true);
-
-        $query = $this->createSearchQuery()->setQuery('')->setPage(1)->setPageSize(10);
+        $query = $this->createSearchQuery()->setQuery('')->setPage(1)->setPageSize(2);
         $mediaSource = $query->getAsset()->getMediaSource();
         $mediaSource->method('getDirectories')->willReturn([
             'path' => 'taomedia://mediamanager/Assets',
@@ -268,27 +305,40 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
         $this->queryBuilder->method('build')->willReturn(['query' => ['bool' => ['must' => []]]]);
 
         $hits = [
-            ['id' => 'asset://readable', 'label' => 'Readable', 'mime_type' => 'image/png'],
-            'unreadable-hit',
+            ['id' => 'asset://a', 'label' => 'A', 'mime_type' => 'image/png'],
+            ['id' => 'asset://b', 'label' => 'B', 'mime_type' => 'image/png'],
+            ['id' => 'asset://c', 'label' => 'C', 'mime_type' => 'image/png'],
         ];
+        $requestedFroms = [];
         $this->elasticSearch->method('searchWithBody')->willReturnCallback(
-            static function ($index, array $body) use ($hits): SearchResult {
+            static function ($index, array $body) use ($hits, &$requestedFroms): SearchResult {
+                $requestedFroms[] = (int)($body['from'] ?? 0);
                 $from = (int)($body['from'] ?? 0);
                 $size = (int)($body['size'] ?? count($hits));
 
                 return new SearchResult(array_slice($hits, $from, $size), count($hits));
             }
         );
+        $this->permissionChecker->method('hasReadAccess')->willReturnCallback(
+            static function (string $uri): bool {
+                return $uri !== 'asset://a';
+            }
+        );
 
-        $result = $this->subject->search($query);
+        $pageOne = $this->subject->search($query);
+        $pageTwo = $this->subject->search($query->setPage(2));
 
-        $this->assertSame(2, $result['total']);
-        $this->assertCount(1, $result['items']);
-        $this->assertSame('asset://readable', $result['items'][0]['uri']);
-        $this->assertTrue($result['totalIsApproximate']);
+        $this->assertSame(['asset://b', 'asset://c'], array_column($pageOne['items'], 'uri'));
+        $this->assertSame(['asset://b', 'asset://c'], array_column($pageTwo['items'], 'uri'));
+        $this->assertSame(1, $pageTwo['page']);
+        $this->assertSame(2, $pageTwo['total']);
+        $this->assertFalse($pageTwo['totalIsApproximate']);
+        foreach ($requestedFroms as $requestedFrom) {
+            $this->assertSame(0, $requestedFrom);
+        }
     }
 
-    public function testBrowseListingUsesDirectPaginationWhenAccessControlIsNotInQuery(): void
+    public function testBrowseListingWithoutAccessControlInQueryScansAuthorizedItemsInPhp(): void
     {
         $mediaSource = $this->createMock(MediaBrowser::class);
         $asset = $this->createMock(MediaAsset::class);
@@ -322,7 +372,7 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
 
         $result = $this->subject->search($query);
 
-        $this->assertSame([15], $requestedSizes);
+        $this->assertSame([500], $requestedSizes);
         $this->assertCount(15, $result['items']);
         $this->assertSame(100, $result['total']);
         $this->assertFalse($result['totalIsApproximate']);
@@ -364,8 +414,8 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
         $result = $this->subject->search($query);
 
         $this->assertCount(1, $result['items']);
-        $this->assertSame(30, $result['total']);
-        $this->assertTrue($result['totalIsApproximate']);
+        $this->assertSame(1, $result['total']);
+        $this->assertFalse($result['totalIsApproximate']);
     }
 
     public function testSearchScopesByClassUriFromBrowsePath(): void
@@ -585,13 +635,14 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
         $this->assertSame(1, $result['pageSize']);
         $this->assertSame('asset://beta', $result['items'][0]['uri']);
         $this->assertFalse($result['totalIsApproximate']);
-        $this->assertSame(1, $requestedBodies[0]['from']);
-        $this->assertSame(1, $requestedBodies[0]['size']);
-        $this->assertTrue($requestedBodies[0]['track_total_hits']);
+        $this->assertSame(0, $requestedBodies[0]['from']);
+        $this->assertSame(500, $requestedBodies[0]['size']);
     }
 
     public function testBrowseListingClampsOutOfRangePageToLastPage(): void
     {
+        $this->queryBuilder->method('lastBuildAppliedAccessControl')->willReturn(true);
+
         $query = $this->createSearchQuery()->setQuery('')->setPage(5)->setPageSize(2);
         $mediaSource = $query->getAsset()->getMediaSource();
         $mediaSource->method('getDirectories')->willReturn([
