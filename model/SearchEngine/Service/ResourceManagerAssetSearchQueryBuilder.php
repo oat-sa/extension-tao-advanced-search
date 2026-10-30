@@ -37,9 +37,20 @@ class ResourceManagerAssetSearchQueryBuilder
     public const PREFIX_MATCH_MIN_LENGTH = 3;
 
     private const SORT_FIELD_MAP = [
-        AssetSearchQuery::SORT_LABEL => 'label.raw',
-        AssetSearchQuery::SORT_LOCATION => 'location.raw',
+        AssetSearchQuery::SORT_LABEL => 'label.sort',
+        AssetSearchQuery::SORT_LOCATION => 'location.sort',
         AssetSearchQuery::SORT_UPDATED_AT => 'updated_at.raw',
+    ];
+
+    /**
+     * Ties are broken by the byte-ordered twins of the sorted fields: the assets index holds no unique
+     * sortable keyword per document (`_id` is not sortable), so case-folding alone would leave labels
+     * differing only by case, and duplicate labels, in an order that changes between requests.
+     */
+    private const SORT_TIEBREAK_FIELDS = [
+        AssetSearchQuery::SORT_LABEL => ['label.raw', 'location.raw', 'resource_id.keyword'],
+        AssetSearchQuery::SORT_LOCATION => ['location.raw', 'label.raw', 'resource_id.keyword'],
+        AssetSearchQuery::SORT_UPDATED_AT => ['label.sort', 'location.raw', 'resource_id.keyword'],
     ];
 
     /** @var NestedAttributesQueryService */
@@ -249,13 +260,30 @@ class ResourceManagerAssetSearchQueryBuilder
      */
     private function buildSort(AssetSearchQuery $query): array
     {
-        $field = self::SORT_FIELD_MAP[$query->getSortBy()] ?? self::SORT_FIELD_MAP[AssetSearchQuery::SORT_LABEL];
+        $sortBy = isset(self::SORT_FIELD_MAP[$query->getSortBy()])
+            ? $query->getSortBy()
+            : AssetSearchQuery::SORT_LABEL;
+        $order = $query->getSortDir();
 
+        $sort = [$this->buildSortClause(self::SORT_FIELD_MAP[$sortBy], $order)];
+
+        foreach (self::SORT_TIEBREAK_FIELDS[$sortBy] as $tiebreakField) {
+            $sort[] = $this->buildSortClause($tiebreakField, $order);
+        }
+
+        return $sort;
+    }
+
+    /**
+     * @return array<string, array<string, string>>
+     */
+    private function buildSortClause(string $field, string $order): array
+    {
         return [
-            [
-                $field => [
-                    'order' => $query->getSortDir(),
-                ],
+            $field => [
+                'order' => $order,
+                'missing' => '_last',
+                'unmapped_type' => 'keyword',
             ],
         ];
     }
