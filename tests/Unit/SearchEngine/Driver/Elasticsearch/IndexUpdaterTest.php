@@ -80,7 +80,6 @@ class IndexUpdaterTest extends TestCase
             ->with(
                 [
                     'index' => 'items',
-                    'type' => '_doc',
                     'conflicts' => 'proceed',
                     'wait_for_completion' => true,
                     'body' => [
@@ -141,7 +140,6 @@ class IndexUpdaterTest extends TestCase
             ->with(
                 [
                     'index' => 'items',
-                    'type' => '_doc',
                     'conflicts' => 'proceed',
                     'wait_for_completion' => true,
                     'body' => [
@@ -200,7 +198,6 @@ class IndexUpdaterTest extends TestCase
             ->with(
                 [
                     'index' => 'items',
-                    'type' => '_doc',
                     'conflicts' => 'proceed',
                     'wait_for_completion' => true,
                     'body' => [
