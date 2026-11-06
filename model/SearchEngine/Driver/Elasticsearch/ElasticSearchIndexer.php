@@ -186,9 +186,8 @@ class ElasticSearchIndexer implements IndexerInterface
 
         if ($document) {
             $deleteParams = [
-                'type' => '_doc',
                 'index' => $document['_index'],
-                'id' => $document['_id']
+                'id' => $document['_id'],
             ];
 
             try {

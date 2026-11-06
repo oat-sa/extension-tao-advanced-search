@@ -236,7 +236,6 @@ class IndexUpdater extends ConfigurableService implements IndexUpdaterInterface
     {
         return [
             'index' => $index,
-            'type' => '_doc',
             'conflicts' => 'proceed',
             'wait_for_completion' => true,
             'body' => [
