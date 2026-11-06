@@ -306,6 +306,81 @@ class ResourceManagerAssetSearchQueryBuilderTest extends TestCase
         $this->assertArrayHasKey('match_none', end($body['query']['bool']['must']));
     }
 
+    public function testBuildSortsByNormalizedSubfields(): void
+    {
+        $this->assertSame(
+            [
+                ['label.sort' => $this->sortClause('asc')],
+                ['label.raw' => $this->sortClause('asc')],
+                ['location.raw' => $this->sortClause('asc')],
+                ['resource_id.keyword' => $this->sortClause('asc')],
+            ],
+            $this->subject->build($this->createQuery(''), '')['sort']
+        );
+
+        $locationQuery = $this->createQuery('');
+        $locationQuery->setSortBy(AssetSearchQuery::SORT_LOCATION);
+        $this->assertSame(
+            [
+                ['location.sort' => $this->sortClause('asc')],
+                ['location.raw' => $this->sortClause('asc')],
+                ['label.raw' => $this->sortClause('asc')],
+                ['resource_id.keyword' => $this->sortClause('asc')],
+            ],
+            $this->subject->build($locationQuery, '')['sort']
+        );
+
+        $updatedAtQuery = $this->createQuery('');
+        $updatedAtQuery->setSortBy(AssetSearchQuery::SORT_UPDATED_AT);
+        $this->assertSame(
+            [
+                ['updated_at.raw' => $this->sortClause('asc')],
+                ['label.sort' => $this->sortClause('asc')],
+                ['location.raw' => $this->sortClause('asc')],
+                ['resource_id.keyword' => $this->sortClause('asc')],
+            ],
+            $this->subject->build($updatedAtQuery, '')['sort']
+        );
+
+        $descendingQuery = $this->createQuery('');
+        $descendingQuery->setSortDir('desc');
+        $this->assertSame(
+            [
+                ['label.sort' => $this->sortClause('desc')],
+                ['label.raw' => $this->sortClause('desc')],
+                ['location.raw' => $this->sortClause('desc')],
+                ['resource_id.keyword' => $this->sortClause('desc')],
+            ],
+            $this->subject->build($descendingQuery, '')['sort']
+        );
+
+        $unknownQuery = $this->createQuery('');
+        $unknownQuery->setSortBy('unknown');
+        $this->assertSame(
+            [
+                ['label.sort' => $this->sortClause('asc')],
+                ['label.raw' => $this->sortClause('asc')],
+                ['location.raw' => $this->sortClause('asc')],
+                ['resource_id.keyword' => $this->sortClause('asc')],
+            ],
+            $this->subject->build($unknownQuery, '')['sort']
+        );
+    }
+
+    /**
+     * Every sort spec carries the same guards: missing values last, unmapped field tolerated as empty.
+     *
+     * @return array<string, string>
+     */
+    private function sortClause(string $order): array
+    {
+        return [
+            'order' => $order,
+            'missing' => '_last',
+            'unmapped_type' => 'keyword',
+        ];
+    }
+
     private function extractExactNestedMetadataQuery(array $body): array
     {
         foreach ($body['query']['bool']['must'] as $clause) {
