@@ -22,10 +22,12 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\SearchEngine\Driver\Elasticsearch;
 
+use Exception;
 use oat\oatbox\log\LoggerService;
 use oat\tao\model\search\index\IndexDocument;
 use oat\tao\model\TaoOntology;
 use Elastic\Elasticsearch\Client;
+use Elastic\Elasticsearch\Endpoints\Indices;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\tao\model\search\index\DocumentBuilder\PropertyIndexReferenceFactory;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchIndexer;
@@ -201,6 +203,114 @@ class ElasticSearchIndexerTest extends TestCase
         $this->assertCount(1, $out);
         $this->assertSame(['x'], $out[0]['value']);
         $this->assertArrayNotHasKey('raw_value', $out[0]);
+    }
+
+    public function testDeleteDocumentRefreshesFoundDocumentIndex(): void
+    {
+        $indexMock = $this->createMock(Indices::class);
+
+        $this->client->expects($this->once())
+            ->method('search')
+            ->with([
+                'body' => [
+                    'query' => [
+                        'ids' => [
+                            'values' => ['document-id']
+                        ]
+                    ]
+                ]
+            ])
+            ->willReturn([
+                'hits' => [
+                    'hits' => [
+                        [
+                            '_index' => 'items',
+                            '_id' => 'document-id'
+                        ]
+                    ],
+                    'total' => 1
+                ]
+            ]);
+
+        $this->client->expects($this->once())
+            ->method('delete')
+            ->with([
+                'type' => '_doc',
+                'index' => 'items',
+                'id' => 'document-id'
+            ]);
+
+        $this->client->expects($this->once())
+            ->method('indices')
+            ->willReturn($indexMock);
+
+        $indexMock->expects($this->once())
+            ->method('refresh')
+            ->with(['index' => 'items']);
+
+        $this->assertTrue($this->sut->deleteDocument('document-id'));
+    }
+
+    public function testDeleteDocumentLogsRefreshFailureAndReturnsTrue(): void
+    {
+        $indexMock = $this->createMock(Indices::class);
+
+        $this->client->expects($this->once())
+            ->method('search')
+            ->willReturn([
+                'hits' => [
+                    'hits' => [
+                        [
+                            '_index' => 'items',
+                            '_id' => 'document-id'
+                        ]
+                    ],
+                    'total' => 1
+                ]
+            ]);
+
+        $this->client->expects($this->once())
+            ->method('delete')
+            ->with([
+                'type' => '_doc',
+                'index' => 'items',
+                'id' => 'document-id'
+            ]);
+
+        $this->client->expects($this->once())
+            ->method('indices')
+            ->willReturn($indexMock);
+
+        $indexMock->expects($this->once())
+            ->method('refresh')
+            ->with(['index' => 'items'])
+            ->willThrowException(new Exception('refresh failed'));
+
+        $this->logger->expects($this->once())
+            ->method('error')
+            ->with($this->stringContains('refresh failed'));
+
+        $this->assertTrue($this->sut->deleteDocument('document-id'));
+    }
+
+    public function testDeleteDocumentReturnsFalseWithoutDeleteOrRefreshWhenNotFound(): void
+    {
+        $this->client->expects($this->once())
+            ->method('search')
+            ->willReturn([
+                'hits' => [
+                    'hits' => [],
+                    'total' => 0
+                ]
+            ]);
+
+        $this->client->expects($this->never())
+            ->method('delete');
+
+        $this->client->expects($this->never())
+            ->method('indices');
+
+        $this->assertFalse($this->sut->deleteDocument('unknown-id'));
     }
 
     private function createIterator(array $items = []): MockObject
