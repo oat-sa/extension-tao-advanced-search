@@ -22,13 +22,18 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\model\Metadata\Listener;
 
+use common_Logger;
 use core_kernel_classes_Class;
+use core_kernel_classes_Resource;
 use oat\generis\model\data\event\ResourceCreated;
 use oat\oatbox\service\ConfigurableService;
 use oat\taoAdvancedSearch\model\Index\Listener\ListenerInterface;
 use oat\taoAdvancedSearch\model\Index\Service\IndexerInterface;
 use oat\taoAdvancedSearch\model\Index\Service\ResultIndexer;
 use oat\taoAdvancedSearch\model\Metadata\Normalizer\MetadataNormalizer;
+use oat\taoAdvancedSearch\model\Resource\Service\SyncResourceResultIndexer;
+use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface as SearchEngineIndexerInterface;
+use Throwable;
 
 class MetadataInheritanceListener extends ConfigurableService implements ListenerInterface
 {
@@ -43,11 +48,39 @@ class MetadataInheritanceListener extends ConfigurableService implements Listene
             throw new UnsupportedEventException(ResourceCreated::class);
         }
 
-        if (!$event->getResource() instanceof core_kernel_classes_Class) {
+        if ($event->getResource() instanceof core_kernel_classes_Class) {
+            $this->getIndexer()->addIndex($event->getResource());
             return;
         }
 
-        $this->getIndexer()->addIndex($event->getResource());
+        if ($this->isMediaResource($event->getResource())) {
+            try {
+                $this->getSyncIndexer()->addIndex($event->getResource());
+            } catch (Throwable $exception) {
+                common_Logger::e(
+                    sprintf('Could not sync-index created media resource: %s', $exception->getMessage())
+                );
+            }
+        }
+    }
+
+    private function isMediaResource(core_kernel_classes_Resource $resource): bool
+    {
+        $types = $resource->getTypes();
+
+        if (empty($types)) {
+            return false;
+        }
+
+        $mediaClass = $resource->getClass(SearchEngineIndexerInterface::MEDIA_CLASS_URI);
+
+        foreach ($types as $type) {
+            if ($type->equals($mediaClass) || $type->isSubClassOf($mediaClass)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function getIndexer(): IndexerInterface
@@ -57,5 +90,10 @@ class MetadataInheritanceListener extends ConfigurableService implements Listene
             $this->getServiceLocator()->get(MetadataNormalizer::class)
         );
         return $indexer;
+    }
+
+    private function getSyncIndexer(): IndexerInterface
+    {
+        return $this->getServiceManager()->get(SyncResourceResultIndexer::class);
     }
 }

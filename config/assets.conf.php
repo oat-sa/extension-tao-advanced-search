@@ -39,7 +39,11 @@ return [
                     'fields' => [
                         'raw' => [
                             'type' => 'keyword'
-                        ]
+                        ],
+                        'sort' => [
+                            'type' => 'keyword',
+                            'normalizer' => 'lowercase',
+                        ],
                     ]
                 ],
                 'updated_at' => [
@@ -55,7 +59,11 @@ return [
                     'fields' => [
                         'raw' => [
                             'type' => 'keyword'
-                        ]
+                        ],
+                        'sort' => [
+                            'type' => 'keyword',
+                            'normalizer' => 'lowercase',
+                        ],
                     ]
                 ],
                 'type' => [
@@ -69,6 +77,15 @@ return [
                 'search_tokens' => [
                     'type' => 'keyword',
                     'ignore_above' => 256,
+                ],
+                'resource_id' => [
+                    'type' => 'text',
+                    'fields' => [
+                        'keyword' => [
+                            'type' => 'keyword',
+                            'ignore_above' => 1024,
+                        ],
+                    ],
                 ],
                 'read_access' => [
                     'type' => 'keyword',
