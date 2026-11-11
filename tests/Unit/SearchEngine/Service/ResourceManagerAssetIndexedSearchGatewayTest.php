@@ -30,6 +30,7 @@ use oat\tao\model\media\MediaBrowser;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\AssetMimeTypeResolverInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\AssetUriEncoderInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
+use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
 use oat\taoItems\model\media\AssetSearchUnavailableException;
 use oat\taoAdvancedSearch\model\SearchEngine\SearchResult;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\ResourceManagerAssetIndexedSearchGateway;
@@ -66,6 +67,9 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
     /** @var ResourceUpdatedAtResolver */
     private $updatedAtResolver;
 
+    /** @var ElasticSearchConfig|MockObject */
+    private $elasticSearchConfig;
+
     /** @var ResourceManagerAssetIndexedSearchGateway */
     private $subject;
 
@@ -83,6 +87,9 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
             return \tao_helpers_Uri::encode($uri);
         });
         $this->updatedAtResolver = $this->createUpdatedAtResolverStub();
+        $this->elasticSearchConfig = $this->createMock(ElasticSearchConfig::class);
+        $this->elasticSearchConfig->method('getHosts')->willReturn(['http://localhost:9200']);
+        $this->elasticSearchConfig->method('getElasticCloudId')->willReturn(null);
 
         $this->subject = new ResourceManagerAssetIndexedSearchGateway(
             $this->elasticSearch,
@@ -91,7 +98,8 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
             $this->logger,
             $this->mimeTypeResolver,
             $this->uriEncoder,
-            $this->updatedAtResolver
+            $this->updatedAtResolver,
+            $this->elasticSearchConfig
         );
     }
 
@@ -108,6 +116,73 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
         $this->logger->expects($this->once())->method('warning');
 
         $this->assertFalse($this->subject->isAvailable());
+    }
+
+    public function testIsAvailableReturnsFalseWithoutPingWhenConfigIsEmpty(): void
+    {
+        $elasticSearchConfig = $this->createMock(ElasticSearchConfig::class);
+        $elasticSearchConfig->method('getHosts')->willReturn([]);
+        $elasticSearchConfig->method('getElasticCloudId')->willReturn(null);
+
+        $this->elasticSearch->expects($this->never())->method('ping');
+
+        $subject = new ResourceManagerAssetIndexedSearchGateway(
+            $this->elasticSearch,
+            $this->queryBuilder,
+            $this->permissionChecker,
+            $this->logger,
+            $this->mimeTypeResolver,
+            $this->uriEncoder,
+            $this->updatedAtResolver,
+            $elasticSearchConfig
+        );
+
+        $this->assertFalse($subject->isAvailable());
+    }
+
+    /** Verifies that an empty-string cloud id is treated as absent and skips ping. */
+    public function testIsAvailableReturnsFalseWithoutPingWhenCloudIdIsEmptyString(): void
+    {
+        $elasticSearchConfig = $this->createMock(ElasticSearchConfig::class);
+        $elasticSearchConfig->method('getHosts')->willReturn([]);
+        $elasticSearchConfig->method('getElasticCloudId')->willReturn('');
+
+        $this->elasticSearch->expects($this->never())->method('ping');
+
+        $subject = new ResourceManagerAssetIndexedSearchGateway(
+            $this->elasticSearch,
+            $this->queryBuilder,
+            $this->permissionChecker,
+            $this->logger,
+            $this->mimeTypeResolver,
+            $this->uriEncoder,
+            $this->updatedAtResolver,
+            $elasticSearchConfig
+        );
+
+        $this->assertFalse($subject->isAvailable());
+    }
+
+    public function testIsAvailableUsesPingResultWhenCloudIdIsSetAndHostsAreEmpty(): void
+    {
+        $elasticSearchConfig = $this->createMock(ElasticSearchConfig::class);
+        $elasticSearchConfig->method('getHosts')->willReturn([]);
+        $elasticSearchConfig->method('getElasticCloudId')->willReturn('cloud-id');
+
+        $this->elasticSearch->expects($this->once())->method('ping')->willReturn(true);
+
+        $subject = new ResourceManagerAssetIndexedSearchGateway(
+            $this->elasticSearch,
+            $this->queryBuilder,
+            $this->permissionChecker,
+            $this->logger,
+            $this->mimeTypeResolver,
+            $this->uriEncoder,
+            $this->updatedAtResolver,
+            $elasticSearchConfig
+        );
+
+        $this->assertTrue($subject->isAvailable());
     }
 
     public function testBrowseListingScopesBareMediamanagerPathToMediaRootClass(): void
@@ -497,7 +572,8 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
             $this->logger,
             $this->mimeTypeResolver,
             $this->uriEncoder,
-            $this->updatedAtResolver
+            $this->updatedAtResolver,
+            $this->elasticSearchConfig
         );
 
         $query = $this->createSearchQuery();
@@ -732,7 +808,8 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
             $this->logger,
             $this->mimeTypeResolver,
             $this->uriEncoder,
-            $this->updatedAtResolver
+            $this->updatedAtResolver,
+            $this->elasticSearchConfig
         );
 
         $mediaSource = $this->createMock(MediaBrowser::class);
@@ -826,7 +903,8 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
             $this->logger,
             $this->mimeTypeResolver,
             $this->uriEncoder,
-            $this->updatedAtResolver
+            $this->updatedAtResolver,
+            $this->elasticSearchConfig
         );
 
         $hits = [];
