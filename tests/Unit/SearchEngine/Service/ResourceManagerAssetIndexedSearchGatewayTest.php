@@ -140,6 +140,29 @@ class ResourceManagerAssetIndexedSearchGatewayTest extends TestCase
         $this->assertFalse($subject->isAvailable());
     }
 
+    /** Verifies that an empty-string cloud id is treated as absent and skips ping. */
+    public function testIsAvailableReturnsFalseWithoutPingWhenCloudIdIsEmptyString(): void
+    {
+        $elasticSearchConfig = $this->createMock(ElasticSearchConfig::class);
+        $elasticSearchConfig->method('getHosts')->willReturn([]);
+        $elasticSearchConfig->method('getElasticCloudId')->willReturn('');
+
+        $this->elasticSearch->expects($this->never())->method('ping');
+
+        $subject = new ResourceManagerAssetIndexedSearchGateway(
+            $this->elasticSearch,
+            $this->queryBuilder,
+            $this->permissionChecker,
+            $this->logger,
+            $this->mimeTypeResolver,
+            $this->uriEncoder,
+            $this->updatedAtResolver,
+            $elasticSearchConfig
+        );
+
+        $this->assertFalse($subject->isAvailable());
+    }
+
     public function testBrowseListingScopesBareMediamanagerPathToMediaRootClass(): void
     {
         $rootClassUri = TaoMediaOntology::CLASS_URI_MEDIA_ROOT;

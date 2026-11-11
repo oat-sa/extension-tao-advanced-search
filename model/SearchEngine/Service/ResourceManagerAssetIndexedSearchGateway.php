@@ -105,7 +105,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
     {
         if (
             $this->elasticSearchConfig->getHosts() === []
-            && $this->elasticSearchConfig->getElasticCloudId() === null
+            && !$this->elasticSearchConfig->getElasticCloudId()
         ) {
             return false;
         }
