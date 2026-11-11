@@ -122,34 +122,8 @@ class ElasticSearchConfig
         return $this->serviceOptions->get(self::class, self::OPTION_ELASTIC_CLOUD_API_KEY_ID);
     }
 
-    /**
-     * @return array|string|null
-     */
-    private function getFirstHost()
-    {
-        if (getenv(self::ENV_OPTION_HOSTS)) {
-            $hosts = $this->getHosts();
-
-            return $hosts[0] ?? null;
-        }
-
-        $hosts = $this->serviceOptions->get(self::class, self::OPTION_HOSTS);
-
-        if (!is_array($hosts) || $hosts === []) {
-            return null;
-        }
-
-        return current($hosts) ?: null;
-    }
-
     private function getFirstHostOption(string $option): ?string
     {
-        $firstHost = $this->getFirstHost();
-
-        if (is_array($firstHost) && isset($firstHost[$option])) {
-            return (string)$firstHost[$option];
-        }
-
         $hosts = $this->serviceOptions->get(self::class, self::OPTION_HOSTS);
 
         if (!is_array($hosts) || $hosts === []) {
