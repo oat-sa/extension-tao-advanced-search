@@ -105,6 +105,39 @@ class ElasticSearchConfigTest extends TestCase
         $this->assertSame('password', $this->sut->getPassword());
     }
 
+    public function testEmptyConfigurationReturnsNoHostsAndNoCredentials(): void
+    {
+        $this->assertSame([], $this->sut->getHosts());
+        $this->assertNull($this->sut->getUsername());
+        $this->assertNull($this->sut->getPassword());
+    }
+
+    public function testEnvHostsWithUserAndPasswordEntriesResolveCredentials(): void
+    {
+        putenv('ELASTICSEARCH_HOSTS=scheme://host:port');
+
+        $this->options
+            ->method('get')
+            ->willReturnCallback(
+                static function (string $class, string $option) {
+                    if ($option === ElasticSearchConfig::OPTION_HOSTS) {
+                        return [
+                            [
+                                'host' => 'host',
+                                'user' => 'username',
+                                'pass' => 'password',
+                            ]
+                        ];
+                    }
+
+                    return null;
+                }
+            );
+
+        $this->assertSame('username', $this->sut->getUsername());
+        $this->assertSame('password', $this->sut->getPassword());
+    }
+
     public function testEnvGetters(): void
     {
         putenv('ELASTICSEARCH_HOSTS=scheme://host:port');

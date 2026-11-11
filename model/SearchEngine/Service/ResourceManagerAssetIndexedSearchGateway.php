@@ -28,6 +28,7 @@ use oat\taoAdvancedSearch\model\SearchEngine\Contract\AssetMimeTypeResolverInter
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\AssetUriEncoderInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearch;
+use oat\taoAdvancedSearch\model\SearchEngine\Driver\Elasticsearch\ElasticSearchConfig;
 use oat\taoItems\model\media\AssetIndexedSearchGatewayInterface;
 use oat\taoItems\model\media\AssetSearchQuery;
 use oat\taoItems\model\media\AssetSearchUnavailableException;
@@ -77,6 +78,9 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
     /** @var ResourceUpdatedAtResolver */
     private $updatedAtResolver;
 
+    /** @var ElasticSearchConfig */
+    private $elasticSearchConfig;
+
     public function __construct(
         ElasticSearch $elasticSearch,
         ResourceManagerAssetSearchQueryBuilder $queryBuilder,
@@ -84,7 +88,8 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
         LoggerInterface $logger,
         AssetMimeTypeResolverInterface $mimeTypeResolver,
         AssetUriEncoderInterface $uriEncoder,
-        ResourceUpdatedAtResolver $updatedAtResolver
+        ResourceUpdatedAtResolver $updatedAtResolver,
+        ElasticSearchConfig $elasticSearchConfig
     ) {
         $this->elasticSearch = $elasticSearch;
         $this->queryBuilder = $queryBuilder;
@@ -93,13 +98,21 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
         $this->mimeTypeResolver = $mimeTypeResolver;
         $this->uriEncoder = $uriEncoder;
         $this->updatedAtResolver = $updatedAtResolver;
+        $this->elasticSearchConfig = $elasticSearchConfig;
     }
 
     public function isAvailable(): bool
     {
+        if (
+            $this->elasticSearchConfig->getHosts() === []
+            && $this->elasticSearchConfig->getElasticCloudId() === null
+        ) {
+            return false;
+        }
+
         try {
             return $this->elasticSearch->ping();
-        } catch (Exception $exception) {
+        } catch (\Throwable $exception) {
             $this->logger->warning(
                 'Asset indexed search ping failed: ' . $exception->getMessage()
             );
