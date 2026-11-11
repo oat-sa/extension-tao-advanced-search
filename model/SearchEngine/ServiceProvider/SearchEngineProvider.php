@@ -164,6 +164,7 @@ class SearchEngineProvider implements ContainerServiceProviderInterface
                     service(OntologyAssetMimeTypeResolver::class),
                     service(TaoAssetUriEncoder::class),
                     service(ResourceUpdatedAtResolver::class),
+                    service(ElasticSearchConfig::class),
                 ]
             )
             ->public();

@@ -79,7 +79,7 @@ class ElasticSearchConfig
         if (getenv(self::ENV_OPTION_USERNAME)) {
             return getenv(self::ENV_OPTION_USERNAME) ?: null;
         }
-        return $this->getFirstHost()[self::OPTION_USERNAME] ?? null;
+        return $this->getFirstHostOption(self::OPTION_USERNAME);
     }
 
     public function getPassword(): ?string
@@ -87,7 +87,7 @@ class ElasticSearchConfig
         if (getenv(self::ENV_OPTION_PASSWORD)) {
             return getenv(self::ENV_OPTION_PASSWORD) ?: null;
         }
-        return $this->getFirstHost()[self::OPTION_PASSWORD] ?? null;
+        return $this->getFirstHostOption(self::OPTION_PASSWORD);
     }
 
     public function getIndexPrefix(): ?string
@@ -122,11 +122,20 @@ class ElasticSearchConfig
         return $this->serviceOptions->get(self::class, self::OPTION_ELASTIC_CLOUD_API_KEY_ID);
     }
 
-    private function getFirstHost(): ?array
+    private function getFirstHostOption(string $option): ?string
     {
-        if (getenv(self::ENV_OPTION_HOSTS)) {
-            return [current($this->getHosts())];
+        $hosts = $this->serviceOptions->get(self::class, self::OPTION_HOSTS);
+
+        if (!is_array($hosts) || $hosts === []) {
+            return null;
         }
-        return current($this->serviceOptions->get(self::class, self::OPTION_HOSTS)) ?: null;
+
+        $firstConfiguredHost = current($hosts);
+
+        if (is_array($firstConfiguredHost) && isset($firstConfiguredHost[$option])) {
+            return (string)$firstConfiguredHost[$option];
+        }
+
+        return null;
     }
 }
