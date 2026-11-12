@@ -254,8 +254,8 @@ class ElasticSearchIndexer implements IndexerInterface
         $body = $document->getBody();
         $dynamicProperties = (array) $document->getDynamicProperties();
         if ($this->nestedAttributesFeature->shouldUseNestedAttributes($indexName)) {
-            $body[self::ATTRIBUTES_FIELD] = $this->nestedAttributesDocumentBuilder
-                ->buildFromDynamicProperties($dynamicProperties);
+            $body[self::ATTRIBUTES_FIELD] = $body[self::ATTRIBUTES_FIELD]
+                ?? $this->nestedAttributesDocumentBuilder->buildFromDynamicProperties($dynamicProperties);
         } else {
             $body = array_merge($body, $dynamicProperties);
         }

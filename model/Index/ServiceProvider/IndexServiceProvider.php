@@ -27,6 +27,8 @@ use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\taoAdvancedSearch\model\Index\Service\AdvancedSearchIndexDocumentBuilder;
 use oat\taoAdvancedSearch\model\Index\Service\AssetIndexDocumentBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\AssetSearchTokenizer;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesDocumentBuilder;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesFeature;
 use oat\taoAdvancedSearch\model\Test\Normalizer\TestNormalizer;
 use oat\taoMediaManager\model\relation\service\IdDiscoverService;
 use oat\taoQtiItem\model\qti\parser\ElementReferencesExtractor;
@@ -49,6 +51,8 @@ class IndexServiceProvider implements ContainerServiceProviderInterface
             ->args([
                 service(IndexDocumentBuilderInterface::class),
                 service(AssetSearchTokenizer::class),
+                service(NestedAttributesDocumentBuilder::class),
+                service(NestedAttributesFeature::class),
             ])
             ->public();
 
