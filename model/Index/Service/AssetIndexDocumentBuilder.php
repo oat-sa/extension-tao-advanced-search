@@ -29,6 +29,8 @@ use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\AssetSearchTokenizer;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesDocumentBuilder;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesFeature;
 use oat\taoMediaManager\model\TaoMediaOntology;
 
 /**
@@ -36,18 +38,30 @@ use oat\taoMediaManager\model\TaoMediaOntology;
  */
 class AssetIndexDocumentBuilder implements IndexDocumentBuilderInterface
 {
+    private const ATTRIBUTES_FIELD = 'attributes';
+
     /** @var IndexDocumentBuilderInterface */
     private $inner;
 
     /** @var AssetSearchTokenizer */
     private $assetSearchTokenizer;
 
+    /** @var NestedAttributesDocumentBuilder */
+    private $nestedAttributesDocumentBuilder;
+
+    /** @var NestedAttributesFeature */
+    private $nestedAttributesFeature;
+
     public function __construct(
         IndexDocumentBuilderInterface $inner,
-        AssetSearchTokenizer $assetSearchTokenizer = null
+        AssetSearchTokenizer $assetSearchTokenizer = null,
+        NestedAttributesDocumentBuilder $nestedAttributesDocumentBuilder = null,
+        NestedAttributesFeature $nestedAttributesFeature = null
     ) {
         $this->inner = $inner;
         $this->assetSearchTokenizer = $assetSearchTokenizer ?? new AssetSearchTokenizer();
+        $this->nestedAttributesDocumentBuilder = $nestedAttributesDocumentBuilder;
+        $this->nestedAttributesFeature = $nestedAttributesFeature;
     }
 
     public function createDocumentFromResource(core_kernel_classes_Resource $resource): IndexDocument
@@ -67,11 +81,9 @@ class AssetIndexDocumentBuilder implements IndexDocumentBuilderInterface
 
         $body['resource_id'] = (string) $resource->getUri();
 
-        $body = $this->assetSearchTokenizer->enrichDocumentBody($body);
-
         return new IndexDocument(
             $document->getId(),
-            $body,
+            $this->enrichMediaBody($body, $document),
             $document->getIndexProperties(),
             $document->getDynamicProperties(),
             $document->getAccessProperties()
@@ -84,7 +96,66 @@ class AssetIndexDocumentBuilder implements IndexDocumentBuilderInterface
             $resourceData['body']['resource_id'] = (string) $resourceData['id'];
         }
 
-        return $this->inner->createDocumentFromArray($resourceData);
+        $document = $this->inner->createDocumentFromArray($resourceData);
+
+        $body = $document->getBody();
+
+        if (!$this->isMediaBody($body)) {
+            return $document;
+        }
+
+        if (isset($resourceData['id'])) {
+            $body['resource_id'] = (string) $resourceData['id'];
+        }
+
+        return new IndexDocument(
+            $document->getId(),
+            $this->enrichMediaBody($body, $document),
+            $document->getIndexProperties(),
+            $document->getDynamicProperties(),
+            $document->getAccessProperties()
+        );
+    }
+
+    private function enrichMediaBody(array $body, IndexDocument $document): array
+    {
+        if ($this->getNestedAttributesFeature()->shouldUseNestedAttributes(IndexerInterface::ASSETS_INDEX)) {
+            $body[self::ATTRIBUTES_FIELD] = $this->getNestedAttributesDocumentBuilder()
+                ->buildFromDynamicProperties((array) $document->getDynamicProperties());
+        }
+
+        return $this->assetSearchTokenizer->enrichDocumentBody($body);
+    }
+
+    private function isMediaBody(array $body): bool
+    {
+        $parentClasses = $body['parent_classes'] ?? '';
+        if (
+            is_string($parentClasses)
+            && in_array(IndexerInterface::MEDIA_CLASS_URI, explode(';', $parentClasses), true)
+        ) {
+            return true;
+        }
+
+        return in_array(IndexerInterface::MEDIA_CLASS_URI, (array) ($body['type'] ?? []), true);
+    }
+
+    private function getNestedAttributesDocumentBuilder(): NestedAttributesDocumentBuilder
+    {
+        if ($this->nestedAttributesDocumentBuilder === null) {
+            throw new \RuntimeException('NestedAttributesDocumentBuilder is not configured');
+        }
+
+        return $this->nestedAttributesDocumentBuilder;
+    }
+
+    private function getNestedAttributesFeature(): NestedAttributesFeature
+    {
+        if ($this->nestedAttributesFeature === null) {
+            throw new \RuntimeException('NestedAttributesFeature is not configured');
+        }
+
+        return $this->nestedAttributesFeature;
     }
 
     private function resolveMimeType(core_kernel_classes_Resource $resource): ?string
