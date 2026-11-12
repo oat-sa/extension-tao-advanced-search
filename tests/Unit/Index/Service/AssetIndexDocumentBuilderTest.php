@@ -239,6 +239,35 @@ class AssetIndexDocumentBuilderTest extends TestCase
         $this->assertSame('media-uri', $body['resource_id']);
     }
 
+    public function testCreateDocumentFromArrayLeavesNonMediaDocumentUntouched(): void
+    {
+        $this->nestedAttributesDisabled = false;
+
+        $document = new IndexDocument(
+            'item-uri',
+            [
+                'type' => ['http://www.tao.lu/Ontologies/TAOItem.rdf#Item'],
+                'label' => 'item.qti.xml',
+            ],
+            [],
+            new ArrayIterator(['TextBox_https_2_example_3_prop' => ['keyword-test']]),
+            null
+        );
+
+        $this->inner
+            ->expects($this->once())
+            ->method('createDocumentFromArray')
+            ->willReturn($document);
+
+        $result = $this->subject->createDocumentFromArray(
+            ['id' => 'item-uri', 'body' => ['label' => 'item.qti.xml']]
+        );
+
+        $this->assertSame($document, $result);
+        $this->assertArrayNotHasKey('attributes', $result->getBody());
+        $this->assertArrayNotHasKey('search_tokens', $result->getBody());
+    }
+
     public function testCreateDocumentFromResourceLeavesNonMediaDocumentsUntouched(): void
     {
         $resource = $this->createMock(core_kernel_classes_Resource::class);

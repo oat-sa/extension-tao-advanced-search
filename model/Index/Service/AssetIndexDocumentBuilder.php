@@ -54,9 +54,9 @@ class AssetIndexDocumentBuilder implements IndexDocumentBuilderInterface
 
     public function __construct(
         IndexDocumentBuilderInterface $inner,
-        AssetSearchTokenizer $assetSearchTokenizer = null,
-        NestedAttributesDocumentBuilder $nestedAttributesDocumentBuilder = null,
-        NestedAttributesFeature $nestedAttributesFeature = null
+        ?AssetSearchTokenizer $assetSearchTokenizer = null,
+        ?NestedAttributesDocumentBuilder $nestedAttributesDocumentBuilder = null,
+        ?NestedAttributesFeature $nestedAttributesFeature = null
     ) {
         $this->inner = $inner;
         $this->assetSearchTokenizer = $assetSearchTokenizer ?? new AssetSearchTokenizer();
@@ -119,7 +119,10 @@ class AssetIndexDocumentBuilder implements IndexDocumentBuilderInterface
 
     private function enrichMediaBody(array $body, IndexDocument $document): array
     {
-        if ($this->getNestedAttributesFeature()->shouldUseNestedAttributes(IndexerInterface::ASSETS_INDEX)) {
+        if (
+            $this->nestedAttributesFeature !== null
+            && $this->nestedAttributesFeature->shouldUseNestedAttributes(IndexerInterface::ASSETS_INDEX)
+        ) {
             $body[self::ATTRIBUTES_FIELD] = $this->getNestedAttributesDocumentBuilder()
                 ->buildFromDynamicProperties((array) $document->getDynamicProperties());
         }
@@ -147,15 +150,6 @@ class AssetIndexDocumentBuilder implements IndexDocumentBuilderInterface
         }
 
         return $this->nestedAttributesDocumentBuilder;
-    }
-
-    private function getNestedAttributesFeature(): NestedAttributesFeature
-    {
-        if ($this->nestedAttributesFeature === null) {
-            throw new \RuntimeException('NestedAttributesFeature is not configured');
-        }
-
-        return $this->nestedAttributesFeature;
     }
 
     private function resolveMimeType(core_kernel_classes_Resource $resource): ?string
