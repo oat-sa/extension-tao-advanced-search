@@ -22,14 +22,19 @@ declare(strict_types=1);
 
 namespace oat\taoAdvancedSearch\tests\Unit\Index\Service;
 
+use ArrayIterator;
 use core_kernel_classes_Class;
 use core_kernel_classes_Literal;
 use core_kernel_classes_Property;
 use core_kernel_classes_Resource;
+use oat\tao\model\featureFlag\FeatureFlagCheckerInterface;
 use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
 use oat\taoAdvancedSearch\model\Index\Service\AssetIndexDocumentBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesDocumentBuilder;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesFeature;
+use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesIndexResolver;
 use oat\taoMediaManager\model\TaoMediaOntology;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -39,13 +44,32 @@ class AssetIndexDocumentBuilderTest extends TestCase
     /** @var IndexDocumentBuilderInterface|MockObject */
     private $inner;
 
+    /** @var FeatureFlagCheckerInterface|MockObject */
+    private $featureFlagChecker;
+
+    /** @var bool */
+    private $nestedAttributesDisabled = true;
+
     /** @var AssetIndexDocumentBuilder */
     private $subject;
 
     protected function setUp(): void
     {
         $this->inner = $this->createMock(IndexDocumentBuilderInterface::class);
-        $this->subject = new AssetIndexDocumentBuilder($this->inner);
+        $this->featureFlagChecker = $this->createMock(FeatureFlagCheckerInterface::class);
+        $this->featureFlagChecker
+            ->method('isEnabled')
+            ->with(NestedAttributesFeature::FEATURE_FLAG_DISABLE_NESTED_ATTRIBUTES)
+            ->willReturnCallback(function (): bool {
+                return $this->nestedAttributesDisabled;
+            });
+
+        $this->subject = new AssetIndexDocumentBuilder(
+            $this->inner,
+            null,
+            new NestedAttributesDocumentBuilder(),
+            new NestedAttributesFeature($this->featureFlagChecker, new NestedAttributesIndexResolver())
+        );
     }
 
     public function testCreateDocumentFromResourceSetsMimeTypeForMediaAssets(): void
@@ -177,6 +201,43 @@ class AssetIndexDocumentBuilderTest extends TestCase
         $this->assertSame('media-uri', $document->getBody()['resource_id']);
     }
 
+    public function testCreateDocumentFromArrayEnrichesMediaBody(): void
+    {
+        $this->nestedAttributesDisabled = false;
+
+        $this->inner
+            ->expects($this->once())
+            ->method('createDocumentFromArray')
+            ->with($this->callback(static function (array $data): bool {
+                return ($data['body']['resource_id'] ?? null) === 'media-uri';
+            }))
+            ->willReturn(
+                new IndexDocument(
+                    'media-uri',
+                    [
+                        'type' => ['https_2_backoffice_0_ngs_0_test_1_ontologies_1_tao_0_rdf_3_i6aedcdbca0045'],
+                        'label' => 'banner.webp',
+                        'parent_classes' => ';http://www.w3.org/2000/01/rdf-schema#Resource;http://www.tao.lu/Ontologies/TAOMedia.rdf#Media',
+                    ],
+                    [],
+                    new ArrayIterator(['TextBox_https_2_example_3_prop' => ['keyword-test']]),
+                    null
+                )
+            );
+
+        $document = $this->subject->createDocumentFromArray(
+            ['id' => 'media-uri', 'body' => ['label' => 'banner.webp']]
+        );
+
+        $body = $document->getBody();
+
+        $this->assertSame(['keyword', 'test'], $body['attributes'][0]['search_tokens']);
+        $this->assertContains('keyword', $body['search_tokens']);
+        $this->assertContains('test', $body['search_tokens']);
+        $this->assertContains('banner', $body['search_tokens']);
+        $this->assertSame('media-uri', $body['resource_id']);
+    }
+
     public function testCreateDocumentFromResourceLeavesNonMediaDocumentsUntouched(): void
     {
         $resource = $this->createMock(core_kernel_classes_Resource::class);
@@ -192,6 +253,56 @@ class AssetIndexDocumentBuilderTest extends TestCase
         $this->inner->method('createDocumentFromResource')->willReturn($expected);
 
         $this->assertSame($expected, $this->subject->createDocumentFromResource($resource));
+    }
+
+    public function testCreateDocumentFromResourceBuildsNestedAttributesBeforeTokenizing(): void
+    {
+        $this->nestedAttributesDisabled = false;
+
+        $resource = $this->createMediaResource(null);
+
+        $this->inner->method('createDocumentFromResource')->willReturn(
+            new IndexDocument(
+                'media-uri',
+                ['type' => [IndexerInterface::MEDIA_CLASS_URI], 'label' => 'banner.webp'],
+                [],
+                new ArrayIterator(['TextBox_https_2_example_3_prop' => ['keyword-test']]),
+                null
+            )
+        );
+
+        $body = $this->subject->createDocumentFromResource($resource)->getBody();
+
+        $this->assertCount(1, $body['attributes']);
+        $this->assertSame('https_2_example_3_prop', $body['attributes'][0]['key']);
+        $this->assertSame(['keyword-test'], $body['attributes'][0]['value']);
+        $this->assertSame(['keyword', 'test'], $body['attributes'][0]['search_tokens']);
+
+        $this->assertContains('keyword', $body['search_tokens']);
+        $this->assertContains('test', $body['search_tokens']);
+        $this->assertContains('banner', $body['search_tokens']);
+    }
+
+    public function testCreateDocumentFromResourceSkipsNestedAttributesWhenFeatureDisabled(): void
+    {
+        $this->nestedAttributesDisabled = true;
+
+        $resource = $this->createMediaResource(null);
+
+        $this->inner->method('createDocumentFromResource')->willReturn(
+            new IndexDocument(
+                'media-uri',
+                ['type' => [IndexerInterface::MEDIA_CLASS_URI], 'label' => 'banner.webp'],
+                [],
+                new ArrayIterator(['TextBox_https_2_example_3_prop' => ['keyword-test']]),
+                null
+            )
+        );
+
+        $body = $this->subject->createDocumentFromResource($resource)->getBody();
+
+        $this->assertArrayNotHasKey('attributes', $body);
+        $this->assertSame(['banner'], $body['search_tokens']);
     }
 
     /**
