@@ -217,7 +217,8 @@ class AssetIndexDocumentBuilderTest extends TestCase
                     [
                         'type' => ['https_2_backoffice_0_ngs_0_test_1_ontologies_1_tao_0_rdf_3_i6aedcdbca0045'],
                         'label' => 'banner.webp',
-                        'parent_classes' => ';http://www.w3.org/2000/01/rdf-schema#Resource;http://www.tao.lu/Ontologies/TAOMedia.rdf#Media',
+                        'parent_classes' => ';http://www.w3.org/2000/01/rdf-schema#Resource;'
+                            . 'http://www.tao.lu/Ontologies/TAOMedia.rdf#Media',
                     ],
                     [],
                     new ArrayIterator(['TextBox_https_2_example_3_prop' => ['keyword-test']]),
