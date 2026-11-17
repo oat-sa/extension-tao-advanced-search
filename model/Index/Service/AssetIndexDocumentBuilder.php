@@ -29,10 +29,12 @@ use oat\tao\model\search\index\DocumentBuilder\IndexDocumentBuilderInterface;
 use oat\tao\model\search\index\IndexDocument;
 use oat\taoAdvancedSearch\model\SearchEngine\Contract\IndexerInterface;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\AssetSearchTokenizer;
+use oat\taoMediaManager\model\MediaSource;
 use oat\taoMediaManager\model\TaoMediaOntology;
+use tao_models_classes_FileNotFoundException;
 
 /**
- * Ensures assets index documents store MIME type and RM search tokens.
+ * Ensures assets index documents store MIME type, file size and RM search tokens.
  */
 class AssetIndexDocumentBuilder implements IndexDocumentBuilderInterface
 {
@@ -42,12 +44,17 @@ class AssetIndexDocumentBuilder implements IndexDocumentBuilderInterface
     /** @var AssetSearchTokenizer */
     private $assetSearchTokenizer;
 
+    /** @var MediaSource|null */
+    private $mediaSource;
+
     public function __construct(
         IndexDocumentBuilderInterface $inner,
-        AssetSearchTokenizer $assetSearchTokenizer = null
+        ?AssetSearchTokenizer $assetSearchTokenizer = null,
+        ?MediaSource $mediaSource = null
     ) {
         $this->inner = $inner;
         $this->assetSearchTokenizer = $assetSearchTokenizer ?? new AssetSearchTokenizer();
+        $this->mediaSource = $mediaSource;
     }
 
     public function createDocumentFromResource(core_kernel_classes_Resource $resource): IndexDocument
@@ -63,6 +70,17 @@ class AssetIndexDocumentBuilder implements IndexDocumentBuilderInterface
         $mimeType = $this->resolveMimeType($resource);
         if ($mimeType !== null) {
             $body['mime_type'] = $mimeType;
+        }
+
+        if ($this->mediaSource !== null) {
+            try {
+                $size = $this->mediaSource->getFileInfo($resource->getUri())['size'] ?? null;
+                if ($size !== null) {
+                    $body['size'] = (int)$size;
+                }
+            } catch (tao_models_classes_FileNotFoundException $exception) {
+                // Skip size for legacy media resources without a file link.
+            }
         }
 
         $body['resource_id'] = (string) $resource->getUri();
