@@ -55,7 +55,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
     private const MAX_SCANNED_HITS = 2000;
 
     /** @var string[] */
-    private const SEARCH_SOURCE_FIELDS = ['label', 'mime_type', 'location', 'updated_at'];
+    private const SEARCH_SOURCE_FIELDS = ['label', 'mime_type', 'location', 'updated_at', 'size'];
 
     /** @var ElasticSearch */
     private $elasticSearch;
@@ -385,7 +385,7 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
             $mime = $this->mimeTypeResolver->resolve($uri);
         }
 
-        return [
+        $asset = [
             'uri' => $this->toMediaBrowserUri($uri),
             'label' => $label,
             'name' => $label,
@@ -393,6 +393,12 @@ class ResourceManagerAssetIndexedSearchGateway implements AssetIndexedSearchGate
             'location' => (string)($hit['location'] ?? ''),
             'updatedAt' => $this->updatedAtResolver->resolve($hit['updated_at'] ?? null, $uri),
         ];
+
+        if (isset($hit['size']) && is_numeric($hit['size'])) {
+            $asset['size'] = (int)$hit['size'];
+        }
+
+        return $asset;
     }
 
     /**
