@@ -74,6 +74,9 @@ return [
                     'type' => 'keyword',
                     'ignore_above' => 256,
                 ],
+                'size' => [
+                    'type' => 'long',
+                ],
                 'search_tokens' => [
                     'type' => 'keyword',
                     'ignore_above' => 256,
