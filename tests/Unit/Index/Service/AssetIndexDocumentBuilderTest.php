@@ -67,6 +67,7 @@ class AssetIndexDocumentBuilderTest extends TestCase
         $this->subject = new AssetIndexDocumentBuilder(
             $this->inner,
             null,
+            null,
             new NestedAttributesDocumentBuilder(),
             new NestedAttributesFeature($this->featureFlagChecker, new NestedAttributesIndexResolver())
         );

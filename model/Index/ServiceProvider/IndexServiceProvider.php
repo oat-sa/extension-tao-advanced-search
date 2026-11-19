@@ -30,6 +30,7 @@ use oat\taoAdvancedSearch\model\SearchEngine\Service\AssetSearchTokenizer;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesDocumentBuilder;
 use oat\taoAdvancedSearch\model\SearchEngine\Service\NestedAttributesFeature;
 use oat\taoAdvancedSearch\model\Test\Normalizer\TestNormalizer;
+use oat\taoMediaManager\model\MediaSource;
 use oat\taoMediaManager\model\relation\service\IdDiscoverService;
 use oat\taoQtiItem\model\qti\parser\ElementReferencesExtractor;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -46,11 +47,13 @@ class IndexServiceProvider implements ContainerServiceProviderInterface
         $services = $configurator->services();
 
         $services->set(AssetSearchTokenizer::class, AssetSearchTokenizer::class)->public();
+        $services->set(MediaSource::class, MediaSource::class)->public();
 
         $services->set(AssetIndexDocumentBuilder::class, AssetIndexDocumentBuilder::class)
             ->args([
                 service(IndexDocumentBuilderInterface::class),
                 service(AssetSearchTokenizer::class),
+                service(MediaSource::class),
                 service(NestedAttributesDocumentBuilder::class),
                 service(NestedAttributesFeature::class),
             ])
