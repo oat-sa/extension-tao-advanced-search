@@ -13,7 +13,7 @@
 
 ## Requirements
 
-- ElasticSearch 8.13+ installed.
+- Elasticsearch **9.x** cluster (supported via `elasticsearch/elasticsearch` **8.19+**; **9.x** PHP client when the platform resolves `psr/http-message` **2.x**).
 - Have this extension installed in TAO.
 
 ## Installation instructions
