@@ -13,7 +13,8 @@
 
 ## Requirements
 
-- ElasticSearch 8.13+ installed.
+- Elasticsearch 9.x installed.
+- PHP 8.1 or newer.
 - Have this extension installed in TAO.
 
 ## Installation instructions
