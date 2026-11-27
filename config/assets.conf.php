@@ -133,6 +133,14 @@ return [
                 'number_of_shards' => '1',
                 'number_of_replicas' => '1',
             ],
+            'analysis' => [
+                'normalizer' => [
+                    'lowercase' => [
+                        'type' => 'custom',
+                        'filter' => ['lowercase'],
+                    ],
+                ],
+            ],
         ],
         'aliases' => [
             'assets_alias' => (object)[]
