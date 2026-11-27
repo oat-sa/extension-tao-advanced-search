@@ -175,6 +175,49 @@ class ElasticSearchIndexerTest extends TestCase
         $this->assertFalse($result->hasError());
     }
 
+    public function testBuildIndexKeepsPreBuiltNestedAttributes(): void
+    {
+        $attributes = [
+            [
+                'key' => 'https_2_example_3_prop',
+                'type' => 'TextBox',
+                'value' => ['keyword-test'],
+                'search_tokens' => ['keyword', 'test'],
+            ],
+        ];
+
+        $document = $this->createMock(IndexDocument::class);
+        $document->method('getBody')->willReturn([
+            'type' => [IndexerInterface::MEDIA_CLASS_URI],
+            'label' => 'banner.webp',
+            'attributes' => $attributes,
+        ]);
+        $document->method('getId')->willReturn('some_id');
+        $document->method('getDynamicProperties')->willReturn(
+            new ArrayIterator(['TextBox_https_2_example_3_prop' => ['keyword-test']])
+        );
+
+        $this->logger->expects($this->any())->method('info');
+        $this->logger->expects($this->any())->method('debug');
+
+        $iterator = $this->createIterator([$document]);
+        $iterator->expects($this->once())
+            ->method('next');
+
+        $this->client->expects($this->once())
+            ->method('bulk')
+            ->with($this->callback(static function (array $params) use ($attributes): bool {
+                return ($params['body'][1]['attributes'] ?? null) === $attributes;
+            }))
+            ->willReturn(['bulk_response']);
+
+        $result = $this->sut->buildIndex($iterator);
+
+        $this->assertSame(1, $result->getTotalIndexed());
+        $this->assertNull($result->getErrorMessage());
+        $this->assertFalse($result->hasError());
+    }
+
     public function testBuildAttributesIncludesRawValueWhenRawFieldPresent(): void
     {
         $field = 'RadioBox_http_2_prop';
